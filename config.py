@@ -24,6 +24,10 @@ FPS_SMOOTHING = 0.1  # EMA weight of the newest frame interval
 
 # Hand tracking (CONJ-4)
 HAND_MODEL_PATH = ROOT / "models" / "hand_landmarker.task"
+# 1, not 2: with num_hands=2 and one hand visible, MediaPipe reruns palm detection every
+# frame looking for the second hand (~26 ms/frame on the M1 vs a ~20 ms budget). With 1,
+# it tracks the locked hand from its previous ROI, which is also what keeps it sticky.
+MAX_HANDS = 1
 MIN_DETECTION_CONFIDENCE = 0.5  # MediaPipe palm detection
 MIN_PRESENCE_CONFIDENCE = 0.5  # MediaPipe hand presence while tracking
 MIN_TRACKING_CONFIDENCE = 0.5  # MediaPipe frame-to-frame tracking

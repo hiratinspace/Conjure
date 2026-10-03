@@ -51,7 +51,7 @@ def test_switches_when_tracked_hand_leaves():
 
 @pytest.fixture(scope="module")
 def tracker():
-    with HandTracker(config.HAND_MODEL_PATH, 0.5, 0.5, 0.5, MIN_CONF, JUMP) as t:
+    with HandTracker(config.HAND_MODEL_PATH, 1, 0.5, 0.5, 0.5, MIN_CONF, JUMP) as t:
         yield t
 
 

@@ -1,7 +1,10 @@
 """CONJ-4: MediaPipe hand tracking, one hand out.
 
-MediaPipe runs with num_hands=2 so that a second hand is seen and can be
-ignored deliberately. `select_hand` then picks exactly one:
+MediaPipe runs with num_hands=config.MAX_HANDS (1). Once it finds a hand it
+tracks it from frame to frame by region, skipping palm detection, so it is
+both fast and sticky: a second hand entering the frame is not even looked at
+until the tracked one is lost. `select_hand` then gates the result, and keeps
+selection sticky if MAX_HANDS is ever raised:
   - only hands at or above the confidence threshold count;
   - the hand being tracked stays selected while it is visible (sticky),
     matched by wrist position, not by its Left/Right label, which MediaPipe
@@ -37,12 +40,12 @@ def select_hand(candidates, previous, min_confidence, max_wrist_jump):
 
 
 class HandTracker:
-    def __init__(self, model_path, min_detection_confidence, min_presence_confidence,
+    def __init__(self, model_path, max_hands, min_detection_confidence, min_presence_confidence,
                  min_tracking_confidence, min_hand_confidence, max_wrist_jump):
         options = vision.HandLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=str(model_path)),
             running_mode=vision.RunningMode.VIDEO,
-            num_hands=2,
+            num_hands=max_hands,
             min_hand_detection_confidence=min_detection_confidence,
             min_hand_presence_confidence=min_presence_confidence,
             min_tracking_confidence=min_tracking_confidence,

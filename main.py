@@ -35,7 +35,7 @@ def parse_args(argv):
 
 
 def make_tracker():
-    return HandTracker(config.HAND_MODEL_PATH, config.MIN_DETECTION_CONFIDENCE, config.MIN_PRESENCE_CONFIDENCE,
+    return HandTracker(config.HAND_MODEL_PATH, config.MAX_HANDS, config.MIN_DETECTION_CONFIDENCE, config.MIN_PRESENCE_CONFIDENCE,
                        config.MIN_TRACKING_CONFIDENCE, config.MIN_HAND_CONFIDENCE, config.MAX_WRIST_JUMP)
 
 
