@@ -90,3 +90,7 @@ These are out of scope; treat them as roadmap items and do not build them:
 - multi-monitor or two-hand control
 
 After the hour-16 freeze (CONJ-19), only config changes are allowed. Venue thresholds go in `venue.json`.
+
+## Git workflow
+
+The remote is `github.com:hiratinspace/Conjure` (private), on the `main` branch. After each meaningful change, commit and push it. Write a descriptive message: a short summary line, then a body that says what changed and why. Reference the CONJ ticket ID when one applies. Never commit anything in `docs/`.
