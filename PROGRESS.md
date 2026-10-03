@@ -7,7 +7,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | Ticket | Title | Phase | Status | Notes |
 | --- | --- | --- | --- | --- |
 | CONJ-1 | Project scaffold & dependency install | A | done (1 laptop) | Verified on the M1 laptop. Second-laptop AC waived: only one laptop available. |
-| CONJ-2 | macOS Camera + Accessibility permissions | A | code done | `scripts/check_permissions.py` written. Laptop 1 (VS Code runner): Accessibility already granted; camera, cursor, click untested. Human run pending. Second-laptop AC waived (one laptop). |
+| CONJ-2 | macOS Camera + Accessibility permissions | A | done | All checks pass from Terminal.app on the M1. Second-laptop AC waived (one laptop). |
 | CONJ-3 | Webcam capture loop + debug preview | A | todo | |
 | CONJ-4 | MediaPipe hand landmark extraction | A | todo | |
 | CONJ-5 | Hand-to-cursor mapping | B | todo | |
@@ -41,17 +41,18 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 - **mediapipe pinned to 0.10.35, not 1.0.x.** 1.0.1 aborts on macOS when HandLandmarker opens (`DrishtiMetalHelper ... Service is unavailable`), with both GPU and CPU delegates, inside and outside the sandbox. 0.10.35 runs at ~13.6 ms/frame on a blank 640x480 frame (M1, CPU).
 - **mediapipe 0.10.35 has no `mp.solutions.hands`.** HandTracker uses the Tasks API (`HandLandmarker`, VIDEO mode), which needs a model file. `models/hand_landmarker.task` is committed so runtime never touches the network and both laptops run the identical model (source: Google's `mediapipe-models` bucket, float16/latest, sha256 `fbc2a300...cde1`).
 - **`opencv-contrib-python` instead of `opencv-python`.** mediapipe hard-requires the contrib build, which provides the same `cv2` module. Having both installed makes them overwrite each other.
+- **One demo machine, no backup laptop.** The team has a single M1 MacBook Air, so the both-laptops ACs (CONJ-1, CONJ-2) and the build plan's laptop-parity gate are waived. The plan's backup-laptop mitigation is gone, which makes the CONJ-20 backup video (stored on a phone too) the only fallback for a machine failure.
 
 ## Granted runners (CONJ-2 AC)
 
 | Laptop | Runner app | Accessibility | Camera | Cursor | Click |
 | --- | --- | --- | --- | --- | --- |
-| M1 MacBook Air (Hirats-MacBook-Air-4) | Visual Studio Code.app | pass | pending | pending | pending |
+| M1 MacBook Air (Hirats-MacBook-Air-4) | **Terminal.app** (demo runner) | pass | pass (1920x1080 default, ~22 fps) | pass | pass (double-click in TextEdit) |
+| M1 MacBook Air | Visual Studio Code.app (dev only) | pass | untested | untested | untested |
 
 Permissions belong to the runner app. Demo from the same runner listed here, or re-run the script after switching.
 
-- **One demo machine, no backup laptop.** The team has a single M1 MacBook Air, so the both-laptops ACs (CONJ-1, CONJ-2) and the build plan's laptop-parity gate are waived. The plan's backup-laptop mitigation is gone, which makes the CONJ-20 backup video (stored on a phone too) the only fallback for a machine failure.
-
 ## Open questions
 
-- Which runner will the demo use: VS Code's integrated terminal or Terminal.app? Both must pass CONJ-2 if both are used.
+- None.
+
