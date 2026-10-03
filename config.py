@@ -21,3 +21,14 @@ CAMERA_FPS = 30
 MIRROR = True  # selfie view: moving the hand right moves the cursor right
 CAMERA_WARMUP_FRAMES = 5
 FPS_SMOOTHING = 0.1  # EMA weight of the newest frame interval
+
+# Hand tracking (CONJ-4)
+HAND_MODEL_PATH = ROOT / "models" / "hand_landmarker.task"
+MIN_DETECTION_CONFIDENCE = 0.5  # MediaPipe palm detection
+MIN_PRESENCE_CONFIDENCE = 0.5  # MediaPipe hand presence while tracking
+MIN_TRACKING_CONFIDENCE = 0.5  # MediaPipe frame-to-frame tracking
+MIN_HAND_CONFIDENCE = 0.5  # our gate: hands below this are treated as absent
+MAX_WRIST_JUMP = 0.15  # normalized wrist travel per frame still counted as the same hand
+
+# Recordings (record/replay harness)
+RECORDINGS_DIR = ROOT / "recordings"

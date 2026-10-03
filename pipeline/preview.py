@@ -9,6 +9,8 @@ Keys while the window has focus: p hides the preview, q or Esc quits.
 
 import cv2
 
+from pipeline.landmarks import HAND_CONNECTIONS, INDEX_MCP
+
 WINDOW = "Conjure preview"
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 TEXT_COLOR = (255, 255, 255)
@@ -24,6 +26,23 @@ def draw_text_lines(frame, lines, origin=(10, 24), line_height=22, scale=0.55):
         cv2.putText(frame, line, (x + 1, y + 1), FONT, scale, SHADOW_COLOR, 3, cv2.LINE_AA)
         cv2.putText(frame, line, (x, y), FONT, scale, TEXT_COLOR, 1, cv2.LINE_AA)
         y += line_height
+    return frame
+
+
+BONE_COLOR = (0, 200, 255)
+JOINT_COLOR = (255, 255, 255)
+CONTROL_COLOR = (0, 255, 0)
+
+
+def draw_hand(frame, hand):
+    """Draw a LandmarkFrame's skeleton; the cursor control point (index MCP) is green."""
+    h, w = frame.shape[:2]
+    pts = [(int(x * w), int(y * h)) for x, y, _ in hand.landmarks]
+    for a, b in HAND_CONNECTIONS:
+        cv2.line(frame, pts[a], pts[b], BONE_COLOR, 2, cv2.LINE_AA)
+    for p in pts:
+        cv2.circle(frame, p, 3, JOINT_COLOR, -1, cv2.LINE_AA)
+    cv2.circle(frame, pts[INDEX_MCP], 7, CONTROL_COLOR, 2, cv2.LINE_AA)
     return frame
 
 

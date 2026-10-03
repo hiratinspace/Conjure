@@ -9,7 +9,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | CONJ-1 | Project scaffold & dependency install | A | done (1 laptop) | Verified on the M1 laptop. Second-laptop AC waived: only one laptop available. |
 | CONJ-2 | macOS Camera + Accessibility permissions | A | done | All checks pass from Terminal.app on the M1. Second-laptop AC waived (one laptop). |
 | CONJ-3 | Webcam capture loop + debug preview | A | code done | 640x480 @ 30 requested, mirrored once at the source, FPS overlay, `p` hides preview without stopping capture. Physical AC (>=20 fps on the M1) checked at the Phase A gate. |
-| CONJ-4 | MediaPipe hand landmark extraction | A | todo | |
+| CONJ-4 | MediaPipe hand landmark extraction | A | code done | Tasks API HandLandmarker, num_hands=2 then sticky single-hand selection by wrist proximity (survives label flips); confidence gate in config. JSONL record/replay harness + `scripts/record_session.py` presets. Physical AC (overlay on either hand) checked at the Phase A gate. |
 | CONJ-5 | Hand-to-cursor mapping | B | todo | |
 | CONJ-6 | One Euro filter + precision mode | B | todo | |
 | CONJ-7 | Pinch click with hysteresis | C (Dev A) | todo | |
@@ -31,7 +31,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 | Contract | Module | Status |
 | --- | --- | --- |
-| LandmarkFrame | `pipeline/landmarks.py` | todo |
+| LandmarkFrame | `pipeline/landmarks.py` | frozen (field-list tripwire test in `tests/test_landmarks.py`) |
 | Mode state machine | `pipeline/modes.py` | todo |
 | ClickEvent | `pipeline/events.py` | todo |
 | profile.json schema | `pipeline/profile_schema.py` | todo |

@@ -26,10 +26,15 @@ When they conflict, build-plan.md governs order, backlog.md governs "done" (acce
 
 ```bash
 python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python main.py                         # run the app
+.venv/bin/python main.py --preview               # run with the debug window (p hides it, q quits)
+.venv/bin/python main.py --replay recordings/traversal.jsonl   # run the pipeline from a recording
+.venv/bin/python scripts/record_session.py --list   # record named sessions for replay tests
+.venv/bin/python scripts/check_permissions.py    # CONJ-2 smoke test (run from Terminal.app, the demo runner)
 .venv/bin/python -m pytest                       # all tests (headless)
 .venv/bin/python -m pytest tests/test_timing.py::test_window_resets_after_each_summary   # one test
 ```
+
+The loop consumes `(timestamp, image, LandmarkFrame | None)` from either the live camera + tracker or a JSONL recording, so every stage after the tracker runs identically on recorded sessions. Recordings keep no-hand frames, so pauses and exits replay faithfully. Synthetic hands for tests come from `tests/synthetic.py`.
 
 Per-stage timings are logged every few seconds by `pipeline/timing.py`; wrap every new loop stage in `timer.stage(name)` so the 33 ms budget stays visible.
 
