@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 
 import config
-from pipeline.hand_tracker import HandTracker, select_hand
+from pipeline.hand_tracker import HandTracker, select_hand, user_handedness
 from tests.synthetic import make_hand
 
 MIN_CONF = 0.5
@@ -49,9 +49,15 @@ def test_switches_when_tracked_hand_leaves():
     assert select_hand([other], tracked, MIN_CONF, JUMP) is other
 
 
+def test_handedness_swap_corrects_mediapipe_label():
+    assert user_handedness("Right", swap=True) == "Left"
+    assert user_handedness("Left", swap=True) == "Right"
+    assert user_handedness("Left", swap=False) == "Left"
+
+
 @pytest.fixture(scope="module")
 def tracker():
-    with HandTracker(config.HAND_MODEL_PATH, 1, 0.5, 0.5, 0.5, MIN_CONF, JUMP) as t:
+    with HandTracker(config.HAND_MODEL_PATH, 1, 0.5, 0.5, 0.5, MIN_CONF, JUMP, True) as t:
         yield t
 
 

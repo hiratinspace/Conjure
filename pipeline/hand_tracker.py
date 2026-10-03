@@ -22,6 +22,14 @@ from mediapipe.tasks.python import BaseOptions, vision
 from pipeline.landmarks import WRIST, LandmarkFrame
 
 
+OTHER_HAND = {"Left": "Right", "Right": "Left"}
+
+
+def user_handedness(label, swap):
+    """MediaPipe's label, corrected to the user's actual hand when `swap` is set."""
+    return OTHER_HAND[label] if swap else label
+
+
 def select_hand(candidates, previous, min_confidence, max_wrist_jump):
     """Pick one LandmarkFrame from `candidates`, or None.
 
@@ -41,7 +49,7 @@ def select_hand(candidates, previous, min_confidence, max_wrist_jump):
 
 class HandTracker:
     def __init__(self, model_path, max_hands, min_detection_confidence, min_presence_confidence,
-                 min_tracking_confidence, min_hand_confidence, max_wrist_jump):
+                 min_tracking_confidence, min_hand_confidence, max_wrist_jump, swap_handedness):
         options = vision.HandLandmarkerOptions(
             base_options=BaseOptions(model_asset_path=str(model_path)),
             running_mode=vision.RunningMode.VIDEO,
@@ -53,6 +61,7 @@ class HandTracker:
         self._landmarker = vision.HandLandmarker.create_from_options(options)
         self.min_hand_confidence = min_hand_confidence
         self.max_wrist_jump = max_wrist_jump
+        self.swap_handedness = swap_handedness
         self._last_ts_ms = -1
         self._selected = None
 
@@ -67,7 +76,7 @@ class HandTracker:
         candidates = [
             LandmarkFrame(
                 landmarks=tuple((p.x, p.y, p.z) for p in hand),
-                handedness=handed[0].category_name,
+                handedness=user_handedness(handed[0].category_name, self.swap_handedness),
                 confidence=handed[0].score,
                 timestamp=timestamp,
             )

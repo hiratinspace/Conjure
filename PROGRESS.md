@@ -8,8 +8,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | --- | --- | --- | --- | --- |
 | CONJ-1 | Project scaffold & dependency install | A | done (1 laptop) | Verified on the M1 laptop. Second-laptop AC waived: only one laptop available. |
 | CONJ-2 | macOS Camera + Accessibility permissions | A | done | All checks pass from Terminal.app on the M1. Second-laptop AC waived (one laptop). |
-| CONJ-3 | Webcam capture loop + debug preview | A | code done | 640x480 @ 30 requested, mirrored once at the source, FPS overlay, `p` hides preview without stopping capture. Physical AC (>=20 fps on the M1) checked at the Phase A gate. |
-| CONJ-4 | MediaPipe hand landmark extraction | A | code done | Tasks API HandLandmarker, num_hands=1 (MediaPipe's ROI tracking keeps the locked hand sticky and skips palm detection), plus a sticky `select_hand` gate; confidence gate in config. JSONL record/replay harness + `scripts/record_session.py` presets. Physical AC (overlay on either hand) checked at the Phase A gate. |
+| CONJ-3 | Webcam capture loop + debug preview | A | done | Phase A gate: 30 fps with preview on (work ~28 ms: track ~15, preview ~13), 30 fps with preview hidden via `p` while capture continues. |
+| CONJ-4 | MediaPipe hand landmark extraction | A | code done | Tasks API HandLandmarker, num_hands=1 (MediaPipe's ROI tracking keeps the locked hand sticky and skips palm detection), plus a sticky `select_hand` gate; confidence gate in config. JSONL record/replay harness + `scripts/record_session.py` presets. Phase A gate: overlay renders on either hand (pass); labels were swapped, fixed with SWAP_HANDEDNESS. Two-hand stickiness check and recordings pending. |
 | CONJ-5 | Hand-to-cursor mapping | B | todo | |
 | CONJ-6 | One Euro filter + precision mode | B | todo | |
 | CONJ-7 | Pinch click with hysteresis | C (Dev A) | todo | |
@@ -44,6 +44,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 - **One demo machine, no backup laptop.** The team has a single M1 MacBook Air, so the both-laptops ACs (CONJ-1, CONJ-2) and the build plan's laptop-parity gate are waived. The plan's backup-laptop mitigation is gone, which makes the CONJ-20 backup video (stored on a phone too) the only fallback for a machine failure.
 
 - **Tracker runs with num_hands=1.** First live run (Phase A gate) with num_hands=2: tracking 25-29 ms/frame with a hand visible, over the ~20 ms budget, because MediaPipe reruns palm detection every frame while looking for a second hand. num_hands=1 tracks the locked hand by ROI instead. The preview window itself costs 13-18 ms/frame on macOS (imshow + waitKey); with it hidden the loop held 30 fps.
+
+- **MediaPipe handedness labels are swapped on our mirrored input.** The Phase A gate showed the left hand labeled "Right" and vice versa, contrary to MediaPipe's docs. `SWAP_HANDEDNESS = True` corrects it at the tracker, so LandmarkFrame and recordings carry the user's real hand.
 
 ## Granted runners (CONJ-2 AC)
 

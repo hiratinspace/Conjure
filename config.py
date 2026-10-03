@@ -32,7 +32,11 @@ MIN_DETECTION_CONFIDENCE = 0.5  # MediaPipe palm detection
 MIN_PRESENCE_CONFIDENCE = 0.5  # MediaPipe hand presence while tracking
 MIN_TRACKING_CONFIDENCE = 0.5  # MediaPipe frame-to-frame tracking
 MIN_HAND_CONFIDENCE = 0.5  # our gate: hands below this are treated as absent
-MAX_WRIST_JUMP = 0.15  # normalized wrist travel per frame still counted as the same hand
+MAX_WRIST_JUMP = 0.15
+# Measured on the M1 (mediapipe 0.10.35, mirrored input): MediaPipe labels the user's left
+# hand "Right" and vice versa, despite its docs. Swap so LandmarkFrame.handedness is the
+# user's real hand. Re-check if MIRROR or the mediapipe version changes.
+SWAP_HANDEDNESS = True  # normalized wrist travel per frame still counted as the same hand
 
 # Recordings (record/replay harness)
 RECORDINGS_DIR = ROOT / "recordings"
