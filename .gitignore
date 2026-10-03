@@ -20,3 +20,7 @@ profile.json
 .DS_Store
 .vscode/
 .idea/
+
+# Test / runtime output
+.pytest_cache/
+logs/

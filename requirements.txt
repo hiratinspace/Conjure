@@ -1,0 +1,10 @@
+# Python 3.11+ (verified on 3.12, Apple Silicon).
+# mediapipe is pinned below 1.0: 1.0.x aborts on macOS in HandLandmarker
+# ("DrishtiMetalHelper ... Service is unavailable"), even with the CPU delegate.
+mediapipe==0.10.35
+# mediapipe hard-requires opencv-contrib-python, a superset of opencv-python that
+# installs the same cv2 module. Installing both makes them overwrite each other.
+opencv-contrib-python==5.0.0.93
+numpy==2.5.3
+pynput==1.8.2
+pytest==9.1.1

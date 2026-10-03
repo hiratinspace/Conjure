@@ -4,33 +4,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-Conjure is an 18-hour hackathon project. It turns a webcam into a mouse replacement for people with limited hand mobility: the hand moves the cursor, and a click comes from a pinch, a dwell (holding still), or a gesture the user records. **No code exists yet.** The repo holds three planning docs in `docs/` (gitignored, local only), and they are the source of truth:
+Conjure is an 18-hour hackathon project. It turns a webcam into a mouse replacement for people with limited hand mobility: the hand moves the cursor, and a click comes from a pinch, a dwell (holding still), or a gesture the user records. The planning docs live in `docs/` (gitignored, local only):
 
-- `docs/Conjure — Project Discovery & Scope Document.md`: vision, personas, stack, out-of-scope list, risks
-- `docs/Engineering backlog.md`: tickets CONJ-1 to CONJ-20, each with dependencies and acceptance criteria
-- `docs/Build plan.md`: shared contracts, build order, implied blockers, validation gates
+- `docs/scope.md`: vision, personas, stack, out-of-scope list (section 4 is a hard no), risks
+- `docs/backlog.md`: tickets CONJ-1 to CONJ-20, each with dependencies and acceptance criteria
+- `docs/build-plan.md`: shared contracts, build order (Phases A to F), stage gates, validation table
 
-Refer to work by ticket ID (CONJ-n). When an acceptance criterion and an implementation idea conflict, the acceptance criterion wins.
+When they conflict, build-plan.md governs order, backlog.md governs "done" (acceptance criteria are the definition of done), and scope.md governs intent. Work ticket by ticket in build-plan order and never cross a stage gate that hasn't passed. `PROGRESS.md` tracks ticket status, decisions, and open questions; keep it current.
 
 ## Stack and constraints
 
 - Python 3.11+, macOS only (Apple Silicon). Single process, on-device, no backend, no database, no accounts.
-- MediaPipe Hands for tracking, OpenCV for capture and the debug preview, pynput for input injection (Quartz CGEvent as fallback), Tkinter or PyQt for the settings overlay, and a static local HTML "spellbook" demo page.
+- MediaPipe for tracking via the Tasks API `HandLandmarker` (VIDEO mode) with the committed model `models/hand_landmarker.task`. mediapipe is pinned to 0.10.35 because 1.0.x aborts on macOS; see PROGRESS.md decisions before changing it. The legacy `mp.solutions.hands` API does not exist in this version.
+- Dependencies are limited to mediapipe, opencv (the `opencv-contrib-python` build mediapipe requires), pynput, and pytest. Ask before adding anything else.
+- OpenCV for capture and the debug preview, pynput for input injection (Quartz CGEvent as fallback), Tkinter or PyQt for the settings overlay, and a static local HTML "spellbook" demo page.
 - Persistence is one local JSON file (`profile.json`).
 - The only network call is ElevenLabs TTS (CONJ-18). Read the API key from an env var. Wrap the call in a 1 s timeout and play the audio asynchronously. On any exception, fall back to pre-generated local audio files. The core pointer must never touch the network.
 - macOS Camera and Accessibility permissions are tied to the terminal or runner app. Switching runners silently revokes them: the cursor still moves but clicks never land. `scripts/check_permissions.py` (CONJ-2) is the smoke test.
 
-## Planned commands
-
-These are planned for CONJ-1. Update this section once they exist.
+## Commands
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt     # pinned: mediapipe, opencv-python, pynput
-python main.py                      # run the app
-python main.py --preview            # with the OpenCV debug preview (landmarks, FPS, pinch/dwell state)
-python scripts/check_permissions.py # camera + cursor move + click into TextEdit
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/python main.py                         # run the app
+.venv/bin/python -m pytest                       # all tests (headless)
+.venv/bin/python -m pytest tests/test_timing.py::test_window_resets_after_each_summary   # one test
 ```
+
+Per-stage timings are logged every few seconds by `pipeline/timing.py`; wrap every new loop stage in `timer.stage(name)` so the 33 ms budget stays visible.
 
 ## Architecture
 
@@ -65,7 +66,7 @@ Four shared contracts must stay single-owner because both developer tracks consu
 
 ## Validation
 
-There is no unit-test suite in the plan. Each acceptance criterion is checked by a manual gate, and the cheap gates are rerun at the end of every stage:
+Everything that can run without a hand gets a pytest (filter jitter, pinch hysteresis, dwell repeat-fire, gesture normalization, profile fallback, calibration mapping), driven by synthetic landmark streams or by real sessions recorded to JSONL in `recordings/` and replayed headless. The physical gates below are run by a human at each stage gate:
 
 - 60 s full-screen traversal: 0 false clicks or matches
 - 20 pinches: at least 19 fire exactly once, at the pre-pinch position
@@ -73,7 +74,7 @@ There is no unit-test suite in the plan. Each acceptance criterion is checked by
 - 10 casts of the custom gesture: at least 8 fire within 500 ms
 - kill and relaunch: the profile restores with no re-setup
 
-The full table is in `docs/Build plan.md` §4.
+The full table is in `docs/build-plan.md` section 4.
 
 ## Scope guardrails
 
@@ -93,4 +94,4 @@ After the hour-16 freeze (CONJ-19), only config changes are allowed. Venue thres
 
 ## Git workflow
 
-The remote is `github.com:hiratinspace/Conjure` (private), on the `main` branch. After each meaningful change, commit and push it. Write a descriptive message: a short summary line, then a body that says what changed and why. Reference the CONJ ticket ID when one applies. Never commit anything in `docs/`.
+The remote is `github.com:hiratinspace/Conjure` (private), on the `main` branch. After each meaningful change, commit and push it. One commit per ticket, titled `CONJ-n: <summary>`, with a body that says what changed and why. Never commit anything in `docs/`.
