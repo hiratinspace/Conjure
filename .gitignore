@@ -1,0 +1,22 @@
+# Planning docs (kept local)
+docs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Secrets
+.env
+.env.*
+
+# Local user data
+profile.json
+*.tmp
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
