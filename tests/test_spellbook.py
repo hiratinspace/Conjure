@@ -5,8 +5,18 @@ import config
 HTML = config.SPELLBOOK_PATH.read_text()
 
 
+PRACTICE = (config.SPELLBOOK_PATH.parent / "practice.html").read_text()
+
+
 def test_spellbook_loads_nothing_from_the_network():
-    assert not re.search(r"https?://|//fonts|@import|<link|src=", HTML)
+    for html in (HTML, PRACTICE):
+        assert not re.search(r"https?://|//fonts|@import|<link|src=", html)
+
+
+def test_practice_page_measures_throughput_and_misses_with_three_target_sizes():
+    assert "bits/s" in PRACTICE and "misses" in PRACTICE.lower()
+    assert "SIZES = [120, 80, 50]" in PRACTICE
+    assert 'href="practice.html"' in HTML or "practice.html" in HTML
 
 
 def test_base_target_size_is_at_least_80px_and_buttons_use_it():

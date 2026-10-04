@@ -221,7 +221,9 @@
     <p class="say">Pointing, clicking, holding, casting, scrolling, and dragging, with a webcam and one hand.</p>
     <div class="stage">
       <button class="big restart"><span class="glyph" aria-hidden="true">&#x1F4D6;</span>Read it again</button>
+      <button class="big practice"><span class="glyph" aria-hidden="true">&#x1F3AF;</span>Measure yourself</button>
     </div>
+    <p class="hint">Measure yourself opens a 12-target test that reports your hit time, misses, and throughput.</p>
   </div>
 </section>
 
@@ -336,6 +338,7 @@
 
   // Finale
   pages[6].querySelector(".restart").addEventListener("click", () => { location.hash = ""; location.reload(); });
+  pages[6].querySelector(".practice").addEventListener("click", () => { location.href = "practice.html"; });
 
   // index.html#3 opens at page III (rehearsal shortcut).
   const start = parseInt(location.hash.slice(1), 10);
