@@ -23,7 +23,6 @@ def test_valid_overrides_are_applied_and_comments_skipped(tmp_path):
                                                          "GESTURE_SCALES": [0.8, 1.0]}), cfg)
     assert (cfg.PINCH_HOLD_MS, cfg.GESTURE_MATCH_SCALE, cfg.GESTURE_SCALES) == (200, 1.2, (0.8, 1.0))
     assert errors == [] and mode is None and len(applied) == 3
-    _, _, _ = apply_venue(write(tmp_path, {"PINCH_HOLD_MS": 200}), cfg)
     assert apply_venue(write(tmp_path, {"PINCH_HOLD_MS": 200}), cfg)[0] == []  # unchanged values are not reported
 
 
