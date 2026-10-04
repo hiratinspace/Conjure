@@ -17,6 +17,7 @@ import numpy as np
 import config
 from pipeline.action_mapper import ActionMapper
 from pipeline.cursor_mapper import Box, BoxCalibration, CursorMapper
+from pipeline.dwell import DwellDetector
 from pipeline.engine import Engine
 from pipeline.filter import PointerFilter
 from pipeline.frame_source import CameraError, FrameSource
@@ -35,6 +36,8 @@ log = logging.getLogger("conjure")
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Conjure: hand-tracking pointer for macOS")
     parser.add_argument("--preview", action="store_true", help="show the debug preview window (p hides it, q quits)")
+    parser.add_argument("--no-ui", action="store_true",
+                        help="no overlay: single-thread loop with the OpenCV preview (debugging fallback)")
     parser.add_argument("--camera", type=int, default=config.CAMERA_INDEX, help="camera index")
     parser.add_argument("--record", metavar="PATH", help="record the landmark stream to a JSONL file")
     parser.add_argument("--replay", metavar="PATH", help="run from a JSONL recording instead of the camera")
@@ -76,7 +79,8 @@ def make_engine(injector, timer, screen_size, modes=None):
     modes = modes or ModeState(Mode(config.DEFAULT_CLICK_MODE))
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
     return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, ActionMapper(injector, modes),
-                  modes, make_pinch(), timer, config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
+                  modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), timer,
+                  config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
 
 
 def live_stream(source, tracker, timer):
@@ -95,55 +99,87 @@ def replay_stream(path):
         yield t, np.zeros((config.CAMERA_HEIGHT, config.CAMERA_WIDTH, 3), np.uint8), hand
 
 
-def run_loop(stream, engine, timer, preview, recorder, fps_fn, permissions=None):
+def run_loop(stream, engine, timer, recorder, fps_fn, on_frame, should_stop, permissions=None):
+    """Drive the engine from a stream. on_frame(image, hand, result, fps) returns True to stop."""
     for t, image, hand in stream:
+        if should_stop():
+            return
         if recorder is not None:
             recorder.write(t, hand)
         result = engine.step(t, hand)
         if permissions is not None and not permissions.poll():
             result.lines.insert(0, "!!! NO ACCESSIBILITY PERMISSION: input is being dropped !!!")
-
-        with timer.stage("preview"):
-            if preview.enabled:
-                if hand is not None:
-                    draw_hand(image, hand)
-                lines = [f"{fps_fn():.1f} fps"] + result.lines
-                if recorder is not None:
-                    lines.append(f"REC {recorder.frames} frames")
-                if preview.show(image, lines) == QUIT:
-                    return
+        if recorder is not None:
+            result.lines.append(f"REC {recorder.frames} frames")
+        with timer.stage("ui"):
+            if on_frame(image, hand, result, fps_fn()):
+                return
         timer.end_frame()
 
 
-def run(args):
-    timer = StageTimer(config.FRAME_BUDGET_MS, config.TIMING_LOG_INTERVAL_S)
-    preview = Preview(enabled=args.preview)
-    screen_size = main_screen_size()
-    dry_run = args.no_inject or (args.replay and not args.inject)
-    injector = make_injector(dry_run)
-    permissions = None if dry_run else PermissionWatch(config.PERMISSION_CHECK_INTERVAL_S)
-    engine = make_engine(injector, timer, screen_size)
-    log.info("screen %dx%d, %s", *screen_size, "dry run (no real input)" if dry_run else "driving the real cursor")
+def cv2_preview_frame(preview):
+    """on_frame for --no-ui: the synchronous OpenCV preview window."""
+    def on_frame(image, hand, result, fps):
+        if not preview.enabled:
+            return False
+        if hand is not None:
+            draw_hand(image, hand)
+        return preview.show(image, [f"{fps:.1f} fps"] + result.lines) == QUIT
+    return on_frame
+
+
+def run_pipeline(args, engine, timer, permissions, on_frame, should_stop):
+    """Open the source (camera or replay) and run until it ends or should_stop()."""
+    if args.replay:
+        log.info("replaying %s", args.replay)
+        run_loop(replay_stream(args.replay), engine, timer, None, lambda: timer.last_summary.get("fps", 0.0),
+                 on_frame, should_stop, permissions)
+        return
     recorder = None
+    source = make_frame_source(args.camera)
     try:
-        if args.replay:
-            log.info("replaying %s", args.replay)
-            run_loop(replay_stream(args.replay), engine, timer, preview, None,
-                     lambda: timer.last_summary.get("fps", 0.0), permissions)
-            return
-        source = make_frame_source(args.camera)
         with source, make_tracker() as tracker:
             if args.record:
-                recorder = LandmarkRecorder(args.record, name="manual", frame_size=[config.CAMERA_WIDTH, config.CAMERA_HEIGHT],
-                                            mirror=config.MIRROR)
+                recorder = LandmarkRecorder(args.record, name="manual",
+                                            frame_size=[config.CAMERA_WIDTH, config.CAMERA_HEIGHT], mirror=config.MIRROR)
                 log.info("recording to %s", args.record)
-            run_loop(live_stream(source, tracker, timer), engine, timer, preview, recorder, lambda: source.fps,
-                     permissions)
+            run_loop(live_stream(source, tracker, timer), engine, timer, recorder, lambda: source.fps, on_frame,
+                     should_stop, permissions)
     finally:
         if recorder is not None:
             recorder.close()
             log.info("saved %d frames to %s", recorder.frames, args.record)
-        preview.close()
+
+
+def run(args):
+    timer = StageTimer(config.FRAME_BUDGET_MS, config.TIMING_LOG_INTERVAL_S)
+    screen_size = main_screen_size()
+    dry_run = args.no_inject or (args.replay and not args.inject)
+    injector = make_injector(dry_run)
+    permissions = None if dry_run else PermissionWatch(config.PERMISSION_CHECK_INTERVAL_S)
+    modes = ModeState(Mode(config.DEFAULT_CLICK_MODE))
+    engine = make_engine(injector, timer, screen_size, modes)
+    log.info("screen %dx%d, %s", *screen_size, "dry run (no real input)" if dry_run else "driving the real cursor")
+
+    if args.no_ui:
+        preview = Preview(enabled=args.preview)
+        try:
+            run_pipeline(args, engine, timer, permissions, cv2_preview_frame(preview), lambda: False)
+        finally:
+            preview.close()
+        return
+
+    from pipeline.app import App
+    from pipeline.ui_state import UiState
+
+    ui = UiState()
+
+    def on_frame(image, hand, result, fps):
+        ui.publish(image, hand, result, fps, modes.mode.value, permissions.trusted if permissions else True)
+        return False
+
+    app = App(ui, modes, screen_size, show_preview=args.preview)
+    app.run(lambda should_stop: run_pipeline(args, engine, timer, permissions, on_frame, should_stop))
 
 
 def main(argv=None):

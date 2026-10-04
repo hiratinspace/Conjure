@@ -21,17 +21,19 @@ class StepResult:
 
     cursor: tuple = None  # screen position after this frame, or None if the hand was not tracked
     events: list = field(default_factory=list)  # ClickEvents emitted this frame
+    dwell_progress: float = None  # 0..1 while a dwell is counting down (drives the ring)
     lines: list = field(default_factory=list)  # overlay text
 
 
 class Engine:
-    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, timer, aspect, edge_margin):
+    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, timer, aspect, edge_margin):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
         self.actions = actions
         self.modes = modes
         self.pinch = pinch
+        self.dwell = dwell
         self.timer = timer
         self.aspect = aspect
         self.edge_margin = edge_margin
@@ -42,6 +44,8 @@ class Engine:
         """Cancel whatever the given mode's detector was in the middle of."""
         if mode == Mode.PINCH and self.cursor is not None:
             return self.pinch.reset(self.cursor)
+        if mode == Mode.DWELL:
+            self.dwell.reset()
         return []
 
     def _emit(self, events, result):
@@ -78,6 +82,10 @@ class Engine:
             if mode == Mode.PINCH:
                 self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result)
                 result.lines.append(self.pinch.status())
+            elif mode == Mode.DWELL:
+                self._emit(self.dwell.update(self.cursor, t), result)
+                result.dwell_progress = self.dwell.progress
+                result.lines.append(self.dwell.status())
 
         x, y = self.cursor
         result.lines.append(f"{hand.handedness} hand  conf {hand.confidence:.2f}  cursor {x:.0f},{y:.0f}")
