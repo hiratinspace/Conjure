@@ -15,7 +15,7 @@ from collections import deque
 from dataclasses import asdict, dataclass, field
 
 from pipeline import calibration
-from pipeline.cursor_mapper import Box, BoxCalibration
+from pipeline.cursor_mapper import CONTROL_POINT, Box, BoxCalibration
 from pipeline.gestures import normalize
 from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
@@ -41,7 +41,7 @@ class StepResult:
 
 class Engine:
     def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, matcher,
-                 calibrator, auto_pause, timer, aspect, edge_margin):
+                 calibrator, auto_pause, timer, edge_freeze_margin, aspect, edge_margin):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -54,6 +54,7 @@ class Engine:
         self.matcher = matcher
         self.calibrator = calibrator
         self.auto_pause = auto_pause
+        self.edge_freeze_margin = edge_freeze_margin
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
         self.store = None  # ProfileStore; when set, persist() saves after every change
         self.calibrated = False  # False while the naive default box is in use
@@ -222,6 +223,17 @@ class Engine:
             result.lines.append(self.scroll.status())
             return result
 
+        kx, ky = hand.point(CONTROL_POINT)
+        m = self.edge_freeze_margin
+        if not (m <= kx <= 1 - m and m <= ky <= 1 - m):
+            # Near the frame edge landmarks degrade: hold the cursor rather than follow guesses.
+            self.filter.reset()
+            result.cursor = self.cursor
+            result.lines.append("hand near the camera edge: cursor held")
+            with self.timer.stage("gesture"):
+                if mode == Mode.PINCH:
+                    self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result, t)
+            return result
         with self.timer.stage("filter"):
             self.cursor = self.filter.update(target, t)
         result.cursor = self.cursor
@@ -246,5 +258,5 @@ class Engine:
 
         x, y = self.cursor
         result.lines.append(f"{hand.handedness} hand  conf {hand.confidence:.2f}  cursor {x:.0f},{y:.0f}")
-        result.lines.append(f"speed {self.filter.speed:.0f} px/s  gain {self.filter.gain(self.filter.speed):.2f}")
+        result.lines.append(f"speed {self.filter.speed:.0f} px/s  gain {self.filter.current_gain:.2f}")
         return result

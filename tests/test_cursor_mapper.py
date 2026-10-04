@@ -74,3 +74,17 @@ def test_traversal_recording_reaches_every_screen_edge():
     ys = [c[2] for c in moves]
     assert min(xs) == 0 and max(xs) == SCREEN[0] - 1
     assert min(ys) == 0 and max(ys) == SCREEN[1] - 1
+
+
+def test_cursor_holds_still_when_the_knuckle_nears_the_frame_edge():
+    from tests.synthetic import stream
+    from pipeline.cursor_mapper import CONTROL_POINT
+
+    offset = make_hand(wrist=(0.0, 0.0)).point(CONTROL_POINT)
+    # Knuckle slides from x=0.80 to x=0.985 (inside the 4% freeze zone, outside the 1% pause zone).
+    frames = stream([(0.5, dict(wrist=(0.80 - offset[0], 0.6 - offset[1]))),
+                     (0.5, dict(wrist=lambda f: (0.80 + 0.185 * f - offset[0], 0.6 - offset[1])))])
+    _, results = run_engine(frames)
+    frozen = [r for r in results if any("cursor held" in line for line in r.lines)]
+    assert frozen
+    assert len({r.cursor for r in frozen}) == 1  # the cursor did not move while in the zone

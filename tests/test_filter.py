@@ -140,3 +140,18 @@ def test_idle_recording_jitter_within_3px():
     assert jitter.mean() <= 3.0
     assert jitter.mean() < raw_jitter.mean() / 2
     assert math.isfinite(jitter.max())
+
+
+def test_precision_gain_glides_instead_of_snapping():
+    f = make_filter(precision_gain=0.3, ramp_s=0.2)
+    for i in range(30):  # fast sweep: gain reaches 1
+        f.update((100 + 1500 * i * DT, 450), i * DT)
+    assert f.current_gain > 0.95
+    gains = []
+    x = 100 + 1500 * 29 * DT
+    for i in range(30, 55):  # hand stops dead
+        f.update((x, 450), i * DT)
+        gains.append(f.current_gain)
+    assert gains[0] > 0.6  # one frame later: still near full gain, no snap
+    assert all(a >= b for a, b in zip(gains, gains[1:]))  # monotonic glide down
+    assert gains[-1] < 0.4  # settled toward precision gain within ~0.8 s (speed itself decays smoothly)

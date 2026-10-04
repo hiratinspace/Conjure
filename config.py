@@ -68,6 +68,7 @@ PRECISION_GAIN = 0.3  # cursor gain when the hand is nearly still (1.0 disables 
 PRECISION_SPEED_PX_S = 60  # at or below this hand speed, full precision gain
 FAST_SPEED_PX_S = 400  # at or above this, gain 1 and the cursor re-anchors to the hand
 REANCHOR_RATE = 0.15  # fraction of the precision offset removed per fast frame
+PRECISION_RAMP_S = 0.2  # gain glides to its new value over ~this long; snapping feels haunted
 POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinch latch)
 
 # Click modes (contract: pipeline/modes.py)
@@ -135,7 +136,8 @@ CALIBRATION_MIN_SIZE = 0.03  # normalized frame units; smaller traces are redone
 # Auto-pause (CONJ-15). AC: freeze within 500 ms of losing the hand, resume within 1 s of it returning.
 PAUSE_AFTER_FRAMES = 10  # ~0.33 s at 30 fps without a usable hand
 RESUME_AFTER_FRAMES = 5  # ~0.17 s with one
-CONTROL_POINT_EDGE_MARGIN = 0.01  # knuckle this close to the frame edge = hand leaving
+CONTROL_POINT_EDGE_MARGIN = 0.01  # knuckle this close to the frame edge = hand leaving (pause)
+EDGE_FREEZE_MARGIN = 0.04  # knuckle this close to the frame edge: landmarks degrade, so hold the cursor still
 
 # Feedback (CONJ-17): macOS system sounds, played with afplay (no dependency, offline)
 CLICK_SOUND = "/System/Library/Sounds/Tink.aiff"

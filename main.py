@@ -74,7 +74,7 @@ def make_frame_source(camera):
 def make_pointer_filter(screen_size):
     return PointerFilter(config.FILTER_MIN_CUTOFF, config.FILTER_BETA, config.FILTER_D_CUTOFF, config.PRECISION_GAIN,
                          config.PRECISION_SPEED_PX_S, config.FAST_SPEED_PX_S, config.REANCHOR_RATE, screen_size,
-                         config.POSITION_HISTORY_FRAMES)
+                         config.POSITION_HISTORY_FRAMES, config.PRECISION_RAMP_S)
 
 
 def make_pinch():
@@ -156,6 +156,7 @@ def make_engine(injector, timer, screen_size, modes=None):
                   make_gesture_recorder(), make_gesture_matcher(), make_calibrator(),
                   AutoPause(modes, config.PAUSE_AFTER_FRAMES, config.RESUME_AFTER_FRAMES,
                             config.CONTROL_POINT_EDGE_MARGIN), timer,
+                  config.EDGE_FREEZE_MARGIN,
                   config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
 
 
