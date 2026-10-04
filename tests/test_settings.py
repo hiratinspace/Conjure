@@ -1,5 +1,7 @@
 import pytest
 
+import config
+
 from main import make_engine
 from pipeline import settings_model as sm
 from pipeline.injector import RecordingInjector
@@ -40,23 +42,24 @@ def test_each_setting_applies_live_and_is_saved(engine):
     sm.toggle_precision(engine)
     assert engine.filter.precision_gain == 1.0
     sm.step_dwell_ms(engine, +1)
-    assert engine.dwell.dwell_s == pytest.approx(1.1)
+    assert engine.dwell.dwell_s == pytest.approx((config.DWELL_MS + 100) / 1000)
     sm.step_dwell_radius(engine, -1)
-    assert engine.dwell.radius_px == 25
+    assert engine.dwell.radius_px == config.DWELL_RADIUS_PX - 5
     sm.set_click_mode(engine, "dwell")
     assert engine.modes.click_mode == Mode.DWELL
     s = saved(engine)
-    assert (s.sensitivity, s.dwell_ms, s.dwell_radius_px, s.click_mode) == (pytest.approx(1.1), 1100, 25, "dwell")
+    assert (s.sensitivity, s.dwell_ms, s.dwell_radius_px, s.click_mode) == (
+        pytest.approx(1.1), config.DWELL_MS + 100, config.DWELL_RADIUS_PX - 5, "dwell")
     assert s.filter.min_cutoff == sm.SMOOTHING_LEVELS[4] and s.filter.precision_gain == 1.0
 
 
 def test_live_change_affects_the_very_next_frame(engine):
     sm.set_click_mode(engine, "dwell")
-    sm.step_dwell_ms(engine, -1)  # 0.9 s
+    sm.step_dwell_ms(engine, -1)  # 100 ms shorter than the default
     frames = stream([(0.3, dict(wrist=lambda f: (0.4 + 0.2 * f, 0.7))), (1.5, dict(wrist=(0.6, 0.7)))])
     clicks = [i for i, (t, h) in enumerate(frames) if engine.step(t, h).events]
     assert len(clicks) == 1
-    assert frames[clicks[0]][0] - 0.3 < 1.0  # fired at ~0.9 s, sooner than the 1.0 s default
+    assert frames[clicks[0]][0] - 0.3 < config.DWELL_MS / 1000  # sooner than the default
 
 
 def test_spell_forgiveness_adjusts_and_saves_the_threshold(engine):

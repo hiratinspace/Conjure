@@ -150,7 +150,8 @@ def make_engine(injector, timer, screen_size, modes=None):
     # Second guard for CONJ-15: while paused the injector itself is off, whatever the engine does.
     modes.subscribe(lambda _old, new: setattr(injector, "enabled", new != Mode.PAUSED))
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
-    return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, ActionMapper(injector, modes),
+    actions = ActionMapper(injector, modes, config.CLICK_REFRACTORY_MS / 1000)
+    return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, actions,
                   modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), make_scroll(),
                   make_gesture_recorder(), make_gesture_matcher(), make_calibrator(),
                   AutoPause(modes, config.PAUSE_AFTER_FRAMES, config.RESUME_AFTER_FRAMES,

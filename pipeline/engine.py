@@ -151,9 +151,9 @@ class Engine:
                 return
             fn(self)
 
-    def _emit(self, events, result):
+    def _emit(self, events, result, t=None):
         for event in events:
-            if self.actions.handle(event):
+            if self.actions.handle(event, t):
                 result.events.append(event)
 
     def step(self, t, hand):
@@ -217,7 +217,7 @@ class Engine:
             if not was_scrolling:
                 self._emit(self._detectors_reset(mode), result)
             self.filter.reset()
-            self._emit(scroll_events, result)
+            self._emit(scroll_events, result, t)
             result.cursor = self.cursor
             result.lines.append(self.scroll.status())
             return result
@@ -229,15 +229,15 @@ class Engine:
             self.injector.move(*self.cursor)
         with self.timer.stage("gesture"):
             if mode == Mode.PINCH:
-                self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result)
+                self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result, t)
                 result.lines.append(self.pinch.status())
             elif mode == Mode.DWELL:
-                self._emit(self.dwell.update(self.cursor, t), result)
+                self._emit(self.dwell.update(self.cursor, t), result, t)
                 result.dwell_progress = self.dwell.progress
                 result.lines.append(self.dwell.status())
             elif mode == Mode.CUSTOM:
                 fired = self.matcher.update(hand, t, self.filter)
-                self._emit(fired, result)
+                self._emit(fired, result, t)
                 if fired:
                     result.spell = self.matcher.last_match
                     for listener in self.spell_listeners:

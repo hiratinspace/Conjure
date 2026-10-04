@@ -74,14 +74,14 @@ POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinc
 DEFAULT_CLICK_MODE = "pinch"  # "pinch" | "dwell" | "custom"
 
 # Dwell (CONJ-8)
-DWELL_MS = 1000  # hold still this long to click
-DWELL_RADIUS_PX = 30  # "still" means the cursor stays inside this radius
+DWELL_MS = 800  # hold still this long to click
+DWELL_RADIUS_PX = 25  # "still" means the cursor stays inside this radius
 
 # Pinch (CONJ-7). Ratios are thumb-to-fingertip distance / hand size (wrist to middle MCP).
 # Tuned on recordings: with the other-fingers-open rule there are 0 sustained false pinches in
 # traversal_first/traversal/idle/exits. Real-pinch values still need the deferred pinches recording.
-PINCH_ENGAGE_RATIO = 0.20  # closing below this starts a pinch
-PINCH_RELEASE_RATIO = 0.32  # opening above this ends it (hysteresis gap)
+PINCH_ENGAGE_RATIO = 0.25  # closing below this starts a pinch
+PINCH_RELEASE_RATIO = 0.40  # opening above this ends it (wide hysteresis gap = no flutter)
 PINCH_HOLD_MS = 150  # a pinch must stay closed this long to count (kills Midas-touch blips)
 PINCH_OPEN_EXTENSION = 1.4  # other fingers' mean extension must exceed this (curled hand != pinch).
 # 1.2 let through 0.16-0.37 s fingertip contacts with half-open fingers (1.21-1.32) in the second
@@ -90,6 +90,7 @@ FINGERTIP_EDGE_MARGIN = 0.03  # fingertips this close to the frame edge are untr
 PINCH_LATCH_LOOKBACK_S = 0.5  # how far back the pre-pinch click position may be taken from
 DRAG_START_PX = 25  # a confirmed pinch that moves this far becomes a drag (CONJ-9)
 DOUBLE_CLICK_INTERVAL_S = 0.5  # macOS default double-click speed
+CLICK_REFRACTORY_MS = 300  # minimum gap between clicks from any source (double-click is counted separately)
 DOUBLE_CLICK_RADIUS_PX = 8
 
 # Scroll (CONJ-9): two-finger V pose as a joystick. Extensions are fingertip-to-wrist / hand size.

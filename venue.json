@@ -9,8 +9,8 @@
   "MIN_HAND_CONFIDENCE": 0.5,
 
   "_pinch": "False clicks while moving: lower PINCH_ENGAGE_RATIO or raise PINCH_OPEN_EXTENSION / PINCH_HOLD_MS. Missed pinches: the reverse.",
-  "PINCH_ENGAGE_RATIO": 0.20,
-  "PINCH_RELEASE_RATIO": 0.32,
+  "PINCH_ENGAGE_RATIO": 0.25,
+  "PINCH_RELEASE_RATIO": 0.40,
   "PINCH_HOLD_MS": 150,
   "PINCH_OPEN_EXTENSION": 1.4,
 

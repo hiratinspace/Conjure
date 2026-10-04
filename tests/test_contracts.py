@@ -159,3 +159,20 @@ def test_any_invalid_field_rejects_the_whole_profile(mutate):
     mutate(d)
     with pytest.raises(ProfileError):
         profile_from_dict(d)
+
+
+def test_clicks_inside_the_refractory_period_are_dropped():
+    injector = RecordingInjector()
+    mapper = ActionMapper(injector, ModeState(), refractory_s=0.3)
+    assert mapper.handle(ClickEvent(Action.LEFT, (1, 1)), t=1.0)
+    assert not mapper.handle(ClickEvent(Action.RIGHT, (1, 1)), t=1.2)
+    assert mapper.handle(ClickEvent(Action.LEFT, (1, 1)), t=1.35)
+    assert mapper.suppressed == 1
+
+
+def test_refractory_never_blocks_scroll_or_drag_end():
+    injector = RecordingInjector()
+    mapper = ActionMapper(injector, ModeState(), refractory_s=0.3)
+    mapper.handle(ClickEvent(Action.DRAG_START, (1, 1)), t=1.0)
+    assert mapper.handle(ClickEvent(Action.DRAG_END, (5, 5)), t=1.05)
+    assert mapper.handle(ClickEvent(Action.SCROLL, (5, 5), amount=2), t=1.06)
