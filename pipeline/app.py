@@ -22,7 +22,8 @@ from pipeline.gesture_recorder import DONE
 from pipeline.modes import CLICK_MODES, USER, Mode
 from pipeline.action_bar import ActionBar
 from pipeline.overlay import Overlay
-from pipeline.settings_panel import ACCENT, BG, BigButton, SettingsPanel
+from pipeline import palette as P
+from pipeline.settings_panel import ACCENT, BG, FG, BigButton, SettingsPanel
 from pipeline.tutorial import NaivePointer
 from pipeline.ui_state import NaiveClick, SpellCast
 
@@ -175,19 +176,30 @@ class App:
         win = self.naming_win = tk.Toplevel(self.root, bg=BG)
         win.title("Name your spell")
         win.attributes("-topmost", True)
-        tk.Label(win, text="Name your spell", font=("Helvetica", 30, "bold"), bg=BG, fg=ACCENT, pady=16).pack()
-        grid = tk.Frame(win, bg=BG)
-        grid.pack(padx=20, pady=10)
+        win.resizable(False, False)
+        body = tk.Frame(win, bg=BG, padx=24, pady=16)
+        body.pack()
+        tk.Label(body, text="Name your spell", font=("Helvetica", 28, "bold"), bg=BG, fg=ACCENT).pack()
+        tk.Label(body, text="Pick a name, or type your own. It is spoken aloud each time you cast it.",
+                 font=("Helvetica", 14), bg=BG, fg=P.MUTED, pady=6).pack()
+        grid = tk.Frame(body, bg=BG)
+        grid.pack(pady=8)
         for i, name in enumerate(config.STOCK_SPELL_NAMES):
-            BigButton(grid, name, lambda n=name: self._name_chosen(n), width=11).grid(
-                row=i // 3, column=i % 3, padx=8, pady=8)
-        row = tk.Frame(win, bg=BG)
-        row.pack(pady=10)
-        entry = tk.Entry(row, font=BIG_FONT, width=16)
-        entry.pack(side="left", padx=8)
-        BigButton(row, "Use typed name", lambda: self._name_chosen(entry.get().strip()), width=14).pack(side="left")
-        BigButton(win, "Discard", self._discard_recording).pack(pady=(0, 16))
+            BigButton(grid, name, lambda n=name: self._name_chosen(n), width=10).grid(
+                row=i // 3, column=i % 3, padx=5, pady=5)
+        row = tk.Frame(body, bg=BG)
+        row.pack(pady=(10, 6))
+        entry = tk.Entry(row, font=BIG_FONT, width=14, bg=P.NAVY_3, fg=FG, insertbackground=FG, relief="flat",
+                         highlightthickness=2, highlightbackground=P.SKY_DEEP, highlightcolor=P.SKY)
+        entry.pack(side="left", padx=(0, 8), ipady=14)
+        entry.bind("<Return>", lambda _e: self._name_chosen(entry.get().strip()))
+        BigButton(row, "Use this name", lambda: self._name_chosen(entry.get().strip()), width=12).pack(side="left")
+        BigButton(body, "Discard recording", self._discard_recording, width=16).pack(pady=(6, 0))
         win.protocol("WM_DELETE_WINDOW", self._discard_recording)
+        win.update_idletasks()  # center it on the screen
+        w, h = win.winfo_reqwidth(), win.winfo_reqheight()
+        win.geometry(f"+{(self.screen_size[0] - w) // 2}+{(self.screen_size[1] - h) // 2}")
+        entry.focus_set()
 
     def _close_naming(self):
         if self.naming_win is not None:

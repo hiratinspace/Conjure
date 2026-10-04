@@ -13,7 +13,8 @@ import logging
 import tkinter as tk
 
 from pipeline import next_action as na
-from pipeline.settings_panel import BG, BigButton
+from pipeline import palette as P
+from pipeline.settings_panel import ACCENT, BG, BigButton
 
 log = logging.getLogger("conjure.actionbar")
 
@@ -45,13 +46,20 @@ class ActionBar:
         self.win.attributes("-topmost", True)
         self.win.resizable(False, False)
         self.win.protocol("WM_DELETE_WINDOW", self.hide)
+        body = tk.Frame(self.win, bg=BG, padx=10, pady=8)
+        body.pack()
+        self.caption = tk.Label(body, text="Next click", font=("Helvetica", 13, "bold"), bg=BG, fg=ACCENT)
+        self.caption.grid(row=0, column=0, columnspan=len(BUTTONS) + 1, sticky="w", padx=4, pady=(0, 4))
         self.buttons = {}
         for i, (choice, label) in enumerate(BUTTONS):
-            b = BigButton(self.win, label, lambda c=choice: self._choose(c), width=6)
-            b.grid(row=0, column=i, padx=4, pady=6)
+            b = BigButton(body, label, lambda c=choice: self._choose(c), width=6)
+            b.grid(row=1, column=i, padx=3)
             self.buttons[choice] = b
-        self.keep = BigButton(self.win, "Keep", self._toggle_sticky, width=5)
-        self.keep.grid(row=0, column=len(BUTTONS), padx=(10, 6), pady=6)
+        self.keep = BigButton(body, "Keep", self._toggle_sticky, width=5)
+        self.keep.grid(row=1, column=len(BUTTONS), padx=(12, 3))
+        self.hint = tk.Label(body, text="then click the target; falls back to Left after one use",
+                             font=("Helvetica", 12), bg=BG, fg=P.MUTED)
+        self.hint.grid(row=2, column=0, columnspan=len(BUTTONS) + 1, sticky="w", padx=4, pady=(4, 0))
         self.win.update_idletasks()
         w = self.win.winfo_reqwidth()
         self.win.geometry(f"+{screen_size[0] - w - 16}+56")
@@ -69,8 +77,11 @@ class ActionBar:
             button.set_selected(choice == na_.choice and not (choice == na.DRAG and na_.actions.dragging))
         if na_.actions.dragging:
             self.buttons[na.DRAG].configure(text="Drop")
+            self.hint.configure(text="dragging: any click drops it")
         else:
             self.buttons[na.DRAG].configure(text="Drag")
+            self.hint.configure(text="stays until used" if na_.sticky
+                                else "then click the target; falls back to Left after one use")
         self.keep.set_selected(na_.sticky)
 
     def show(self):
