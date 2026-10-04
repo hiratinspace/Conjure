@@ -9,6 +9,12 @@ than `active_threshold` (plus a small margin). If no frame does, the motion
 was indistinguishable from the user's normal hand: the sample is rejected
 with a message and recorded again. Losing the hand mid-sample also repeats it.
 
+Quality gate: after the third sample the three are compared with each
+other. If they would need a threshold above the ceiling to match each other,
+they did not look alike, and saving them would give a spell that misfires or
+never fires. All three are discarded with a message and recording starts
+over (`rejected_sets` counts this).
+
 After 3 good samples, `result()` gives the samples, a generous threshold
 derived from their consistency, and warnings (e.g. a gesture too close to the
 rest shape, which risks false clicks during ordinary movement). Naming the
@@ -45,6 +51,7 @@ class GestureRecorder:
         self.message = ""
         self.samples = []
         self.rests = []
+        self.rejected_sets = 0
         self._frames = []
         self._rest_frames = []
         self._t_state = None
@@ -112,11 +119,22 @@ class GestureRecorder:
         self.samples.append(np.array(self._frames[lo:hi]))
         self.rests.append(rest)
         self.message = ""
+        if len(self.samples) == SAMPLES and not self._consistent():
+            self.rejected_sets += 1
+            self.samples, self.rests = [], []
+            self.message = ("Those three didn't look alike: try a bigger, more distinct motion, "
+                            "and repeat it the same way each time.")
+            self._begin_countdown(t)
+            return
         if len(self.samples) == SAMPLES:
             self.state = DONE
             self.prompt = "Spell recorded! Now give it a name."
         else:
             self._begin_countdown(t)
+
+    def _consistent(self):
+        spread = max(sequence_distance(a, b) for a, b in itertools.combinations(self.samples, 2))
+        return spread * self.threshold_scale <= self.threshold_ceiling
 
     def result(self, ordinary=None):
         """(samples as nested lists, threshold, warnings). Only valid once state == DONE.
@@ -126,10 +144,6 @@ class GestureRecorder:
         fire during ordinary use, and a warning says so."""
         threshold = auto_threshold(self.samples, self.threshold_scale, self.threshold_floor, self.threshold_ceiling)
         warnings = []
-        spread = max(sequence_distance(a, b) for a, b in itertools.combinations(self.samples, 2))
-        if spread * self.threshold_scale > self.threshold_ceiling:
-            warnings.append("Your three casts were quite different from each other, so this spell may be hard "
-                            "to trigger. Recording it again, more consistently, will help.")
         for sample, rest in zip(self.samples, self.rests):
             peak = max(shape_distance(f, rest) for f in sample)
             if peak < threshold * self.distinct_factor:

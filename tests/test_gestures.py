@@ -180,3 +180,21 @@ def test_finishing_a_recording_names_and_stores_one_spell():
     assert len(template.samples) == 3 and template.threshold > 0
     assert engine.recorder.state == IDLE
     assert "Illuminate" in engine.notice
+
+
+def test_three_casts_that_do_not_look_alike_are_rejected_and_redone():
+    # Each motion is distinct from a resting hand on its own, but they are three different motions.
+    spread = [(x * 1.7, y) for x, y in OPEN]
+    fist = hand_points(curled=True)
+    fist[6], fist[7], fist[8] = (-0.3, 1.2), (-0.25, 0.95), (-0.2, 0.75)
+    spread_out = lambda f: blend(OPEN, spread, 1 - abs(2 * f - 1))
+    fist_close = lambda f: blend(OPEN, fist, f)  # closes and stays closed
+    rec = run_recorder(recorder_frames([curl_points, spread_out, fist_close]))
+    assert rec.state in (COUNTDOWN, RECORD) and rec.samples == []
+    assert rec.rejected_sets == 1
+    assert "didn't look alike" in rec.message
+
+
+def test_consistent_casts_pass_the_quality_gate():
+    rec = run_recorder(recorder_frames([curl_points] * 3))
+    assert rec.state == DONE and rec.rejected_sets == 0
