@@ -41,6 +41,9 @@ SWAP_HANDEDNESS = True  # normalized wrist travel per frame still counted as the
 # Profile store (CONJ-13): calibration, the recorded spell, and settings. Gitignored.
 PROFILE_PATH = ROOT / "profile.json"
 
+# Spellbook demo screen (CONJ-16): one offline HTML file
+SPELLBOOK_PATH = ROOT / "spellbook" / "index.html"
+
 # Recordings (record/replay harness)
 RECORDINGS_DIR = ROOT / "recordings"
 

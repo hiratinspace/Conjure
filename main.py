@@ -51,6 +51,8 @@ def parse_args(argv):
                         help="profile file (calibration, spell, settings)")
     parser.add_argument("--no-inject", action="store_true", help="dry run: never move the real cursor or click")
     parser.add_argument("--inject", action="store_true", help="with --replay: drive the real cursor from the recording")
+    parser.add_argument("--spellbook", action="store_true",
+                        help="also open the spellbook demo screen in the default browser (offline file)")
     parser.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     return parser.parse_args(argv)
 
@@ -234,6 +236,9 @@ def main(argv=None):
         datefmt="%H:%M:%S",
     )
     log.info("Conjure starting (frame budget %.0f ms). Ctrl+C to quit.", config.FRAME_BUDGET_MS)
+    if args.spellbook:
+        import webbrowser
+        webbrowser.open(config.SPELLBOOK_PATH.as_uri())
     try:
         run(args)
     except CameraError as e:
