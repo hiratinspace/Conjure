@@ -14,17 +14,19 @@ without a display.
 
 import logging
 
+from pipeline import palette as P
+
 log = logging.getLogger("conjure.overlay")
 
 RING_RADIUS = 30
 RING_WIDTH = 6
-RING_TRACK = "#3b2a5c"
-NAIVE_RED = "#ff3b30"
-RING_FILL = "#f5c542"
-BANNER_BG = "#2a1b47"
-BANNER_FG = "#f5c542"
-WARN_BG = "#8b1e1e"
-BADGE_FG = "#d9c8ff"
+RING_TRACK = P.SKY_DEEP
+NAIVE_RED = P.RED
+RING_FILL = P.SKY_LIGHT
+BANNER_BG = P.NAVY_3
+BANNER_FG = P.WHITE
+WARN_BG = P.RED_DEEP
+BADGE_FG = P.SKY_LIGHT
 TITLE = "Conjure overlay"
 
 
@@ -35,9 +37,9 @@ def ring_arc(progress):
 
 
 def trail_color(i, n):
-    """Fades from deep violet (oldest) to gold (newest)."""
+    """Fades from deep blue (oldest) to light sky blue (newest)."""
     f = (i + 1) / n
-    lo, hi = (0x3b, 0x2a, 0x5c), (0xf5, 0xc5, 0x42)
+    lo, hi = (0x38, 0x59, 0x93), (0x88, 0xb9, 0xfd)
     return "#%02x%02x%02x" % tuple(round(a + (b - a) * f) for a, b in zip(lo, hi))
 
 
@@ -152,7 +154,7 @@ class Overlay:
             text = c.create_text(self.w - 16, 16, text=badge, anchor="ne", fill=BADGE_FG,
                                  font=("Helvetica", 16, "bold"))
             x0, y0, x1, y1 = c.bbox(text)
-            c.create_rectangle(x0 - 34, y0 - 8, x1 + 12, y1 + 8, fill=BANNER_BG, outline=color, width=2)
+            c.create_rectangle(x0 - 34, y0 - 8, x1 + 12, y1 + 8, fill=P.NAVY_2, outline=color, width=2)
             c.create_oval(x0 - 24, (y0 + y1) / 2 - 6, x0 - 12, (y0 + y1) / 2 + 6, fill=color, outline="")
             c.tag_raise(text)
         if snap.metrics:
@@ -169,5 +171,5 @@ class Overlay:
         item = c.create_text(self.w / 2, y, text=text, fill=BANNER_FG, font=("Helvetica", size, "bold"),
                              width=self.w * 0.8, justify="center")
         x0, y0, x1, y1 = c.bbox(item)
-        rect = c.create_rectangle(x0 - 24, y0 - 14, x1 + 24, y1 + 14, fill=bg, outline=BANNER_FG, width=2)
+        rect = c.create_rectangle(x0 - 24, y0 - 14, x1 + 24, y1 + 14, fill=bg, outline=P.SKY_DEEP, width=2)
         c.tag_raise(item, rect)

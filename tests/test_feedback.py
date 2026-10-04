@@ -125,7 +125,7 @@ def test_spell_cast_reaches_the_ui_as_an_event():
 
 def test_trail_fades_from_violet_to_gold():
     assert trail_color(0, 10) != trail_color(9, 10)
-    assert trail_color(9, 10) == "#f5c542"
+    assert trail_color(9, 10) == "#88b9fd"
 
 
 def test_short_sounds_use_the_low_latency_bank_when_given():

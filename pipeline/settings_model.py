@@ -62,6 +62,7 @@ def _then_save(fn):
     def apply(engine, *args):
         fn(engine, *args)
         engine.persist()
+    apply.__wrapped__ = fn
     return apply
 
 
@@ -100,6 +101,17 @@ def step_responsiveness(engine, direction):
 def toggle_pointer_style(engine):
     """Mouse-like (relative, accelerated) <-> Direct (calibrated box). Saved in the profile."""
     engine.set_pointer_style("direct" if engine.pointer_style == "mouse" else "mouse")
+
+
+@_then_save
+def reset_settings(engine):
+    """Back to the config defaults for the tunables (keeps calibration, the spell, and the tuned thresholds)."""
+    engine.set_sensitivity(config.SENSITIVITY)
+    for _, pointer in engine.pointers.values():
+        pointer.configure(min_cutoff=config.FILTER_MIN_CUTOFF, beta=config.FILTER_BETA,
+                          precision_gain=config.PRECISION_GAIN)
+    engine.dwell.configure(dwell_s=config.DWELL_MS / 1000, radius_px=config.DWELL_RADIUS_PX)
+    set_feel.__wrapped__(engine, "balanced")
 
 
 @_then_save

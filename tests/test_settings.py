@@ -111,3 +111,39 @@ def test_big_button_is_at_least_60px_tall():
             assert b.winfo_reqwidth() >= MIN_TARGET_PX
     finally:
         root.destroy()
+
+
+def test_defaults_button_restores_tunables_but_keeps_tuning_and_spell(engine):
+    engine.set_dead_speed(123.0)
+    engine.set_gestures([recorded_curl_template()])
+    sm.step_sensitivity(engine, +1)
+    sm.step_dwell_ms(engine, +1)
+    sm.set_feel(engine, "fast")
+    sm.reset_settings(engine)
+    assert engine.mapper.calibration.sensitivity == pytest.approx(config.SENSITIVITY)
+    assert engine.dwell.dwell_s == pytest.approx(config.DWELL_MS / 1000)
+    assert engine.feel == "balanced"
+    assert engine.pointers["mouse"][1].dead_speed == 123.0 and engine.gestures  # kept
+    assert saved(engine).dwell_ms == config.DWELL_MS
+
+
+def test_panel_fits_a_900px_screen_and_opens_at_the_left_edge():
+    tk = pytest.importorskip("tkinter")
+    try:
+        root = tk.Tk()
+    except tk.TclError:
+        pytest.skip("no display")
+    root.withdraw()
+    try:
+        from pipeline.feedback import FeedbackSettings
+        from pipeline.settings_panel import SettingsPanel
+        eng = make_engine(RecordingInjector(), StageTimer(33.0, 1e9), (1440, 900), ModeState(Mode.PINCH))
+        noop = lambda: None
+        panel = SettingsPanel(root, eng, {k: noop for k in ("calibrate", "record_spell", "toggle_preview", "hide",
+                                                            "quit", "tutorial", "metrics", "actions", "tune")},
+                              FeedbackSettings(), lambda k: None, (1440, 900))
+        panel.refresh()
+        assert panel.win.winfo_reqheight() <= 800
+        assert panel.win.winfo_reqwidth() <= 720
+    finally:
+        root.destroy()

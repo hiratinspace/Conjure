@@ -22,7 +22,7 @@ from pipeline.gesture_recorder import DONE
 from pipeline.modes import CLICK_MODES, USER, Mode
 from pipeline.action_bar import ActionBar
 from pipeline.overlay import Overlay
-from pipeline.settings_panel import BG, FG, BigButton, SettingsPanel
+from pipeline.settings_panel import ACCENT, BG, BigButton, SettingsPanel
 from pipeline.tutorial import NaivePointer
 from pipeline.ui_state import NaiveClick, SpellCast
 
@@ -90,7 +90,7 @@ class App:
             "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit,
             "tutorial": self.toggle_tutorial, "metrics": self.toggle_metrics, "actions": self.toggle_action_bar,
             "tune": self.tune},
-            feedback.settings, feedback.toggle)
+            feedback.settings, feedback.toggle, screen_size)
         if show_preview:
             self.toggle_preview()
 
@@ -175,7 +175,7 @@ class App:
         win = self.naming_win = tk.Toplevel(self.root, bg=BG)
         win.title("Name your spell")
         win.attributes("-topmost", True)
-        tk.Label(win, text="Name your spell", font=("Helvetica", 30, "bold"), bg=BG, fg=FG, pady=16).pack()
+        tk.Label(win, text="Name your spell", font=("Helvetica", 30, "bold"), bg=BG, fg=ACCENT, pady=16).pack()
         grid = tk.Frame(win, bg=BG)
         grid.pack(padx=20, pady=10)
         for i, name in enumerate(config.STOCK_SPELL_NAMES):
