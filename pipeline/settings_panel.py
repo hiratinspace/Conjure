@@ -49,9 +49,11 @@ class BigButton(tk.Label):
 
 
 class SettingsPanel:
-    def __init__(self, root, engine, actions):
-        """actions: dict of UI-level callbacks: calibrate, record_spell, toggle_preview, hide, quit."""
+    def __init__(self, root, engine, actions, feedback_settings, toggle_feedback):
+        """actions: dict of UI-level callbacks: calibrate, record_spell, toggle_preview, hide, quit.
+        feedback_settings / toggle_feedback: the trail, sound, and voice switches (CONJ-17/18)."""
         self.engine = engine
+        self.feedback_settings = feedback_settings
         self.win = tk.Toplevel(root, bg=BG)
         self.win.title("Conjure")
         self.win.attributes("-topmost", True)
@@ -90,8 +92,15 @@ class SettingsPanel:
             BigButton(self.win, "+", lambda s=step: self._submit(s, +1), width=3).grid(
                 row=r, column=3, padx=(0, 16), pady=5)
 
-        self.precision_button = BigButton(self.win, "Precision", lambda: self._submit(sm.toggle_precision), width=12)
-        self.precision_button.grid(row=8, column=0, columnspan=2, pady=8)
+        effects = tk.Frame(self.win, bg=BG)
+        effects.grid(row=8, column=0, columnspan=4, pady=8)
+        self.precision_button = BigButton(effects, "Precision", lambda: self._submit(sm.toggle_precision), width=12)
+        self.precision_button.grid(row=0, column=0, padx=5)
+        self.feedback_buttons = {}
+        for i, (key, label) in enumerate((("trail", "Trail"), ("sound", "Sound"), ("voice", "Voice")), start=1):
+            b = BigButton(effects, label, lambda k=key: toggle_feedback(k), width=8)
+            b.grid(row=0, column=i, padx=5)
+            self.feedback_buttons[key] = (b, label)
 
         actions_row = tk.Frame(self.win, bg=BG)
         actions_row.grid(row=9, column=0, columnspan=4, pady=(8, 16))
@@ -111,6 +120,10 @@ class SettingsPanel:
         self.pause_button.set_selected(v["user_paused"])
         self.precision_button.configure(text=f"Precision: {'on' if v['precision'] else 'off'}")
         self.precision_button.set_selected(v["precision"])
+        for key, (button, label) in self.feedback_buttons.items():
+            on = getattr(self.feedback_settings, key)
+            button.configure(text=f"{label}: {'on' if on else 'off'}")
+            button.set_selected(on)
         self.values["sensitivity"].configure(text=f"{v['sensitivity']:.1f}x")
         self.values["smoothing"].configure(text=f"{v['smoothing']} of 5")
         self.values["dwell_ms"].configure(text=f"{v['dwell_ms'] / 1000:.1f} s")

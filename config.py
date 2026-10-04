@@ -132,3 +132,13 @@ CALIBRATION_MIN_SIZE = 0.03  # normalized frame units; smaller traces are redone
 PAUSE_AFTER_FRAMES = 10  # ~0.33 s at 30 fps without a usable hand
 RESUME_AFTER_FRAMES = 5  # ~0.17 s with one
 CONTROL_POINT_EDGE_MARGIN = 0.01  # knuckle this close to the frame edge = hand leaving
+
+# Feedback (CONJ-17): macOS system sounds, played with afplay (no dependency, offline)
+CLICK_SOUND = "/System/Library/Sounds/Tink.aiff"
+SPELL_SOUND = "/System/Library/Sounds/Glass.aiff"
+TRAIL_LENGTH = 12  # cursor positions kept for the trail
+SPELL_FLASH_S = 1.4
+CLICK_RIPPLE_S = 0.35
+
+# Voice (CONJ-18): pre-generated clips live here, one <slug>.mp3 per phrase (committed)
+VOICE_DIR = ROOT / "audio" / "voice"

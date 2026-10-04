@@ -33,6 +33,13 @@ def ring_arc(progress):
     return 90.0, -360.0 * progress
 
 
+def trail_color(i, n):
+    """Fades from deep violet (oldest) to gold (newest)."""
+    f = (i + 1) / n
+    lo, hi = (0x3b, 0x2a, 0x5c), (0xf5, 0xc5, 0x42)
+    return "#%02x%02x%02x" % tuple(round(a + (b - a) * f) for a, b in zip(lo, hi))
+
+
 def badge_text(snapshot):
     if not snapshot.mode:
         return ""
@@ -77,9 +84,22 @@ class Overlay:
         self.win.update()
         self.click_through = make_click_through(TITLE)
 
-    def draw(self, snap, paused_message=None, notice=""):
+    def draw(self, snap, paused_message=None, notice="", trail=(), ripples=(), flash=None):
+        """trail: recent cursor points (oldest first); ripples: [(x, y, age 0..1)]; flash: (text, x, y) or None."""
         c = self.canvas
         c.delete("all")
+        n = len(trail)
+        for i, (x, y) in enumerate(trail):
+            r = 3 + 7 * (i + 1) / n
+            c.create_oval(x - r, y - r, x + r, y + r, fill=trail_color(i, n), outline="")
+        for x, y, age in ripples:
+            r = 14 + 40 * age
+            c.create_oval(x - r, y - r, x + r, y + r, outline=RING_FILL, width=max(1, 5 * (1 - age)))
+        if flash is not None:
+            text, x, y = flash
+            for dx, dy in ((2, 2), (-2, -2), (2, -2), (-2, 2)):
+                c.create_text(x + dx, y - 70 + dy, text=text, fill=BANNER_BG, font=("Iowan Old Style", 44, "bold"))
+            c.create_text(x, y - 70, text=text, fill=RING_FILL, font=("Iowan Old Style", 44, "bold"))
         if snap.prompt:
             self._banner(snap.prompt, BANNER_BG, y=self.h * 0.35, size=34)
             if snap.message:

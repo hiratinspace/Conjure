@@ -58,6 +58,7 @@ class Engine:
         self.store = None  # ProfileStore; when set, persist() saves after every change
         self.calibrated = False  # False while the naive default box is in use
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
+        self.spell_listeners = []  # fn(name) called when the custom gesture is cast
         self.ordinary = deque(maxlen=ORDINARY_FRAMES)
         self._commands = queue.Queue()
         self.timer = timer
@@ -239,6 +240,8 @@ class Engine:
                 self._emit(fired, result)
                 if fired:
                     result.spell = self.matcher.last_match
+                    for listener in self.spell_listeners:
+                        listener(result.spell)
                 result.lines.append(self.matcher.status())
 
         x, y = self.cursor

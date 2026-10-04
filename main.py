@@ -103,6 +103,22 @@ def make_calibrator():
                       config.CALIBRATION_HIGH_PCT, config.CALIBRATION_MIN_SIZE)
 
 
+def make_feedback(engine, modes, enabled):
+    """Sounds and voice for clicks, spells, and mode changes. Silent for dry runs and replays."""
+    from pipeline.audio import AudioPlayer
+    from pipeline.feedback import Feedback, FeedbackSettings
+    from pipeline.voice import LocalVoice
+
+    player = AudioPlayer()
+    settings = FeedbackSettings() if enabled else FeedbackSettings(trail=True, sound=False, voice=False)
+    feedback = Feedback(player, LocalVoice(player, config.VOICE_DIR), config.CLICK_SOUND, config.SPELL_SOUND,
+                        settings)
+    engine.actions.subscribe(feedback.on_click)
+    engine.spell_listeners.append(feedback.on_spell)
+    modes.subscribe(feedback.on_mode)
+    return feedback
+
+
 def make_injector(dry_run):
     if dry_run:
         return RecordingInjector()
@@ -204,6 +220,7 @@ def run(args):
     engine.store = store
     if warning:
         engine.notice = warning
+    feedback = make_feedback(engine, modes, enabled=not dry_run)
     log.info("screen %dx%d, %s", *screen_size, "dry run (no real input)" if dry_run else "driving the real cursor")
 
     if args.no_ui:
@@ -224,7 +241,7 @@ def run(args):
                    engine.recorder.state, engine.gestures[0].name if engine.gestures else "")
         return False
 
-    app = App(ui, modes, engine, screen_size, show_preview=args.preview)
+    app = App(ui, modes, engine, feedback, screen_size, show_preview=args.preview)
     app.run(lambda should_stop: run_pipeline(args, engine, timer, permissions, on_frame, should_stop))
 
 

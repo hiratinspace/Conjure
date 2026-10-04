@@ -128,3 +128,14 @@ def test_ordinary_movement_fires_zero_false_matches(name):
     _, frames = read_recording(f"recordings/{name}.jsonl")
     fired, _ = run_engine(frames, recorded_curl_template())
     assert fired == []
+
+
+def test_casting_notifies_spell_listeners_with_the_name():
+    injector = RecordingInjector()
+    engine = make_engine(injector, StageTimer(33.0, 1e9), SCREEN, ModeState(Mode.CUSTOM))
+    engine.set_gestures([recorded_curl_template("Banish")])
+    heard = []
+    engine.spell_listeners.append(heard.append)
+    for t, h in stream([(1.0, dict(points=OPEN)), cast(0.8), (1.0, dict(points=OPEN))]):
+        engine.step(t, h)
+    assert heard == ["Banish"]

@@ -13,6 +13,14 @@ from dataclasses import dataclass, field
 from pipeline.preview import draw_hand, draw_text_lines
 
 
+@dataclass(frozen=True)
+class SpellCast:
+    """UI event: the custom gesture fired (drives the spell-name flash)."""
+
+    name: str
+    position: tuple
+
+
 @dataclass
 class UiSnapshot:
     cursor: tuple = None
@@ -50,6 +58,9 @@ class UiState:
         with self._lock:
             self._snapshot = snap
             self._events.extend(result.events)
+            if result.spell:
+                position = result.events[0].position if result.events else result.cursor
+                self._events.append(SpellCast(result.spell, position))
 
     def snapshot(self):
         with self._lock:

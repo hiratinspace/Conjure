@@ -14,12 +14,15 @@ import signal
 import threading
 import time
 import tkinter as tk
+from collections import deque
 
 import config
+from pipeline.events import Action, ClickEvent
 from pipeline.gesture_recorder import DONE
 from pipeline.modes import CLICK_MODES, USER, Mode
 from pipeline.overlay import Overlay
 from pipeline.settings_panel import BG, FG, BigButton, SettingsPanel
+from pipeline.ui_state import SpellCast
 
 log = logging.getLogger("conjure.app")
 
@@ -55,8 +58,12 @@ class PipelineThread(threading.Thread):
 
 
 class App:
-    def __init__(self, ui_state, modes, engine, screen_size, show_preview):
+    def __init__(self, ui_state, modes, engine, feedback, screen_size, show_preview):
         self.ui = ui_state
+        self.feedback = feedback
+        self._trail = deque(maxlen=config.TRAIL_LENGTH)
+        self._ripples = []  # (x, y, t_start)
+        self._flash = None  # (text, x, y, t_until)
         self.modes = modes
         self.engine = engine
         self.naming_win = None
@@ -73,7 +80,8 @@ class App:
         self.thread = None
         self.panel = SettingsPanel(self.root, engine, {
             "calibrate": self.calibrate, "record_spell": self.record_spell,
-            "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit})
+            "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit},
+            feedback.settings, feedback.toggle)
         if show_preview:
             self.toggle_preview()
 
@@ -167,6 +175,22 @@ class App:
         self._close_naming()
         self.engine.submit(lambda e: e.recorder.cancel())
 
+    def _collect_effects(self, snap, now):
+        """Trail points, click ripples, and spell flashes from the latest snapshot and events."""
+        if snap.cursor is not None and snap.hand_visible and self.modes.mode != Mode.PAUSED:
+            if not self._trail or self._trail[-1] != snap.cursor:
+                self._trail.append(snap.cursor)
+        else:
+            self._trail.clear()
+        for event in self.ui.drain_events():
+            if isinstance(event, SpellCast):
+                x, y = event.position
+                self._flash = (event.name, x, y, now + config.SPELL_FLASH_S)
+            elif isinstance(event, ClickEvent) and event.action in (Action.LEFT, Action.RIGHT, Action.DOUBLE,
+                                                                     Action.DRAG_START):
+                self._ripples.append((*event.position, now))
+        self._ripples = [r for r in self._ripples if now - r[2] < config.CLICK_RIPPLE_S]
+
     def paused_message(self, snap):
         if self.modes.mode != Mode.PAUSED:
             return None
@@ -184,8 +208,13 @@ class App:
         if self.engine.notice:
             self._notice, self.engine.notice = self.engine.notice, ""
             self._notice_until = time.monotonic() + NOTICE_S
-        notice = self._notice if time.monotonic() < self._notice_until else ""
-        self.overlay.draw(snap, self.paused_message(snap), notice)
+        now = time.monotonic()
+        notice = self._notice if now < self._notice_until else ""
+        self._collect_effects(snap, now)
+        trail = list(self._trail) if self.feedback.settings.trail else []
+        ripples = [(x, y, (now - t0) / config.CLICK_RIPPLE_S) for x, y, t0 in self._ripples]
+        flash = self._flash[:3] if self._flash and now < self._flash[3] else None
+        self.overlay.draw(snap, self.paused_message(snap), notice, trail, ripples, flash)
         if self._polls % PANEL_REFRESH_EVERY == 0:
             self.panel.refresh()
         self._polls += 1
