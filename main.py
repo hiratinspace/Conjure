@@ -332,7 +332,7 @@ def run(args):
         modes.set_click_mode(Mode(stage_mode))
     if config.CALIBRATE_ON_FIRST_RUN and not engine.calibrated and not dry_run and engine.pointer_style == "direct":
         # First run: fit Conjure to the user's comfortable range before anything else.
-        engine.submit(lambda e: e.calibrator.start())
+        engine.submit(lambda e: e.start_flow("calibrate"))
         log.info("no saved calibration: starting calibration (rest your forearm and trace a small area)")
     if venue_errors:
         engine.notice = f"venue.json has {len(venue_errors)} problem(s); see the terminal."

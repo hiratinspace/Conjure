@@ -9,6 +9,7 @@ smoothing is a 1-5 level, precision is on/off, and spell strictness scales
 the recorded gesture's threshold (which is what profile.json persists).
 """
 
+import config
 from pipeline.modes import USER, Mode
 
 # Smoothing level -> One Euro min_cutoff (Hz). Higher level = smoother and a little laggier.
@@ -53,6 +54,7 @@ def current(engine):
         "spell_threshold": spell.threshold if spell else None,
         "calibrated": engine.calibrated,
         "pointer_style": engine.pointer_style,
+        "feel": engine.feel,
     }
 
 
@@ -98,6 +100,15 @@ def step_responsiveness(engine, direction):
 def toggle_pointer_style(engine):
     """Mouse-like (relative, accelerated) <-> Direct (calibrated box). Saved in the profile."""
     engine.set_pointer_style("direct" if engine.pointer_style == "mouse" else "mouse")
+
+
+@_then_save
+def set_feel(engine, name):
+    """Mouse-pointer preset: precise (small, careful), balanced, fast (big flicks)."""
+    low, high, fast = config.MOUSE_FEELS[name]
+    pointer = engine.pointers["mouse"][1]
+    pointer.low_gain, pointer.high_gain, pointer.fast_speed = low, high, fast
+    engine.feel = name
 
 
 @_then_save

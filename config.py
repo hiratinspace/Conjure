@@ -62,6 +62,8 @@ MOUSE_SLOW_SPEED = 250  # careful movement from here ...
 MOUSE_FAST_SPEED = 1500  # ... to a quick flick here
 MOUSE_LOW_GAIN = 0.6  # careful movement is scaled down for precision
 MOUSE_HIGH_GAIN = 3.0  # a quick flick is scaled up to cross the screen
+# One-click Feel presets (settings panel): (low gain, high gain, fast speed)
+MOUSE_FEELS = {"precise": (0.4, 2.0, 1800), "balanced": (0.6, 3.0, 1500), "fast": (0.8, 4.5, 1200)}
 
 # Auto-tune (pipeline/tuner.py): dead zone = margin x the 95th percentile of the resting hand's speed
 TUNE_COUNTDOWN_S = 2.0
@@ -186,6 +188,10 @@ GESTURE_DISTINCT_FACTOR = 1.5  # warn if the gesture peaks less than this x thre
 # Stock spell names offered when naming a recorded gesture (CONJ-17); pre-generated audio
 # exists for these (CONJ-18). Original names, no franchise terms.
 STOCK_SPELL_NAMES = ["Illuminate", "Summon", "Unlock", "Levitate", "Banish", "Ignite"]
+
+# Spell check right after recording: cast it this many times (no clicks) before it is trusted
+SPELL_CHECK_CASTS = 3
+SPELL_CHECK_TIMEOUT_S = 20.0
 
 # Custom gesture matching (CONJ-11)
 GESTURE_SCALES = (0.75, 1.0, 1.33)  # window lengths tried, relative to each recorded sample

@@ -83,6 +83,8 @@ class App:
         self._polls = 0
         self.thread = None
         self.action_bar = ActionBar(self.root, engine, screen_size)
+        self._bar_manual = False  # the user toggled the bar: stop auto showing/hiding it
+        self.action_bar.hide()
         self.panel = SettingsPanel(self.root, engine, {
             "calibrate": self.calibrate, "record_spell": self.record_spell,
             "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit,
@@ -132,6 +134,7 @@ class App:
         self.engine.submit(lambda e: setattr(e, "show_metrics", not e.show_metrics))
 
     def toggle_action_bar(self):
+        self._bar_manual = True
         if self.action_bar.visible:
             self.action_bar.hide()
         else:
@@ -156,15 +159,15 @@ class App:
         log.info("click mode: %s", mode.value)
 
     def calibrate(self):
-        self.engine.submit(lambda e: e.calibrator.start())
+        self.engine.submit(lambda e: e.start_flow("calibrate"))
         log.info("calibrating: follow the prompts on screen")
 
     def tune(self):
-        self.engine.submit(lambda e: e.tuner.start())
+        self.engine.submit(lambda e: e.start_flow("tune"))
         log.info("tuning: rest your hand and follow the prompts on screen")
 
     def record_spell(self):
-        self.engine.submit(lambda e: e.recorder.start())
+        self.engine.submit(lambda e: e.start_flow("record"))
         log.info("recording a spell: follow the prompts on screen")
 
     def _open_naming(self):
@@ -252,6 +255,10 @@ class App:
         self.overlay.draw(snap, self.paused_message(snap), notice, trail, ripples, flash, naive)
         if self._polls % PANEL_REFRESH_EVERY == 0:
             self.panel.refresh()
+            if not self._bar_manual:  # useful when a click cannot choose its own button: every mode but pinch
+                want = self.modes.click_mode != Mode.PINCH or self.engine.actions.dragging
+                if want != self.action_bar.visible:
+                    (self.action_bar.show if want else self.action_bar.hide)()
             if self.action_bar.visible:
                 self.action_bar.refresh()
         self._polls += 1

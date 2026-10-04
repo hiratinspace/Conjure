@@ -63,10 +63,10 @@ class SettingsPanel:
         tk.Label(self.win, text="Conjure", font=("Helvetica", 30, "bold"), bg=BG, fg=ACCENT).grid(
             row=0, column=0, columnspan=4, pady=(14, 4))
         self.status = tk.Label(self.win, text="", font=SMALL, bg=BG, fg=FG)
-        self.status.grid(row=1, column=0, columnspan=4, pady=(0, 10))
+        self.status.grid(row=12, column=0, columnspan=4, pady=(0, 12))
 
         modes = tk.Frame(self.win, bg=BG)
-        modes.grid(row=2, column=0, columnspan=4, pady=6)
+        modes.grid(row=1, column=0, columnspan=4, pady=6)
         self.mode_buttons = {}
         for i, (mode, label) in enumerate(((Mode.PINCH, "Pinch"), (Mode.TOUCH, "Touch"), (Mode.DWELL, "Dwell"),
                                            (Mode.CUSTOM, "Spell"))):
@@ -76,6 +76,14 @@ class SettingsPanel:
         self.pause_button = BigButton(modes, "Pause", lambda: self._submit(sm.toggle_user_pause), width=6)
         self.pause_button.grid(row=0, column=4, padx=5)
 
+        feel = tk.Frame(self.win, bg=BG)
+        feel.grid(row=2, column=0, columnspan=4, pady=(10, 2), sticky="w", padx=16)
+        tk.Label(feel, text="Feel", font=FONT, bg=BG, fg=FG, width=8, anchor="w").grid(row=0, column=0)
+        self.feel_buttons = {}
+        for i, name in enumerate(("precise", "balanced", "fast")):
+            b = BigButton(feel, name.capitalize(), lambda n=name: self._submit(sm.set_feel, n), width=8)
+            b.grid(row=0, column=i + 1, padx=4)
+            self.feel_buttons[name] = b
         rows = [
             ("sensitivity", "Sensitivity", sm.step_sensitivity),
             ("smoothing", "Smoothing", sm.step_smoothing),
@@ -129,6 +137,8 @@ class SettingsPanel:
         v = sm.current(self.engine)
         for mode, button in self.mode_buttons.items():
             button.set_selected(v["click_mode"] == mode)
+        for name, button in self.feel_buttons.items():
+            button.set_selected(v["feel"] == name and v["pointer_style"] == "mouse")
         self.pause_button.configure(text="Resume" if v["user_paused"] else "Pause")
         self.pause_button.set_selected(v["user_paused"])
         self.pointer_button.configure(text=f"Pointer: {'Mouse' if v['pointer_style'] == 'mouse' else 'Direct'}")

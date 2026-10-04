@@ -179,7 +179,7 @@ def test_finishing_a_recording_names_and_stores_one_spell():
     assert [g.name for g in engine.gestures] == ["Illuminate"]
     assert len(template.samples) == 3 and template.threshold > 0
     assert engine.recorder.state == IDLE
-    assert "Illuminate" in engine.notice
+    assert engine.spell_check.active and engine.spell_check.name == "Illuminate"  # verified before it is trusted
 
 
 def test_three_casts_that_do_not_look_alike_are_rejected_and_redone():

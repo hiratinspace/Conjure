@@ -24,6 +24,7 @@ from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
 from pipeline.next_action import NextAction
 from pipeline.relative import GateView, HandSpeed
+from pipeline.spell_check import SpellCheck
 from pipeline.events import Action
 from pipeline.profile_schema import FilterSettings, GestureTemplate, PointerSettings, Profile, Settings
 
@@ -69,6 +70,7 @@ class Engine:
         self.calibrator = calibrator
         self.auto_pause = auto_pause
         self.tuner = tuner
+        self.spell_check = SpellCheck(config.SPELL_CHECK_CASTS, config.SPELL_CHECK_TIMEOUT_S)
         self.edge_freeze_margin = edge_freeze_margin
         self.pointers = {}  # style -> (mapper, filter); see set_pointer_style
         self.pointer_style = None
@@ -80,10 +82,11 @@ class Engine:
         self.calibrated = False  # False while the naive default box is in use
         self.tuned = False  # True once the resting threshold came from the user's own hand
         self.pinch_close_s = None  # auto-tuned pinch window, None = config default
+        self.feel = "balanced"  # mouse-pointer preset name
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.spell_listeners = []  # fn(name) called when the custom gesture is cast
         self.tutorial = None  # a NaivePointer while tutorial mode is on (the "before" half of the pitch)
-        self.show_metrics = True  # live metrics overlay (fps, jitter, clicks, misfires blocked)
+        self.show_metrics = False  # live metrics overlay (fps, jitter, clicks, misfires blocked); k or the panel
         self.shadow_clicks = 0  # clicks Conjure's own detector would have made during tutorial mode
         self.clicks = 0  # clicks applied this session
         self._recent = deque(maxlen=30)  # (cursor, speed) for the live jitter metric
@@ -115,8 +118,18 @@ class Engine:
         self.set_gestures([GestureTemplate(name=name, samples=samples, threshold=threshold)])
         self.recorder.cancel()
         self.persist()
-        self.notice = " ".join(warnings) or f"Spell '{name}' is ready. Switch to custom mode to cast it."
+        self.notice = " ".join(warnings)
+        self.spell_check.start(name)  # prove it works before trusting it
         return self.gestures[0], warnings
+
+    def start_flow(self, name):
+        """Start one guided flow (tune, calibrate, record) and cancel any other, so they never overlap."""
+        for flow in (self.tuner, self.calibrator, self.recorder, self.spell_check):
+            if flow is not None:
+                flow.cancel()
+        if self.tutorial is not None:
+            self.set_tutorial(None)
+        {"tune": self.tuner, "calibrate": self.calibrator, "record": self.recorder}[name].start()
 
     def set_pointer_style(self, style):
         """Switch between "mouse" (relative, accelerated) and "direct" (calibrated box) pointing."""
@@ -168,6 +181,11 @@ class Engine:
             self.set_dead_speed(profile.pointer.dead_speed)
         if profile.pointer.pinch_close_ms is not None:
             self.set_pinch_close(profile.pointer.pinch_close_ms / 1000)
+        if profile.pointer.feel in config.MOUSE_FEELS and "mouse" in self.pointers:
+            low, high, fast = config.MOUSE_FEELS[profile.pointer.feel]
+            pointer = self.pointers["mouse"][1]
+            pointer.low_gain, pointer.high_gain, pointer.fast_speed = low, high, fast
+            self.feel = profile.pointer.feel
         if profile.pointer.style in self.pointers:
             self.set_pointer_style(profile.pointer.style)
 
@@ -199,7 +217,8 @@ class Engine:
         mouse = self.pointers["mouse"][1] if "mouse" in self.pointers else None
         pointer = PointerSettings(style=self.pointer_style or config.POINTER_STYLE,
                                   dead_speed=mouse.dead_speed if (mouse and self.tuned) else None,
-                                  pinch_close_ms=round(self.pinch_close_s * 1000) if self.pinch_close_s else None)
+                                  pinch_close_ms=round(self.pinch_close_s * 1000) if self.pinch_close_s else None,
+                                  feel=self.feel)
         return Profile(calibration=calibration, gestures=list(self.gestures), settings=settings, pointer=pointer)
 
     def persist(self):
@@ -328,6 +347,22 @@ class Engine:
     def _step(self, t, hand):
         self._run_commands()
         result = StepResult()
+        if self.spell_check.active:
+            if self.cursor is not None:
+                self._emit(self._detectors_reset(self.modes.mode), result)
+            self.filter.reset()
+            matched = bool(self.matcher.update(hand, t, self.gates)) if hand is not None else False
+            if hand is None:
+                self.matcher.reset()
+            if self.spell_check.update(matched, t):
+                self.notice = self.spell_check.verdict
+                if self.spell_check.hits >= self.spell_check.casts_wanted:
+                    self.modes.set_click_mode(Mode.CUSTOM)  # it works: use it
+                    self.persist()
+            result.cursor = self.cursor
+            result.prompt = self.spell_check.prompt
+            result.lines.append(f"spell check: {self.spell_check.hits} hits")
+            return result
         if self.tuner is not None and self.tuner.active:
             if self.cursor is not None:
                 self._emit(self._detectors_reset(self.modes.mode), result)
