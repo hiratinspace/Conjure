@@ -11,11 +11,14 @@ tall laptop screen with room to spare, and it opens at the left edge so it
 does not cover the demo page in the middle.
 """
 
+import logging
 import tkinter as tk
 
 from pipeline import palette as P
 from pipeline import settings_model as sm
 from pipeline.modes import Mode
+
+log = logging.getLogger("conjure.panel")
 
 MIN_TARGET_PX = 60
 BG = P.NAVY
@@ -46,6 +49,7 @@ class BigButton(tk.Label):
         self._selected = False
 
     def _click(self, _event):
+        log.info("button pressed: %s", self.cget("text"))
         self.command()
 
     def _set_hover(self, hover):
