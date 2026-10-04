@@ -47,20 +47,18 @@ def accessibility_trusted():
 
 
 def check_input_monitoring():
-    """The F8 panic key needs Input Monitoring (separate from Accessibility): a global key listener
-    starts but dies at once without it."""
+    """The F8 and F9 hotkeys need Input Monitoring (separate from Accessibility): without it macOS
+    refuses to create a keyboard event tap."""
     try:
-        from pynput import keyboard
-        listener = keyboard.Listener(on_press=lambda k: None)
-        listener.daemon = True
-        listener.start()
-        listener.wait()
-        time.sleep(0.4)
-        if listener.running:
-            listener.stop()
-            return True, "granted (F8 panic key will work)"
+        import Quartz
+        tap = Quartz.CGEventTapCreate(Quartz.kCGSessionEventTap, Quartz.kCGHeadInsertEventTap,
+                                      Quartz.kCGEventTapOptionListenOnly,
+                                      Quartz.CGEventMaskBit(Quartz.kCGEventKeyDown),
+                                      lambda proxy, t, event, refcon: event, None)
+        if tap is not None:
+            return True, "granted (F8 pause and F9 panel hotkeys will work)"
         return False, ("NOT granted: System Settings > Privacy & Security > Input Monitoring > enable this "
-                       "terminal app, then restart it. Only the F8 panic key needs it.")
+                       "terminal app, then restart it. Only the F8 and F9 hotkeys need it.")
     except Exception as e:
         return False, f"could not test ({e})"
 

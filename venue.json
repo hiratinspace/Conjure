@@ -13,7 +13,7 @@
   "PINCH_RELEASE_RATIO": 0.40,
   "PINCH_HOLD_MS": 80,
   "PINCH_QUICK_CLOSE_MS": 200,
-  "PINCH_MAX_SPEED_PX_S": 1500,
+  "PINCH_MAX_SPEED_PX_S": 1000,
 
   "_spell": "Spell misses at the venue: raise GESTURE_MATCH_SCALE (1.2 = 20% more forgiving). Spell fires on its own: lower it.",
   "GESTURE_MATCH_SCALE": 1.0,
