@@ -10,7 +10,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | CONJ-2 | macOS Camera + Accessibility permissions | A | done | All checks pass from Terminal.app on the M1. Second-laptop AC waived (one laptop). |
 | CONJ-3 | Webcam capture loop + debug preview | A | done | Phase A gate: 30 fps with preview on (work ~28 ms: track ~15, preview ~13), 30 fps with preview hidden via `p` while capture continues. |
 | CONJ-4 | MediaPipe hand landmark extraction | A | done | Tasks API HandLandmarker, num_hands=1 (MediaPipe's ROI tracking keeps the locked hand sticky and skips palm detection), plus a sticky `select_hand` gate; confidence gate in config. JSONL record/replay harness + `scripts/record_session.py` presets. Phase A gate: overlay renders on either hand (pass); labels were swapped, fixed with SWAP_HANDEDNESS. Two-hand stickiness passes live. |
-| CONJ-5 | Hand-to-cursor mapping | B | todo | |
+| CONJ-5 | Hand-to-cursor mapping | B | code done | Index MCP control point through a `Calibration` interface (`BoxCalibration`, default box inset 15%, clamped, sensitivity scales the box). Pipeline after tracking lives in `pipeline/engine.py` so replays and tests run the live code. Traversal replay reaches all four screen edges. Accessibility re-checked every 2 s with a loud banner. Physical AC (<100 ms perceived lag) pending. |
 | CONJ-6 | One Euro filter + precision mode | B | todo | |
 | CONJ-7 | Pinch click with hysteresis | C (Dev A) | todo | |
 | CONJ-8 | Dwell click mode | C (Dev A) | todo | |

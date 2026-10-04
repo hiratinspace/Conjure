@@ -4,8 +4,8 @@ The single process loop. Each stage is a module in pipeline/; this file only
 wires them together and owns startup and shutdown.
 
 The loop consumes (timestamp, image, LandmarkFrame | None) from either the live
-camera + tracker or a JSONL recording (--replay), so every stage after the
-tracker runs identically on recorded sessions.
+camera + tracker or a JSONL recording (--replay), and hands each frame to the
+Engine, so every stage after the tracker runs identically on recorded sessions.
 """
 
 import argparse
@@ -15,8 +15,12 @@ import sys
 import numpy as np
 
 import config
+from pipeline.cursor_mapper import Box, BoxCalibration, CursorMapper
+from pipeline.engine import Engine
 from pipeline.frame_source import CameraError, FrameSource
 from pipeline.hand_tracker import HandTracker
+from pipeline.injector import PynputInjector, RecordingInjector
+from pipeline.permissions import PermissionWatch, main_screen_size
 from pipeline.preview import QUIT, Preview, draw_hand
 from pipeline.recorder import LandmarkRecorder, replay
 from pipeline.timing import StageTimer
@@ -30,19 +34,26 @@ def parse_args(argv):
     parser.add_argument("--camera", type=int, default=config.CAMERA_INDEX, help="camera index")
     parser.add_argument("--record", metavar="PATH", help="record the landmark stream to a JSONL file")
     parser.add_argument("--replay", metavar="PATH", help="run from a JSONL recording instead of the camera")
+    parser.add_argument("--no-inject", action="store_true", help="dry run: never move the real cursor or click")
+    parser.add_argument("--inject", action="store_true", help="with --replay: drive the real cursor from the recording")
     parser.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     return parser.parse_args(argv)
 
 
 def make_tracker():
-    return HandTracker(config.HAND_MODEL_PATH, config.MAX_HANDS, config.MIN_DETECTION_CONFIDENCE, config.MIN_PRESENCE_CONFIDENCE,
-                       config.MIN_TRACKING_CONFIDENCE, config.MIN_HAND_CONFIDENCE, config.MAX_WRIST_JUMP,
-                       config.SWAP_HANDEDNESS)
+    return HandTracker(config.HAND_MODEL_PATH, config.MAX_HANDS, config.MIN_DETECTION_CONFIDENCE,
+                       config.MIN_PRESENCE_CONFIDENCE, config.MIN_TRACKING_CONFIDENCE, config.MIN_HAND_CONFIDENCE,
+                       config.MAX_WRIST_JUMP, config.SWAP_HANDEDNESS)
 
 
 def make_frame_source(camera):
     return FrameSource(camera, config.CAMERA_WIDTH, config.CAMERA_HEIGHT, config.CAMERA_FPS,
                        config.MIRROR, config.CAMERA_WARMUP_FRAMES, config.FPS_SMOOTHING)
+
+
+def make_engine(injector, timer, screen_size):
+    calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
+    return Engine(CursorMapper(calibration), injector, timer)
 
 
 def live_stream(source, tracker, timer):
@@ -61,23 +72,22 @@ def replay_stream(path):
         yield t, np.zeros((config.CAMERA_HEIGHT, config.CAMERA_WIDTH, 3), np.uint8), hand
 
 
-def run_loop(stream, timer, preview, recorder, fps_fn):
+def run_loop(stream, engine, timer, preview, recorder, fps_fn, permissions=None):
     for t, image, hand in stream:
         if recorder is not None:
             recorder.write(t, hand)
+        result = engine.step(t, hand)
+        if permissions is not None and not permissions.poll():
+            result.lines.insert(0, "!!! NO ACCESSIBILITY PERMISSION: input is being dropped !!!")
 
         with timer.stage("preview"):
             if preview.enabled:
-                lines = [f"{fps_fn():.1f} fps"]
                 if hand is not None:
                     draw_hand(image, hand)
-                    lines.append(f"{hand.handedness} hand  conf {hand.confidence:.2f}")
-                else:
-                    lines.append("no hand")
+                lines = [f"{fps_fn():.1f} fps"] + result.lines
                 if recorder is not None:
                     lines.append(f"REC {recorder.frames} frames")
-                action = preview.show(image, lines)
-                if action == QUIT:
+                if preview.show(image, lines) == QUIT:
                     return
         timer.end_frame()
 
@@ -85,11 +95,18 @@ def run_loop(stream, timer, preview, recorder, fps_fn):
 def run(args):
     timer = StageTimer(config.FRAME_BUDGET_MS, config.TIMING_LOG_INTERVAL_S)
     preview = Preview(enabled=args.preview)
+    screen_size = main_screen_size()
+    dry_run = args.no_inject or (args.replay and not args.inject)
+    injector = RecordingInjector() if dry_run else PynputInjector()
+    permissions = None if dry_run else PermissionWatch(config.PERMISSION_CHECK_INTERVAL_S)
+    engine = make_engine(injector, timer, screen_size)
+    log.info("screen %dx%d, %s", *screen_size, "dry run (no real input)" if dry_run else "driving the real cursor")
     recorder = None
     try:
         if args.replay:
             log.info("replaying %s", args.replay)
-            run_loop(replay_stream(args.replay), timer, preview, None, lambda: timer.last_summary.get("fps", 0.0))
+            run_loop(replay_stream(args.replay), engine, timer, preview, None,
+                     lambda: timer.last_summary.get("fps", 0.0), permissions)
             return
         source = make_frame_source(args.camera)
         with source, make_tracker() as tracker:
@@ -97,7 +114,8 @@ def run(args):
                 recorder = LandmarkRecorder(args.record, name="manual", frame_size=[config.CAMERA_WIDTH, config.CAMERA_HEIGHT],
                                             mirror=config.MIRROR)
                 log.info("recording to %s", args.record)
-            run_loop(live_stream(source, tracker, timer), timer, preview, recorder, lambda: source.fps)
+            run_loop(live_stream(source, tracker, timer), engine, timer, preview, recorder, lambda: source.fps,
+                     permissions)
     finally:
         if recorder is not None:
             recorder.close()

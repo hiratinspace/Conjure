@@ -40,3 +40,12 @@ SWAP_HANDEDNESS = True  # normalized wrist travel per frame still counted as the
 
 # Recordings (record/replay harness)
 RECORDINGS_DIR = ROOT / "recordings"
+
+# Cursor mapping (CONJ-5). Naive box until the user calibrates (CONJ-12): inset 15% so the
+# cursor reaches every screen edge while the hand stays fully in frame (tracking drops at
+# the frame edge). Normalized frame coordinates, same fields as profile.json calibration.
+DEFAULT_CALIBRATION = {"x_min": 0.15, "x_max": 0.85, "y_min": 0.15, "y_max": 0.85}
+SENSITIVITY = 1.0  # >1 shrinks the box: less hand travel per screen width
+
+# Injection
+PERMISSION_CHECK_INTERVAL_S = 2.0
