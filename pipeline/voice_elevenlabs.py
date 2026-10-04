@@ -16,6 +16,7 @@ request header, and is never logged or written anywhere.
 
 import json
 import logging
+import ssl
 import threading
 import urllib.request
 
@@ -26,9 +27,24 @@ log = logging.getLogger("conjure.voice")
 API_URL = "https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_22050_32"
 
 
+def _ssl_context():
+    """The python.org macOS build ships no root certificates until its "Install Certificates" step is
+    run, so every HTTPS call fails with CERTIFICATE_VERIFY_FAILED. Use certifi's bundle (installed with
+    mediapipe) when available; the system store otherwise."""
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
+def _default_opener(request, timeout):
+    return urllib.request.urlopen(request, timeout=timeout, context=_ssl_context())
+
+
 class ElevenLabsVoice:
     def __init__(self, api_key, voice_id, model_id, clip_dirs, cache_dir, player, fallback, deadline_s,
-                 opener=urllib.request.urlopen):
+                 opener=_default_opener):
         if not api_key:
             raise ValueError("ElevenLabsVoice needs an API key (ELEVENLABS_API_KEY)")
         self._api_key = api_key
