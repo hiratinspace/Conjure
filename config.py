@@ -68,6 +68,7 @@ PRECISION_GAIN = 0.3  # cursor gain when the hand is nearly still (1.0 disables 
 PRECISION_SPEED_PX_S = 60  # at or below this hand speed, full precision gain
 FAST_SPEED_PX_S = 400  # at or above this, gain 1 and the cursor re-anchors to the hand
 REANCHOR_RATE = 0.15  # fraction of the precision offset removed per fast frame
+JITTER_STILL_SPEED_PX_S = 150  # live jitter metric: a hand whose median speed is below this counts as still
 PRECISION_RAMP_S = 0.2  # gain glides to its new value over ~this long; snapping feels haunted
 POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinch latch)
 

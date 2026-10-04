@@ -102,8 +102,15 @@ class SettingsPanel:
             b.grid(row=0, column=i, padx=5)
             self.feedback_buttons[key] = (b, label)
 
+        stage = tk.Frame(self.win, bg=BG)
+        stage.grid(row=9, column=0, columnspan=4, pady=4)
+        self.tutorial_button = BigButton(stage, "Tutorial mode", actions["tutorial"], width=13)
+        self.tutorial_button.grid(row=0, column=0, padx=5)
+        self.metrics_button = BigButton(stage, "Metrics", actions["metrics"], width=10)
+        self.metrics_button.grid(row=0, column=1, padx=5)
+
         actions_row = tk.Frame(self.win, bg=BG)
-        actions_row.grid(row=9, column=0, columnspan=4, pady=(8, 16))
+        actions_row.grid(row=10, column=0, columnspan=4, pady=(8, 16))
         for i, (label, fn) in enumerate((("Calibrate", actions["calibrate"]), ("Record spell", actions["record_spell"]),
                                          ("Preview", actions["toggle_preview"]), ("Hide", actions["hide"]),
                                          ("Quit", actions["quit"]))):
@@ -130,6 +137,9 @@ class SettingsPanel:
         self.values["dwell_radius"].configure(text=f"{v['dwell_radius']} px")
         self.values["spell_threshold"].configure(
             text=f"{v['spell_threshold']:.2f}" if v["spell_threshold"] is not None else "no spell")
+        self.tutorial_button.set_selected(self.engine.tutorial is not None)
+        self.metrics_button.configure(text=f"Metrics: {'on' if self.engine.show_metrics else 'off'}")
+        self.metrics_button.set_selected(self.engine.show_metrics)
         spell = f"spell: {v['spell']}" if v["spell"] else "no spell recorded"
         cal = "calibrated" if v["calibrated"] else "not calibrated (using the default area)"
         self.status.configure(text=f"Mode: {v['mode'].value}  |  {spell}  |  {cal}")

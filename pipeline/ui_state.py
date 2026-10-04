@@ -14,6 +14,13 @@ from pipeline.preview import draw_hand, draw_text_lines
 
 
 @dataclass(frozen=True)
+class NaiveClick:
+    """UI event: tutorial mode's naive detector would have clicked here (shown, never injected)."""
+
+    position: tuple
+
+
+@dataclass(frozen=True)
 class SpellCast:
     """UI event: the custom gesture fired (drives the spell-name flash)."""
 
@@ -38,6 +45,7 @@ class UiSnapshot:
     pinch_state: str = ""
     tracking: str = ""
     metrics: dict = field(default_factory=dict)
+    tutorial: bool = False
     preview: object = None  # annotated BGR frame, only while the preview is visible
 
 
@@ -48,7 +56,8 @@ class UiState:
         self._events = deque(maxlen=50)
         self.preview_visible = False  # written by the UI thread, read by the pipeline thread
 
-    def publish(self, image, hand, result, fps, mode, permission_ok=True, recorder_state="", gesture_name=""):
+    def publish(self, image, hand, result, fps, mode, permission_ok=True, recorder_state="", gesture_name="",
+                tutorial=False):
         preview = None
         if self.preview_visible and image is not None:
             preview = image.copy()
@@ -60,10 +69,12 @@ class UiState:
                           lines=list(result.lines), prompt=result.prompt, message=result.message,
                           recorder_state=recorder_state, gesture_name=gesture_name,
                           pinch_progress=result.pinch_progress, pinch_state=result.pinch_state,
-                          tracking=result.tracking, metrics=dict(result.metrics), preview=preview)
+                          tracking=result.tracking, metrics=dict(result.metrics), tutorial=tutorial,
+                          preview=preview)
         with self._lock:
             self._snapshot = snap
             self._events.extend(result.events)
+            self._events.extend(NaiveClick(p) for p in result.naive_clicks)
             if result.spell:
                 position = result.events[0].position if result.events else result.cursor
                 self._events.append(SpellCast(result.spell, position))

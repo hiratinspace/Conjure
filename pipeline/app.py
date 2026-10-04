@@ -22,7 +22,8 @@ from pipeline.gesture_recorder import DONE
 from pipeline.modes import CLICK_MODES, USER, Mode
 from pipeline.overlay import Overlay
 from pipeline.settings_panel import BG, FG, BigButton, SettingsPanel
-from pipeline.ui_state import SpellCast
+from pipeline.tutorial import NaivePointer
+from pipeline.ui_state import NaiveClick, SpellCast
 
 log = logging.getLogger("conjure.app")
 
@@ -64,6 +65,8 @@ class App:
         self._trail = deque(maxlen=config.TRAIL_LENGTH)
         self._ripples = []  # (x, y, t_start)
         self._flash = None  # (text, x, y, t_until)
+        self._naive = []  # (x, y, t_start) tutorial-mode clicks
+        self.screen_size = screen_size
         self.modes = modes
         self.engine = engine
         self.naming_win = None
@@ -80,7 +83,8 @@ class App:
         self.thread = None
         self.panel = SettingsPanel(self.root, engine, {
             "calibrate": self.calibrate, "record_spell": self.record_spell,
-            "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit},
+            "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit,
+            "tutorial": self.toggle_tutorial, "metrics": self.toggle_metrics},
             feedback.settings, feedback.toggle)
         if show_preview:
             self.toggle_preview()
@@ -97,18 +101,32 @@ class App:
     def toggle_preview(self):
         if self.preview_win is None:
             self.preview_win = tk.Toplevel(self.root)
-            self.preview_win.title("Conjure preview (p hide, m mode, g spell, c calibrate, s settings, q quit)")
+            self.preview_win.title("Conjure preview (p hide, m mode, g spell, c calibrate, s settings, "
+                                   "t tutorial, k metrics, q quit)")
             self.preview_win.protocol("WM_DELETE_WINDOW", self.toggle_preview)
             self.preview_label = tk.Label(self.preview_win, bg="black")
             self.preview_label.pack()
             for key, fn in (("p", self.toggle_preview), ("m", self.cycle_mode), ("g", self.record_spell),
-                            ("c", self.calibrate), ("s", self.toggle_panel), ("q", self.quit)):
+                            ("c", self.calibrate), ("s", self.toggle_panel), ("t", self.toggle_tutorial),
+                            ("k", self.toggle_metrics), ("q", self.quit)):
                 self.preview_win.bind(f"<KeyPress-{key}>", lambda _e, fn=fn: fn())
             self.ui.preview_visible = True
         else:
             self.ui.preview_visible = False
             self.preview_win.destroy()
             self.preview_win = self.preview_label = self._photo = None
+
+    def toggle_tutorial(self):
+        """The before/after pitch: naive fingertip pointer vs Conjure. Naive clicks are shown, not injected."""
+        def flip(engine):
+            on = engine.tutorial is None
+            engine.set_tutorial(NaivePointer(self.screen_size, config.CAMERA_WIDTH / config.CAMERA_HEIGHT)
+                                if on else None)
+            log.info("tutorial mode %s", "on" if on else "off")
+        self.engine.submit(flip)
+
+    def toggle_metrics(self):
+        self.engine.submit(lambda e: setattr(e, "show_metrics", not e.show_metrics))
 
     def toggle_panel(self):
         if self.panel.visible:
@@ -186,10 +204,13 @@ class App:
             if isinstance(event, SpellCast):
                 x, y = event.position
                 self._flash = (event.name, x, y, now + config.SPELL_FLASH_S)
+            elif isinstance(event, NaiveClick):
+                self._naive.append((*event.position, now))
             elif isinstance(event, ClickEvent) and event.action in (Action.LEFT, Action.RIGHT, Action.DOUBLE,
                                                                      Action.DRAG_START):
                 self._ripples.append((*event.position, now))
         self._ripples = [r for r in self._ripples if now - r[2] < config.CLICK_RIPPLE_S]
+        self._naive = [r for r in self._naive if now - r[2] < 2 * config.CLICK_RIPPLE_S]
 
     def paused_message(self, snap):
         if self.modes.mode != Mode.PAUSED:
@@ -214,7 +235,8 @@ class App:
         trail = list(self._trail) if self.feedback.settings.trail else []
         ripples = [(x, y, (now - t0) / config.CLICK_RIPPLE_S) for x, y, t0 in self._ripples]
         flash = self._flash[:3] if self._flash and now < self._flash[3] else None
-        self.overlay.draw(snap, self.paused_message(snap), notice, trail, ripples, flash)
+        naive = [(x, y, (now - t0) / (2 * config.CLICK_RIPPLE_S)) for x, y, t0 in self._naive]
+        self.overlay.draw(snap, self.paused_message(snap), notice, trail, ripples, flash, naive)
         if self._polls % PANEL_REFRESH_EVERY == 0:
             self.panel.refresh()
         self._polls += 1

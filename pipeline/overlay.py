@@ -19,6 +19,7 @@ log = logging.getLogger("conjure.overlay")
 RING_RADIUS = 30
 RING_WIDTH = 6
 RING_TRACK = "#3b2a5c"
+NAIVE_RED = "#ff3b30"
 RING_FILL = "#f5c542"
 BANNER_BG = "#2a1b47"
 BANNER_FG = "#f5c542"
@@ -100,8 +101,9 @@ class Overlay:
         self.win.update()
         self.click_through = make_click_through(TITLE)
 
-    def draw(self, snap, paused_message=None, notice="", trail=(), ripples=(), flash=None):
-        """trail: recent cursor points (oldest first); ripples: [(x, y, age 0..1)]; flash: (text, x, y) or None."""
+    def draw(self, snap, paused_message=None, notice="", trail=(), ripples=(), flash=None, naive=()):
+        """trail: recent cursor points (oldest first); ripples: [(x, y, age 0..1)]; flash: (text, x, y) or None;
+        naive: [(x, y, age 0..1)] tutorial-mode clicks, drawn red."""
         c = self.canvas
         c.delete("all")
         n = len(trail)
@@ -111,6 +113,12 @@ class Overlay:
         for x, y, age in ripples:
             r = 14 + 40 * age
             c.create_oval(x - r, y - r, x + r, y + r, outline=RING_FILL, width=max(1, 5 * (1 - age)))
+        for x, y, age in naive:
+            r = 18 + 30 * age
+            c.create_oval(x - r, y - r, x + r, y + r, outline=NAIVE_RED, width=max(1, 6 * (1 - age)))
+            c.create_text(x, y - r - 14, text="click", fill=NAIVE_RED, font=("Helvetica", 16, "bold"))
+        if snap.tutorial:
+            self._banner("Tutorial mode: how most webcam mice behave", WARN_BG, y=110, size=24)
         if flash is not None:
             text, x, y = flash
             for dx, dy in ((2, 2), (-2, -2), (2, -2), (-2, 2)):

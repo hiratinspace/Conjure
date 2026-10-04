@@ -10,7 +10,10 @@ injected. Switching modes cancels the old mode's half-finished gesture.
 """
 
 import logging
+import math
 import queue
+
+import config
 from collections import deque
 from dataclasses import asdict, dataclass, field
 
@@ -19,6 +22,7 @@ from pipeline.cursor_mapper import CONTROL_POINT, Box, BoxCalibration
 from pipeline.gestures import normalize
 from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
+from pipeline.events import Action
 from pipeline.profile_schema import FilterSettings, GestureTemplate, Profile, Settings
 
 log = logging.getLogger("conjure.engine")
@@ -38,6 +42,7 @@ class StepResult:
     pinch_state: str = ""  # open / pending / confirmed / dragging
     tracking: str = ""  # status pill: "tracking", "edge", "paused", "no hand"
     metrics: dict = field(default_factory=dict)  # live metrics overlay (filled by main's frame loop)
+    naive_clicks: list = field(default_factory=list)  # tutorial mode: where the naive detector "clicked"
     prompt: str = ""  # big instruction text for the overlay (gesture recording, calibration)
     message: str = ""  # secondary text under the prompt
     lines: list = field(default_factory=list)  # overlay text
@@ -64,6 +69,11 @@ class Engine:
         self.calibrated = False  # False while the naive default box is in use
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.spell_listeners = []  # fn(name) called when the custom gesture is cast
+        self.tutorial = None  # a NaivePointer while tutorial mode is on (the "before" half of the pitch)
+        self.show_metrics = True  # live metrics overlay (fps, jitter, clicks, misfires blocked)
+        self.shadow_clicks = 0  # clicks Conjure's own detector would have made during tutorial mode
+        self.clicks = 0  # clicks applied this session
+        self._recent = deque(maxlen=30)  # (cursor, speed) for the live jitter metric
         self.ordinary = deque(maxlen=ORDINARY_FRAMES)
         self._commands = queue.Queue()
         self.timer = timer
@@ -160,6 +170,60 @@ class Engine:
         for event in events:
             if self.actions.handle(event, t):
                 result.events.append(event)
+                if event.action in (Action.LEFT, Action.RIGHT, Action.DOUBLE, Action.DRAG_START):
+                    self.clicks += 1
+
+    def set_tutorial(self, naive_pointer):
+        """Turn tutorial mode on (a NaivePointer) or off (None)."""
+        self.tutorial = naive_pointer
+        self.shadow_clicks = 0
+        self.filter.reset()
+        self._emit(self._detectors_reset(self.modes.mode), StepResult())
+
+    def blocked(self):
+        """Misfires prevented this session: pinch blips, curled-hand contacts, refractory drops."""
+        return self.pinch.blocked + self.actions.suppressed
+
+    def jitter_px(self):
+        """Cursor shake over the last second while the hand is nearly still, else None (moving)."""
+        speeds = sorted(s for _, s in self._recent)
+        if len(speeds) < 15 or speeds[len(speeds) // 2] > config.JITTER_STILL_SPEED_PX_S:
+            return None
+        xs = [c[0] for c, _ in self._recent]
+        ys = [c[1] for c, _ in self._recent]
+        mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+        return math.sqrt(sum((x - mx) ** 2 + (y - my) ** 2 for x, y in zip(xs, ys)) / len(xs))
+
+    def metrics(self, fps):
+        jitter = self.jitter_px()
+        m = {"fps": f"{fps:.0f}", "jitter": "moving" if jitter is None else f"{jitter:.1f}px",
+             "clicks": str(self.clicks), "misfires blocked": str(self.blocked())}
+        if self.tutorial is not None:
+            m = {"fps": m["fps"], "tutorial clicks": str(self.tutorial.clicks),
+                 "Conjure clicks": str(self.shadow_clicks)}
+        return m
+
+    def _tutorial_step(self, t, hand, result):
+        """Tutorial mode: raw fingertip cursor and naive clicks (shown, never injected);
+        Conjure's pinch detector runs in shadow for the side-by-side count."""
+        result.lines.append("tutorial mode: raw fingertip, no smoothing, naive pinch")
+        result.tracking = "tracking" if hand is not None else "no hand"
+        if hand is None:
+            self.tutorial.update(None)
+            self.filter.reset()
+            self.pinch.reset(self.cursor or (0, 0))
+            return result
+        target = self.tutorial.target(hand)
+        self.cursor = target
+        result.cursor = target
+        self.injector.move(*target)
+        if self.tutorial.update(hand):
+            result.naive_clicks.append(target)
+        shadow_cursor = self.filter.update(self.mapper.target(hand), t)
+        pose = analyze(hand, self.aspect, self.edge_margin)
+        shadow = self.pinch.update(pose, t, shadow_cursor, self.filter)
+        self.shadow_clicks += sum(1 for e in shadow if e.action in (Action.LEFT, Action.RIGHT, Action.DRAG_START))
+        return result
 
     def step(self, t, hand):
         self._run_commands()
@@ -187,6 +251,8 @@ class Engine:
             result.prompt, result.message = self.recorder.prompt, self.recorder.message
             result.lines.append(f"recording gesture: {self.recorder.state} ({len(self.recorder.samples)}/3)")
             return result
+        if self.tutorial is not None:
+            return self._tutorial_step(t, hand, result)
         if not self.auto_pause.update(hand):
             hand = None  # a hand at the very edge of the frame is a hand leaving
         mode = self.modes.mode
@@ -243,6 +309,7 @@ class Engine:
         with self.timer.stage("filter"):
             self.cursor = self.filter.update(target, t)
         result.cursor = self.cursor
+        self._recent.append((self.cursor, self.filter.speed))
         with self.timer.stage("inject"):
             self.injector.move(*self.cursor)
         with self.timer.stage("gesture"):

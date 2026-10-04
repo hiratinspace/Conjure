@@ -72,6 +72,11 @@ class PinchChannel:
         self._t_engage = None
         self._latch = None
         self._confirm_pos = None
+        # Misfires this channel prevented (live metrics): pinches shorter than the hold, and
+        # thumb-on-finger contacts with the other fingers curled.
+        self.blocked_blips = 0
+        self.blocked_curled = 0
+        self._curled_contact = False
 
     @property
     def active(self):
@@ -80,6 +85,8 @@ class PinchChannel:
     def cancel(self, cursor):
         """Abort without clicking; end a drag at `cursor`. Returns the events to emit."""
         events = []
+        if self.state == PENDING:
+            self.blocked_blips += 1
         if self.state == DRAGGING:
             events.append(ClickEvent(Action.DRAG_END, cursor))
         self.state = OPEN
@@ -95,15 +102,21 @@ class PinchChannel:
         self._ratios.append((t, r))
 
         if self.state == OPEN:
-            if r < self.engage and self._others_open(pose, self.open_extension):
+            closed = r < self.engage
+            if closed and self._others_open(pose, self.open_extension):
                 self.state = PENDING
                 self._t_engage = t
+            elif closed and not self._curled_contact:
+                self.blocked_curled += 1
+            self._curled_contact = closed and self.state == OPEN
             return []
 
         if r > self.release:
             events = []
             if self.state == CONFIRMED:
                 events.append(ClickEvent(self.click_action, self._latch))
+            elif self.state == PENDING:
+                self.blocked_blips += 1
             elif self.state == DRAGGING:
                 events.append(ClickEvent(Action.DRAG_END, cursor))
             self.state = OPEN
@@ -113,6 +126,8 @@ class PinchChannel:
         if self.state == PENDING:
             if not self._others_open(pose, self.open_extension):
                 self.state = OPEN  # the hand is curling into a fist, not pinching
+                self.blocked_curled += 1
+                self._curled_contact = True
                 return []
             if t - self._t_engage >= self.hold_s:
                 self.state = CONFIRMED
@@ -125,7 +140,6 @@ class PinchChannel:
             self.state = DRAGGING
             return [ClickEvent(Action.DRAG_START, self._latch)]
         return []
-
 
     def _closing_start(self):
         """Time the fingers started closing for the current pinch."""
@@ -156,6 +170,10 @@ class PinchDetector:
         if not self.left.active and not events:
             events = self.right.update(pose, t, cursor, pointer_filter)
         return events
+
+    @property
+    def blocked(self):
+        return sum(ch.blocked_blips + ch.blocked_curled for ch in (self.left, self.right))
 
     def progress(self):
         """(0..1 how far the fingers have closed toward engaging, state) for the overlay dot."""

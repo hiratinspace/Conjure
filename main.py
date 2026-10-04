@@ -270,8 +270,11 @@ def run(args):
     ui = UiState()
 
     def on_frame(image, hand, result, fps):
+        if engine.show_metrics or engine.tutorial is not None:
+            result.metrics = engine.metrics(fps)
         ui.publish(image, hand, result, fps, modes.mode.value, permissions.trusted if permissions else True,
-                   engine.recorder.state, engine.gestures[0].name if engine.gestures else "")
+                   engine.recorder.state, engine.gestures[0].name if engine.gestures else "",
+                   tutorial=engine.tutorial is not None)
         return False
 
     app = App(ui, modes, engine, feedback, screen_size, show_preview=args.preview)
