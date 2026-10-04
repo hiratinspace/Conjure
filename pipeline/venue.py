@@ -60,10 +60,14 @@ def apply_venue(path, cfg):
         if not _compatible(current, value):
             errors.append(f"{key}: expected {type(current).__name__}, got {type(value).__name__}")
             continue
-        setattr(cfg, key, tuple(value) if isinstance(current, tuple) else value)
-        applied.append(f"{key}: {current!r} -> {value!r}")
+        new = tuple(value) if isinstance(current, tuple) else value
+        setattr(cfg, key, new)
+        if new != current:
+            applied.append(f"{key}: {current!r} -> {value!r}")
     for line in applied:
         log.info("venue: %s", line)
+    if not applied and not errors:
+        log.info("venue: %s matches config.py defaults", path.name)
     for line in errors:
         log.error("venue.json problem, skipped: %s", line)
     return applied, errors, stage_mode

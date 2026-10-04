@@ -55,6 +55,7 @@ def parse_args(argv):
     parser.add_argument("--inject", action="store_true", help="with --replay: drive the real cursor from the recording")
     parser.add_argument("--spellbook", action="store_true",
                         help="also open the spellbook demo screen in the default browser (offline file)")
+    parser.add_argument("--quit-after", type=float, metavar="SECONDS", help="quit automatically (smoke tests)")
     parser.add_argument("-v", "--verbose", action="store_true", help="debug logging")
     return parser.parse_args(argv)
 
@@ -270,6 +271,8 @@ def run(args):
         return False
 
     app = App(ui, modes, engine, feedback, screen_size, show_preview=args.preview)
+    if args.quit_after:
+        app.root.after(int(args.quit_after * 1000), app.quit)
     app.run(lambda should_stop: run_pipeline(args, engine, timer, permissions, on_frame, should_stop))
 
 
