@@ -17,6 +17,7 @@ import numpy as np
 import config
 from pipeline.cursor_mapper import Box, BoxCalibration, CursorMapper
 from pipeline.engine import Engine
+from pipeline.filter import PointerFilter
 from pipeline.frame_source import CameraError, FrameSource
 from pipeline.hand_tracker import HandTracker
 from pipeline.injector import PynputInjector, RecordingInjector
@@ -51,9 +52,15 @@ def make_frame_source(camera):
                        config.MIRROR, config.CAMERA_WARMUP_FRAMES, config.FPS_SMOOTHING)
 
 
+def make_pointer_filter(screen_size):
+    return PointerFilter(config.FILTER_MIN_CUTOFF, config.FILTER_BETA, config.FILTER_D_CUTOFF, config.PRECISION_GAIN,
+                         config.PRECISION_SPEED_PX_S, config.FAST_SPEED_PX_S, config.REANCHOR_RATE, screen_size,
+                         config.POSITION_HISTORY_FRAMES)
+
+
 def make_engine(injector, timer, screen_size):
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
-    return Engine(CursorMapper(calibration), injector, timer)
+    return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, timer)
 
 
 def live_stream(source, tracker, timer):

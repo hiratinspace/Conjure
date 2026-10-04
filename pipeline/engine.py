@@ -17,8 +17,9 @@ class StepResult:
 
 
 class Engine:
-    def __init__(self, mapper, injector, timer):
+    def __init__(self, mapper, pointer_filter, injector, timer):
         self.mapper = mapper
+        self.filter = pointer_filter
         self.injector = injector
         self.timer = timer
         self.cursor = None
@@ -26,13 +27,17 @@ class Engine:
     def step(self, t, hand):
         result = StepResult()
         if hand is None:
+            self.filter.reset()
             result.lines.append("no hand")
             return result
         with self.timer.stage("map"):
-            x, y = self.mapper.target(hand)
+            target = self.mapper.target(hand)
+        with self.timer.stage("filter"):
+            x, y = self.filter.update(target, t)
         with self.timer.stage("inject"):
             self.injector.move(x, y)
         self.cursor = (x, y)
         result.cursor = self.cursor
         result.lines.append(f"{hand.handedness} hand  conf {hand.confidence:.2f}  cursor {x:.0f},{y:.0f}")
+        result.lines.append(f"speed {self.filter.speed:.0f} px/s  gain {self.filter.gain(self.filter.speed):.2f}")
         return result

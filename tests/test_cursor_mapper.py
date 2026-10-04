@@ -51,9 +51,12 @@ def test_mapper_follows_index_mcp_not_fingertips():
 
 
 def run_engine(frames):
+    from main import make_pointer_filter
+
     injector = RecordingInjector()
     timer = StageTimer(33.0, 1e9)
-    engine = Engine(CursorMapper(BoxCalibration(Box(0.15, 0.85, 0.15, 0.85), SCREEN)), injector, timer)
+    engine = Engine(CursorMapper(BoxCalibration(Box(0.15, 0.85, 0.15, 0.85), SCREEN)), make_pointer_filter(SCREEN),
+                    injector, timer)
     results = [engine.step(t, hand) for t, hand in frames]
     return injector, results
 

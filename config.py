@@ -49,3 +49,14 @@ SENSITIVITY = 1.0  # >1 shrinks the box: less hand travel per screen width
 
 # Injection
 PERMISSION_CHECK_INTERVAL_S = 2.0
+
+# Smoothing + precision (CONJ-6). Tuned on recordings/idle.jsonl and traversal.jsonl:
+# settled-idle jitter 4.8 px raw -> 1.3 px mean, fast-sweep lag ~14 px (about one frame).
+FILTER_MIN_CUTOFF = 0.5  # Hz; lower = smoother at rest, more lag
+FILTER_BETA = 0.01  # cutoff growth per px/s of speed; higher = less lag when fast
+FILTER_D_CUTOFF = 1.0  # Hz, for the speed estimate
+PRECISION_GAIN = 0.3  # cursor gain when the hand is nearly still (1.0 disables precision mode)
+PRECISION_SPEED_PX_S = 60  # at or below this hand speed, full precision gain
+FAST_SPEED_PX_S = 400  # at or above this, gain 1 and the cursor re-anchors to the hand
+REANCHOR_RATE = 0.15  # fraction of the precision offset removed per fast frame
+POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinch latch)
