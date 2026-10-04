@@ -17,6 +17,11 @@ it.
       }
     }
 
+Additive extension (not in the build plan): an optional top-level "pointer"
+section, `{"style": "mouse" | "direct", "dead_speed": float | null}`, for the
+mouse-style pointer and its auto-tuned dead zone. Old files without it load
+with defaults, so the version stays 1.
+
 One deliberate deviation from the build plan's table, flagged in PROGRESS.md:
 gesture samples are sequences, [3][T][21][3], not single poses [3][21][3],
 because the recorded gesture is a motion. A static pose is T = 1.
@@ -64,11 +69,18 @@ class GestureTemplate:
 
 
 @dataclass
+class PointerSettings:
+    style: str = config.POINTER_STYLE  # "mouse" | "direct"
+    dead_speed: float = None  # auto-tuned resting threshold (base px/s), None = config default
+
+
+@dataclass
 class Profile:
     version: int = SCHEMA_VERSION
     calibration: dict = None  # {"x_min", "x_max", "y_min", "y_max"} or None for the default box
     gestures: list = field(default_factory=list)  # [GestureTemplate]
     settings: Settings = field(default_factory=Settings)
+    pointer: PointerSettings = field(default_factory=PointerSettings)
 
 
 def default_profile():
@@ -143,6 +155,18 @@ def _parse_settings(obj):
     )
 
 
+def _parse_pointer(obj):
+    if obj is None:
+        return PointerSettings()
+    _require(isinstance(obj, dict), "pointer must be an object")
+    style = obj.get("style", config.POINTER_STYLE)
+    _require(style in ("mouse", "direct"), f"bad pointer style {style!r}")
+    dead = obj.get("dead_speed")
+    if dead is not None:
+        dead = _number(obj, "dead_speed", lo=1.0, hi=5000.0)
+    return PointerSettings(style=style, dead_speed=dead)
+
+
 def profile_from_dict(obj):
     """Validate and build a Profile. Raises ProfileError on any problem; never returns a partial profile."""
     _require(isinstance(obj, dict), "profile must be a JSON object")
@@ -155,5 +179,6 @@ def profile_from_dict(obj):
         calibration=_parse_calibration(obj.get("calibration")),
         gestures=[_parse_gesture(g) for g in gestures],
         settings=_parse_settings(obj.get("settings")),
+        pointer=_parse_pointer(obj.get("pointer")),
     )
 

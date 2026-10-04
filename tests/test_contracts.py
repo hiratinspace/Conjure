@@ -138,7 +138,8 @@ def test_default_settings_come_from_config():
 
 
 def test_top_level_fields_are_frozen():
-    assert set(profile_to_dict(default_profile())) == {"version", "calibration", "gestures", "settings"}
+    # "pointer" is an additive, optional section (mouse-style pointer + auto-tune); files without it load.
+    assert set(profile_to_dict(default_profile())) == {"version", "calibration", "gestures", "settings", "pointer"}
     assert set(profile_to_dict(default_profile())["settings"]) == {
         "click_mode", "dwell_ms", "dwell_radius_px", "filter", "sensitivity"}
 

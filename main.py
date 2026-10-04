@@ -35,6 +35,7 @@ from pipeline.profile_store import ProfileStore
 from pipeline.relative import BasePixelMapper, RelativePointer
 from pipeline.scroll import ScrollDetector
 from pipeline.touch import TouchDetector
+from pipeline.tuner import Tuner
 from pipeline.preview import QUIT, Preview, draw_hand
 from pipeline.recorder import LandmarkRecorder, replay
 from pipeline.timing import StageTimer
@@ -122,6 +123,11 @@ def make_gesture_matcher():
                           config.GESTURE_BUFFER_FRAMES)
 
 
+def make_tuner():
+    return Tuner(config.TUNE_COUNTDOWN_S, config.TUNE_MEASURE_S, config.TUNE_MARGIN, config.TUNE_MIN_DEAD,
+                 config.TUNE_MAX_DEAD, config.TUNE_SLOW_RATIO, config.TUNE_MIN_SLOW, config.TUNE_MOVING_SPEED)
+
+
 def make_calibrator():
     return Calibrator(config.CALIBRATION_COUNTDOWN_S, config.CALIBRATION_TRACE_S, config.CALIBRATION_LOW_PCT,
                       config.CALIBRATION_HIGH_PCT, config.CALIBRATION_MIN_SIZE)
@@ -184,7 +190,8 @@ def make_engine(injector, timer, screen_size, modes=None, pointer_style=None):
                   AutoPause(modes, config.PAUSE_AFTER_FRAMES, config.RESUME_AFTER_FRAMES,
                             config.CONTROL_POINT_EDGE_MARGIN), timer,
                   config.EDGE_FREEZE_MARGIN,
-                  config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN, make_touch())
+                  config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN, make_touch(),
+                  make_tuner())
     engine.pointers = {"direct": direct, "mouse": mouse}
     engine.set_pointer_style(pointer_style or config.POINTER_STYLE)
     return engine

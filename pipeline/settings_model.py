@@ -93,8 +93,9 @@ def step_responsiveness(engine, direction):
     engine.filter.configure(beta=RESPONSIVENESS_LEVELS[level])
 
 
+@_then_save
 def toggle_pointer_style(engine):
-    """Mouse-like (relative, accelerated) <-> Direct (calibrated box). Not saved: set POINTER_STYLE to keep it."""
+    """Mouse-like (relative, accelerated) <-> Direct (calibrated box). Saved in the profile."""
     engine.set_pointer_style("direct" if engine.pointer_style == "mouse" else "mouse")
 
 

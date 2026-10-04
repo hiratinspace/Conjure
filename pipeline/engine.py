@@ -24,7 +24,7 @@ from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
 from pipeline.next_action import NextAction
 from pipeline.events import Action
-from pipeline.profile_schema import FilterSettings, GestureTemplate, Profile, Settings
+from pipeline.profile_schema import FilterSettings, GestureTemplate, PointerSettings, Profile, Settings
 
 log = logging.getLogger("conjure.engine")
 
@@ -52,7 +52,7 @@ class StepResult:
 
 class Engine:
     def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, matcher,
-                 calibrator, auto_pause, timer, edge_freeze_margin, aspect, edge_margin, touch=None):
+                 calibrator, auto_pause, timer, edge_freeze_margin, aspect, edge_margin, touch=None, tuner=None):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -67,12 +67,14 @@ class Engine:
         self.matcher = matcher
         self.calibrator = calibrator
         self.auto_pause = auto_pause
+        self.tuner = tuner
         self.edge_freeze_margin = edge_freeze_margin
         self.pointers = {}  # style -> (mapper, filter); see set_pointer_style
         self.pointer_style = None
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
         self.store = None  # ProfileStore; when set, persist() saves after every change
         self.calibrated = False  # False while the naive default box is in use
+        self.tuned = False  # True once the resting threshold came from the user's own hand
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.spell_listeners = []  # fn(name) called when the custom gesture is cast
         self.tutorial = None  # a NaivePointer while tutorial mode is on (the "before" half of the pitch)
@@ -150,10 +152,23 @@ class Engine:
         self.dwell.configure(dwell_s=s.dwell_ms / 1000, radius_px=s.dwell_radius_px)
         self.filter.configure(min_cutoff=s.filter.min_cutoff, beta=s.filter.beta,
                               precision_gain=s.filter.precision_gain)
+        for _, pointer in self.pointers.values():  # both pointer styles share the smoothing settings
+            pointer.configure(min_cutoff=s.filter.min_cutoff, beta=s.filter.beta, precision_gain=s.filter.precision_gain)
         if profile.calibration is not None:
             self.set_calibration(Box(**profile.calibration))
         self.set_sensitivity(s.sensitivity)
         self.set_gestures(profile.gestures)
+        if profile.pointer.dead_speed is not None:
+            self.set_dead_speed(profile.pointer.dead_speed)
+        if profile.pointer.style in self.pointers:
+            self.set_pointer_style(profile.pointer.style)
+
+    def set_dead_speed(self, dead, slow=None):
+        """Resting threshold of the mouse-style pointer (auto-tune), with the careful band scaled to match."""
+        pointer = self.pointers["mouse"][1]
+        pointer.dead_speed = dead
+        pointer.slow_speed = slow if slow is not None else max(config.TUNE_MIN_SLOW, dead * config.TUNE_SLOW_RATIO)
+        self.tuned = True
 
     def to_profile(self):
         """Snapshot the live settings, calibration, and spell as a Profile."""
@@ -166,7 +181,10 @@ class Engine:
             sensitivity=self.mapper.calibration.sensitivity,
         )
         calibration = asdict(self.calibration_box) if self.calibrated else None
-        return Profile(calibration=calibration, gestures=list(self.gestures), settings=settings)
+        mouse = self.pointers["mouse"][1] if "mouse" in self.pointers else None
+        pointer = PointerSettings(style=self.pointer_style or config.POINTER_STYLE,
+                                  dead_speed=mouse.dead_speed if (mouse and self.tuned) else None)
+        return Profile(calibration=calibration, gestures=list(self.gestures), settings=settings, pointer=pointer)
 
     def persist(self):
         if self.store is None:
@@ -288,6 +306,29 @@ class Engine:
     def _step(self, t, hand):
         self._run_commands()
         result = StepResult()
+        if self.tuner is not None and self.tuner.active:
+            if self.cursor is not None:
+                self._emit(self._detectors_reset(self.modes.mode), result)
+            speed = None
+            if hand is not None:
+                target = self.mapper.target(hand)
+                mouse = self.pointers.get("mouse", (None, self.filter))[1]
+                saved = getattr(mouse, "cursor", None)
+                mouse.update(self.pointers["mouse"][0].target(hand) if "mouse" in self.pointers else target, t)
+                if saved is not None:
+                    mouse.cursor = saved  # measuring only: the cursor stays put
+                speed = mouse.speed
+            self.tuner.update(speed, t)
+            if self.tuner.state == "done":
+                dead, slow, p95 = self.tuner.result
+                self.set_dead_speed(dead, slow)
+                self.tuner.cancel()
+                self.notice = f"Tuned to your hand: resting tremor {p95:.0f}, threshold set to {dead:.0f}."
+                self.persist()
+            result.cursor = self.cursor
+            result.prompt, result.message = self.tuner.prompt, self.tuner.message
+            result.lines.append(f"tuning: {self.tuner.state}")
+            return result
         if self.calibrator.active:
             if self.cursor is not None:
                 self._emit(self._detectors_reset(self.modes.mode), result)

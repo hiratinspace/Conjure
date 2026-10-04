@@ -113,10 +113,11 @@ class SettingsPanel:
         self.metrics_button = BigButton(stage, "Metrics", actions["metrics"], width=10)
         self.metrics_button.grid(row=0, column=1, padx=5)
         BigButton(stage, "Actions", actions["actions"], width=8).grid(row=0, column=2, padx=5)
+        BigButton(stage, "Calibrate", actions["calibrate"], width=9).grid(row=0, column=3, padx=5)
 
         actions_row = tk.Frame(self.win, bg=BG)
         actions_row.grid(row=11, column=0, columnspan=4, pady=(8, 16))
-        for i, (label, fn) in enumerate((("Calibrate", actions["calibrate"]), ("Record spell", actions["record_spell"]),
+        for i, (label, fn) in enumerate((("Tune", actions["tune"]), ("Record spell", actions["record_spell"]),
                                          ("Preview", actions["toggle_preview"]), ("Hide", actions["hide"]),
                                          ("Quit", actions["quit"]))):
             BigButton(actions_row, label, fn, width=10 if i < 2 else 7).grid(row=0, column=i, padx=5)
@@ -149,7 +150,10 @@ class SettingsPanel:
         self.metrics_button.configure(text=f"Metrics: {'on' if self.engine.show_metrics else 'off'}")
         self.metrics_button.set_selected(self.engine.show_metrics)
         spell = f"spell: {v['spell']}" if v["spell"] else "no spell recorded"
-        cal = "calibrated" if v["calibrated"] else "not calibrated (using the default area)"
+        if v["pointer_style"] == "mouse":
+            cal = "tuned to your hand" if self.engine.tuned else "not tuned yet (press Tune)"
+        else:
+            cal = "calibrated" if v["calibrated"] else "not calibrated (press Calibrate)"
         self.status.configure(text=f"Mode: {v['mode'].value}  |  {spell}  |  {cal}")
 
     def show(self):

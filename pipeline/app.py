@@ -86,7 +86,8 @@ class App:
         self.panel = SettingsPanel(self.root, engine, {
             "calibrate": self.calibrate, "record_spell": self.record_spell,
             "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit,
-            "tutorial": self.toggle_tutorial, "metrics": self.toggle_metrics, "actions": self.toggle_action_bar},
+            "tutorial": self.toggle_tutorial, "metrics": self.toggle_metrics, "actions": self.toggle_action_bar,
+            "tune": self.tune},
             feedback.settings, feedback.toggle)
         if show_preview:
             self.toggle_preview()
@@ -157,6 +158,10 @@ class App:
     def calibrate(self):
         self.engine.submit(lambda e: e.calibrator.start())
         log.info("calibrating: follow the prompts on screen")
+
+    def tune(self):
+        self.engine.submit(lambda e: e.tuner.start())
+        log.info("tuning: rest your hand and follow the prompts on screen")
 
     def record_spell(self):
         self.engine.submit(lambda e: e.recorder.start())

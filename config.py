@@ -63,6 +63,16 @@ MOUSE_FAST_SPEED = 1500  # ... to a quick flick here
 MOUSE_LOW_GAIN = 0.6  # careful movement is scaled down for precision
 MOUSE_HIGH_GAIN = 3.0  # a quick flick is scaled up to cross the screen
 
+# Auto-tune (pipeline/tuner.py): dead zone = margin x the 95th percentile of the resting hand's speed
+TUNE_COUNTDOWN_S = 2.0
+TUNE_MEASURE_S = 5.0
+TUNE_MARGIN = 1.3
+TUNE_MIN_DEAD = 60.0  # base px/s
+TUNE_MAX_DEAD = 400.0
+TUNE_SLOW_RATIO = 2.5  # careful-movement band starts at this x the dead zone ...
+TUNE_MIN_SLOW = 250.0  # ... but never below this
+TUNE_MOVING_SPEED = 600.0  # a resting p95 above this means the hand was moving: measure again
+
 # Cursor mapping (CONJ-5). Naive box until the user calibrates (CONJ-12): inset 15% so the
 # cursor reaches every screen edge while the hand stays fully in frame (tracking drops at
 # the frame edge). Normalized frame coordinates, same fields as profile.json calibration.
