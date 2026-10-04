@@ -60,3 +60,10 @@ PRECISION_SPEED_PX_S = 60  # at or below this hand speed, full precision gain
 FAST_SPEED_PX_S = 400  # at or above this, gain 1 and the cursor re-anchors to the hand
 REANCHOR_RATE = 0.15  # fraction of the precision offset removed per fast frame
 POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinch latch)
+
+# Click modes (contract: pipeline/modes.py)
+DEFAULT_CLICK_MODE = "pinch"  # "pinch" | "dwell" | "custom"
+
+# Dwell (CONJ-8)
+DWELL_MS = 1000  # hold still this long to click
+DWELL_RADIUS_PX = 30  # "still" means the cursor stays inside this radius

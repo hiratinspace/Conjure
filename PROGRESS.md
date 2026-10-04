@@ -31,6 +31,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 | Gate | Status | Evidence / pending |
 | --- | --- | --- |
+| Phase B (CONJ-5..6) | **code done, physical gate deferred** | Headless: traversal replay reaches all edges, idle jitter 1.3 px mean. Pending: live cursor feel (<100 ms lag, smooth), the hour-3 go/no-go. |
 | Phase A (CONJ-1..4) | **passed with deferrals** | Live: 30 fps with preview, track ~15 ms, either hand, sticky with two hands. Recorded: `traversal`, `idle`, `exits` (stopped at 51 s of 70, but holds 12 clean exit/re-entry cycles). **Deferred by the user** (build continues meanwhile): `pinches`, `small_range` recordings. |
 
 ## Shared contracts (frozen before Phase C)
@@ -38,9 +39,9 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | Contract | Module | Status |
 | --- | --- | --- |
 | LandmarkFrame | `pipeline/landmarks.py` | frozen (field-list tripwire test in `tests/test_landmarks.py`) |
-| Mode state machine | `pipeline/modes.py` | todo |
-| ClickEvent | `pipeline/events.py` | todo |
-| profile.json schema | `pipeline/profile_schema.py` | todo |
+| Mode state machine | `pipeline/modes.py` | frozen. Pause is tracked by reason (hand_lost, user); resume restores the click mode. Thread-safe. |
+| ClickEvent | `pipeline/events.py` | frozen. Adds `amount` (scroll steps) to the plan's `{action, position}`: scroll needs a magnitude. Consumed only by `pipeline/action_mapper.py`. |
+| profile.json schema | `pipeline/profile_schema.py` | frozen, version 1. All-or-nothing validation. **Deviation:** gesture samples are `[3][T][21][3]` sequences, not `[3][21][3]` poses (see open questions). |
 
 ## Decisions
 
@@ -66,5 +67,5 @@ Permissions belong to the runner app. Demo from the same runner listed here, or 
 
 ## Open questions
 
-- None.
+- **Gesture template shape.** The build plan's table says `samples[3][21][3]` (three single poses), but CONJ-10 records a *motion* and CONJ-11 matches with a sliding window, which needs sequences. Implemented as `samples[3][T][21][3]`; a static pose is T = 1, so both readings work. Confirm, or say if the custom gesture should be a static pose only.
 
