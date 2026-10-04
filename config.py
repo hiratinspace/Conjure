@@ -101,8 +101,15 @@ GESTURE_ACTIVE_THRESHOLD = 0.25  # frames differing from rest by more than this 
 GESTURE_MARGIN_FRAMES = 3  # kept on each side of the trimmed gesture
 GESTURE_THRESHOLD_SCALE = 1.5  # match threshold = this x the largest difference between the 3 samples
 GESTURE_THRESHOLD_FLOOR = 0.15
-GESTURE_THRESHOLD_CEILING = 0.6
+GESTURE_THRESHOLD_CEILING = 0.35  # real movement came within 0.40 of a curl gesture (exits recording)
 GESTURE_DISTINCT_FACTOR = 1.5  # warn if the gesture peaks less than this x threshold away from rest
 # Stock spell names offered when naming a recorded gesture (CONJ-17); pre-generated audio
 # exists for these (CONJ-18). Original names, no franchise terms.
 STOCK_SPELL_NAMES = ["Illuminate", "Summon", "Unlock", "Levitate", "Banish", "Ignite"]
+
+# Custom gesture matching (CONJ-11)
+GESTURE_SCALES = (0.75, 1.0, 1.33)  # window lengths tried, relative to each recorded sample
+GESTURE_MATCH_SCALE = 1.0  # runtime multiplier on the recorded threshold (>1 = more forgiving)
+GESTURE_REARM_FACTOR = 1.5  # after a match, distance must exceed threshold x this before the next
+GESTURE_REFRACTORY_S = 1.0  # minimum time between matches
+GESTURE_BUFFER_FRAMES = 90  # ~3 s of live shapes kept for matching

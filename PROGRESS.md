@@ -16,7 +16,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | CONJ-8 | Dwell click mode | C (Dev A) | code done | Hold within 30 px for 1 s; must leave the circle before the next dwell; hand re-entry never clicks by itself. Countdown ring drawn by a transparent, click-through, always-on-top Tk overlay (pipeline now runs on a worker thread, Tk owns the main thread). Mode toggle: `m` in the preview window (settings panel later). Physical AC (ring visible, clicks pass through the overlay) pending. |
 | CONJ-9 | Drag and scroll gestures | C (Dev A) | code done | Drag: confirmed pinch + 25 px of movement presses at the pre-pinch position, release ends it (in CONJ-7). Scroll: hold the V pose 200 ms, then hand height relative to that point is a joystick (dead zone 0.15 hand sizes, up to 60 steps/s, same feel at any camera distance); cursor frozen while scrolling; works in every click mode. Recordings never scroll. Physical AC pending. |
 | CONJ-10 | Custom gesture recorder | C (Dev B) | code done | `g` in the preview starts it; on-screen prompts walk through 3 samples (2 s countdown captures the rest hand, 2 s window, trimmed to the frames that differ from rest; indistinct samples are redone). Normalization (wrist origin, hand size 1) is translation- and scale-invariant (tested). Threshold auto-derived from sample consistency. Warns if the gesture resembles the last 15 s of ordinary movement. Naming window with big stock-name buttons. Kept in memory until CONJ-13 persists it. Physical AC pending. |
-| CONJ-11 | Custom gesture recognition engine | C (Dev B) | todo | |
+| CONJ-11 | Custom gesture recognition engine | C (Dev B) | code done | Multi-scale window match (0.75/1/1.33x each sample), generous auto threshold (floor 0.15, ceiling 0.35), runtime `match_scale`, rearm hysteresis so a held pose fires once, 1 s refractory, click at the gesture's start position. Headless: 0 false matches on traversal/idle/exits; >= 8/10 noisy, varied-speed synthetic casts fire within 500 ms; 0.6 ms/frame. Physical AC (10 real casts) pending. |
 | CONJ-12 | Range-of-motion calibration | C (Dev B) | todo | |
 | CONJ-13 | Profile store (local JSON) | D | todo | |
 | CONJ-14 | Settings panel | D | todo | |
@@ -61,6 +61,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 - **Scroll will use the two-finger V pose, not a fist.** A fist is the user's resting travel pose, so it would scroll constantly. The V pose (index + middle out, ring + pinky folded) never occurs by accident in any recording (max 1 frame).
 
 - **UI architecture: Tk on the main thread, pipeline on a worker thread.** macOS needs every window on the main thread, and the dwell ring must be drawn on screen, not in the debug preview. The overlay is a full-screen transparent Tk window made click-through and always-on-top via AppKit (installed with pynput). The preview window is now rendered in Tk (PPM image, ~2 ms/frame). `--no-ui` keeps the single-thread OpenCV loop as a fallback.
+
+- **Custom gesture safety margin, measured.** For an open-curl-open gesture, the closest any stretch of real ordinary movement came was 0.40 (exits) and 0.60 (traversal), against a 0.15 threshold for consistent samples. The threshold ceiling is 0.35 (below 0.40) and the recorder warns when the three casts are inconsistent enough to hit it. A pinky-only wiggle is rejected at recording time as indistinct from a resting hand.
 
 ## Granted runners (CONJ-2 AC)
 

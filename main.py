@@ -21,6 +21,7 @@ from pipeline.dwell import DwellDetector
 from pipeline.engine import Engine
 from pipeline.filter import PointerFilter
 from pipeline.frame_source import CameraError, FrameSource
+from pipeline.gesture_matcher import GestureMatcher
 from pipeline.gesture_recorder import GestureRecorder
 from pipeline.hand_tracker import HandTracker
 from pipeline.injector import PynputInjector, RecordingInjector
@@ -84,6 +85,12 @@ def make_gesture_recorder():
                            config.GESTURE_THRESHOLD_CEILING, config.GESTURE_DISTINCT_FACTOR)
 
 
+def make_gesture_matcher():
+    return GestureMatcher(config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.GESTURE_SCALES,
+                          config.GESTURE_MATCH_SCALE, config.GESTURE_REARM_FACTOR, config.GESTURE_REFRACTORY_S,
+                          config.GESTURE_BUFFER_FRAMES)
+
+
 def make_injector(dry_run):
     if dry_run:
         return RecordingInjector()
@@ -95,7 +102,7 @@ def make_engine(injector, timer, screen_size, modes=None):
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
     return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, ActionMapper(injector, modes),
                   modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), make_scroll(),
-                  make_gesture_recorder(), timer,
+                  make_gesture_recorder(), make_gesture_matcher(), timer,
                   config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
 
 

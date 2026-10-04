@@ -20,6 +20,8 @@ the terminal.
 
 import numpy as np
 
+import itertools
+
 from pipeline.gestures import RESAMPLE_N, auto_threshold, normalize, sequence_distance, shape_distance
 
 IDLE, COUNTDOWN, RECORD, DONE = "idle", "countdown", "record", "done"
@@ -124,6 +126,10 @@ class GestureRecorder:
         fire during ordinary use, and a warning says so."""
         threshold = auto_threshold(self.samples, self.threshold_scale, self.threshold_floor, self.threshold_ceiling)
         warnings = []
+        spread = max(sequence_distance(a, b) for a, b in itertools.combinations(self.samples, 2))
+        if spread * self.threshold_scale > self.threshold_ceiling:
+            warnings.append("Your three casts were quite different from each other, so this spell may be hard "
+                            "to trigger. Recording it again, more consistently, will help.")
         for sample, rest in zip(self.samples, self.rests):
             peak = max(shape_distance(f, rest) for f in sample)
             if peak < threshold * self.distinct_factor:

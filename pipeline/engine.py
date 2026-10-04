@@ -27,14 +27,15 @@ class StepResult:
     cursor: tuple = None  # screen position after this frame, or None if the hand was not tracked
     events: list = field(default_factory=list)  # ClickEvents emitted this frame
     dwell_progress: float = None  # 0..1 while a dwell is counting down (drives the ring)
+    spell: str = ""  # name of the custom gesture cast this frame (spell flash, voice)
     prompt: str = ""  # big instruction text for the overlay (gesture recording, calibration)
     message: str = ""  # secondary text under the prompt
     lines: list = field(default_factory=list)  # overlay text
 
 
 class Engine:
-    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, timer,
-                 aspect, edge_margin):
+    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, matcher,
+                 timer, aspect, edge_margin):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -44,6 +45,7 @@ class Engine:
         self.dwell = dwell
         self.scroll = scroll
         self.recorder = recorder
+        self.matcher = matcher
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.ordinary = deque(maxlen=ORDINARY_FRAMES)
@@ -60,6 +62,8 @@ class Engine:
             return self.pinch.reset(self.cursor)
         if mode == Mode.DWELL:
             self.dwell.reset()
+        if mode == Mode.CUSTOM:
+            self.matcher.reset()
         return []
 
     def finish_recording(self, name):
@@ -67,10 +71,14 @@ class Engine:
         from pipeline.profile_schema import GestureTemplate
 
         samples, threshold, warnings = self.recorder.result(ordinary=list(self.ordinary))
-        self.gestures = [GestureTemplate(name=name, samples=samples, threshold=threshold)]
+        self.set_gestures([GestureTemplate(name=name, samples=samples, threshold=threshold)])
         self.recorder.cancel()
         self.notice = " ".join(warnings) or f"Spell '{name}' is ready. Switch to custom mode to cast it."
         return self.gestures[0], warnings
+
+    def set_gestures(self, gestures):
+        self.gestures = list(gestures)
+        self.matcher.set_templates(self.gestures)
 
     def submit(self, fn):
         """Run fn(engine) on the pipeline thread at the start of the next frame (thread-safe)."""
@@ -153,6 +161,12 @@ class Engine:
                 self._emit(self.dwell.update(self.cursor, t), result)
                 result.dwell_progress = self.dwell.progress
                 result.lines.append(self.dwell.status())
+            elif mode == Mode.CUSTOM:
+                fired = self.matcher.update(hand, t, self.filter)
+                self._emit(fired, result)
+                if fired:
+                    result.spell = self.matcher.last_match
+                result.lines.append(self.matcher.status())
 
         x, y = self.cursor
         result.lines.append(f"{hand.handedness} hand  conf {hand.confidence:.2f}  cursor {x:.0f},{y:.0f}")
