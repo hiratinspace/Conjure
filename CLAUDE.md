@@ -10,93 +10,70 @@ Conjure is an 18-hour hackathon project. It turns a webcam into a mouse replacem
 - `docs/backlog.md`: tickets CONJ-1 to CONJ-20, each with dependencies and acceptance criteria
 - `docs/build-plan.md`: shared contracts, build order (Phases A to F), stage gates, validation table
 
-When they conflict, build-plan.md governs order, backlog.md governs "done" (acceptance criteria are the definition of done), and scope.md governs intent. Work ticket by ticket in build-plan order and never cross a stage gate that hasn't passed. `PROGRESS.md` tracks ticket status, decisions, and open questions; keep it current.
+When they conflict, build-plan.md governs order, backlog.md governs "done" (acceptance criteria are the definition of done), and scope.md governs intent. `PROGRESS.md` tracks ticket status, stage gates, decisions (with the measurements behind them), and open questions; keep it current and read its decisions before changing any threshold. `RUNBOOK.md` is the demo-day procedure.
 
 ## Stack and constraints
 
-- Python 3.11+, macOS only (Apple Silicon). Single process, on-device, no backend, no database, no accounts.
-- MediaPipe for tracking via the Tasks API `HandLandmarker` (VIDEO mode) with the committed model `models/hand_landmarker.task`. mediapipe is pinned to 0.10.35 because 1.0.x aborts on macOS; see PROGRESS.md decisions before changing it. The legacy `mp.solutions.hands` API does not exist in this version.
-- Dependencies are limited to mediapipe, opencv (the `opencv-contrib-python` build mediapipe requires), pynput, and pytest. Ask before adding anything else.
-- OpenCV for capture and the debug preview, pynput for input injection (Quartz CGEvent as fallback), Tkinter or PyQt for the settings overlay, and a static local HTML "spellbook" demo page.
-- Persistence is one local JSON file (`profile.json`).
-- The only network call is ElevenLabs TTS (CONJ-18). Read the API key from an env var. Wrap the call in a 1 s timeout and play the audio asynchronously. On any exception, fall back to pre-generated local audio files. The core pointer must never touch the network.
-- macOS Camera and Accessibility permissions are tied to the terminal or runner app. Switching runners silently revokes them: the cursor still moves but clicks never land. `scripts/check_permissions.py` (CONJ-2) is the smoke test.
+- Python 3.11+ (developed on 3.12), macOS only, one M1 laptop. Single process, on-device, no backend, no accounts.
+- Dependencies are exactly those in `requirements.txt` (mediapipe, opencv-contrib-python, numpy, pynput, pytest). Ask before adding anything. pyobjc (`Quartz`, `AppKit`) arrives with pynput and is used directly; Tk is stdlib; audio uses macOS `afplay` and `say`.
+- **mediapipe is pinned to 0.10.33.** 1.0.x aborts on macOS, and 0.10.35 ships a Google telemetry uploader that makes network calls (`tests/test_no_network.py` scans for it). It only has the Tasks API (`HandLandmarker`, VIDEO mode) with the committed model `models/hand_landmarker.task`; `mp.solutions.hands` does not exist.
+- **The only network code is `pipeline/voice_elevenlabs.py`** (a test fails if any other module imports networking code). The key comes only from `ELEVENLABS_API_KEY`; never ask for it in chat or write it to a file.
+- macOS permissions belong to the runner app. Terminal.app is the verified demo runner. Without Accessibility the cursor may move while clicks silently vanish; `scripts/check_permissions.py` checks it.
 
 ## Commands
 
 ```bash
 python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python main.py --preview               # run with the debug window (p hides it, q quits)
-.venv/bin/python main.py --replay recordings/traversal.jsonl   # run the pipeline from a recording
-.venv/bin/python scripts/record_session.py --list   # record named sessions for replay tests
-.venv/bin/python scripts/check_permissions.py    # CONJ-2 smoke test (run from Terminal.app, the demo runner)
-.venv/bin/python -m pytest                       # all tests (headless)
-.venv/bin/python -m pytest tests/test_timing.py::test_window_resets_after_each_summary   # one test
+.venv/bin/python main.py --spellbook                 # the app: overlay + settings panel (+ demo page in the browser)
+.venv/bin/python main.py --preview                   # plus the debug preview (keys: p m g c s q)
+.venv/bin/python main.py --replay recordings/idle.jsonl --preview      # drive the app from a recording (dry run)
+.venv/bin/python main.py --replay recordings/idle.jsonl --quit-after 6 # UI smoke test
+.venv/bin/python main.py --no-ui --preview           # fallback: single thread, OpenCV preview, no overlay
+.venv/bin/python -m pytest -q                        # all tests, headless (~7 s)
+.venv/bin/python -m pytest tests/test_pinch.py -k traversal   # a subset
+.venv/bin/python scripts/record_session.py --list    # record named landmark sessions for replay tests
+.venv/bin/python scripts/check_permissions.py        # camera / Accessibility / click smoke test
+.venv/bin/python scripts/diagnose_tracking.py        # what the camera and tracker see, saved to logs/
+.venv/bin/python scripts/pregenerate_voices.py       # render voice clips (needs ELEVENLABS_API_KEY)
 ```
-
-The loop consumes `(timestamp, image, LandmarkFrame | None)` from either the live camera + tracker or a JSONL recording, so every stage after the tracker runs identically on recorded sessions. Recordings keep no-hand frames, so pauses and exits replay faithfully. Synthetic hands for tests come from `tests/synthetic.py`.
-
-Per-stage timings are logged every few seconds by `pipeline/timing.py`; wrap every new loop stage in `timer.stage(name)` so the 33 ms budget stays visible.
 
 ## Architecture
 
-The app is one per-frame pipeline in `main.py`, with one module per stage under `pipeline/`. Defaults live in `config.py`.
+**Threads.** macOS needs every window on the main thread, so Tk owns it (`pipeline/app.py`: overlay, settings panel, preview, naming window), and camera + tracking + engine run on a worker thread. They share only `UiState` (`pipeline/ui_state.py`: a per-frame snapshot plus an event queue) and the thread-safe `ModeState`. The UI never mutates engine state directly: it calls `engine.submit(fn)`, which runs `fn(engine)` on the pipeline thread at the next frame. `--no-ui` runs everything on one thread with the OpenCV preview.
 
-```
-FrameSource → HandTracker → Filter → GestureEngine → ActionMapper → Injector
-```
+**Per frame.** `main.run_pipeline` yields `(t, image, LandmarkFrame | None)` from the camera (`frame_source` + `hand_tracker`) or a JSONL replay (`recorder`), and calls `Engine.step(t, hand)` (`pipeline/engine.py`). The engine runs submitted commands; hands frames to the calibrator or gesture recorder if one is active (no cursor or clicks then); applies auto-pause; checks scroll (which freezes the cursor); maps and filters the cursor (`cursor_mapper`, `filter`); then runs the active click mode's detector (`pinch`, `dwell`, or `gesture_matcher`). Detectors return `ClickEvent`s, which go to the single `ActionMapper` and then the injector. `StepResult` carries overlay text, prompts, dwell progress, and the cast spell name. Every factory lives in `main.py` (`make_engine`, `make_pinch`, ...), and tests build engines through them, so tests run the live wiring.
 
-The GestureEngine runs pinch detection, the dwell timer, and custom-gesture template matching side by side.
+**Frozen contracts** (implemented once; import them, never fork them; each has a field-list tripwire test):
 
-Four shared contracts must stay single-owner because both developer tracks consume them:
+1. `LandmarkFrame` (`pipeline/landmarks.py`): 21 normalized `(x, y, z)` in mirrored frame coords, handedness (corrected by `SWAP_HANDEDNESS`), confidence, monotonic timestamp. Changing it invalidates every recording.
+2. `Mode` / `ModeState` (`pipeline/modes.py`): `PINCH | DWELL | CUSTOM | PAUSED`. Pauses are tracked by reason (`HAND_LOST`, `USER`), so auto-resume never cancels a user pause.
+3. `ClickEvent` (`pipeline/events.py`): `{action, position, amount}`; `amount` (scroll steps) is an addition to the build plan.
+4. `profile.json` schema (`pipeline/profile_schema.py`), version 1, all-or-nothing validation. Deviation: gesture samples are sequences `[3][T][21][3]`, not poses (open question in PROGRESS.md). `pipeline/profile_store.py` saves atomically and turns any bad file into defaults plus an on-screen warning.
 
-1. **`LandmarkFrame`** (CONJ-4): 21 normalized landmarks, handedness, confidence, and timestamp. It is frozen after Stage 1, and every downstream stage imports it.
-2. **Mode state machine**: one enum, `PINCH | DWELL | CUSTOM | PAUSED`, in one module. CONJ-8, CONJ-11, CONJ-14 and CONJ-15 all write to it. Do not create a second copy of the mode state.
-3. **`ClickEvent`**: `{action: left|right|double|drag_start|drag_end|scroll, position}`. All three click paths emit this type into one ActionMapper, so downstream code never cares which mode fired.
-4. **`profile.json`**: versioned schema with the fields `version`, `calibration {x_min,x_max,y_min,y_max}`, `gestures[] {name, samples[3][21][3], threshold}`, and `settings {click_mode, dwell_ms, dwell_radius_px, filter{min_cutoff,beta,precision_gain}, sensitivity}`. Write atomically (temp file, then rename). A corrupt, missing, or old-version file loads defaults with a warning and never crashes.
+**Config layering.** `config.py` holds every tunable. At startup `venue.json` overrides it by name (`pipeline/venue.py`; typos are logged and skipped; `STAGE_CLICK_MODE` forces the launch mode). Then `profile.json` sets the user-facing values (click mode, dwell, filter, sensitivity, calibration, spell). Settings panel changes go through `pipeline/settings_model.py` and are saved immediately.
 
-## Design decisions that are easy to get wrong
+## Decisions that are easy to undo by accident
 
-- **The control point is the index MCP knuckle, not a fingertip.** A fingertip moves during a pinch.
-- **The One Euro filter owns a position-history ring buffer** (about 10 frames), exposed as `filter.position_at(t)`. A pinch click fires at the *pre-pinch* position latched from this buffer.
-- **Pinch** distance is thumb tip to index tip, normalized by hand size (wrist to middle MCP). It uses separate engage and release thresholds plus a ~150 ms confirmation hold, which suppresses false clicks during fast movement.
-- **Dwell** requires the cursor to leave and return between clicks, so holding still never fires repeated clicks.
-- **Custom gestures** are normalized for position and scale (subtract the wrist position, divide by hand size). Matching uses a sliding window, mean landmark distance or DTW, a generous configurable threshold, and a refractory period. Support one gesture only, not a library.
-- **Two hands in frame:** the highest-confidence hand wins, and the choice is sticky. Switching back and forth between hands makes the cursor jump.
-- **Low confidence or a lost hand must go to `PAUSED`,** with the injector inert. It must never reach a frozen-but-armed state where a noise frame can click. Treat partial or edge frames as low confidence, not as movement.
-- **Calibration** maps a small comfortable box (about 3 inches, forearm rested) to the full screen, clamped at the edges. It sits behind a `Calibration` interface so it can replace the naive linear map.
-- **Frame budget** is about 33 ms per frame for the whole loop: about 20 ms for tracking and about 10 ms for everything else.
-- **Large targets:** settings controls must be ≥60 px, and spellbook targets ≥80 px. Both must be usable with Conjure itself in dwell mode.
-- **Tunables live in config or the profile,** never hardcoded. This covers filter params, thresholds, dwell time and radius, and sensitivity.
+Each was forced by real recordings; PROGRESS.md has the numbers.
+
+- **The control point is the index MCP knuckle**, not a fingertip.
+- **A pinch counts only with the other fingers open** (mean extension > 1.4). The user's natural pointing pose is a curled hand, which puts the thumb on the index finger. So a fist cannot be the scroll gesture: scroll is the two-finger V pose, used like a joystick.
+- **Edge trust is per fingertip**: only the pinching fingertip joints must be inside the frame. The wrist is usually below the frame.
+- **A pinch click lands where the fingers started closing**, found by walking back through the ratio history and read from `filter.position_at(t)`. Drag distance is measured from the confirmation point, and a drag starts only while the pinch is firmly closed.
+- **Precision gain below 1 drifts the cursor away from the hand**: it is re-anchored when the hand moves fast, and snapped to a screen edge when the raw target is pinned there.
+- **Custom gestures compare hand shape only** (wrist subtracted, size normalized), so cursor travel is never a gesture. The threshold ceiling (0.35) sits below the closest real ordinary movement measured (0.40).
+- **Dwell, gestures, and auto-pause all need movement or a clean re-entry before acting again**, so stillness or a returning hand never clicks by itself.
+- **Large targets**: panel controls at least 60 px (Aqua buttons ignore height, so `BigButton` is a styled Label); spellbook targets at least 96 px, and every step is completable with plain clicks.
+- **Frame budget**: 33 ms total; tracking ~15 ms with one hand (`MAX_HANDS = 1`; two hands cost ~26 ms). Wrap new loop stages in `timer.stage(name)`.
 
 ## Validation
 
-Everything that can run without a hand gets a pytest (filter jitter, pinch hysteresis, dwell repeat-fire, gesture normalization, profile fallback, calibration mapping), driven by synthetic landmark streams or by real sessions recorded to JSONL in `recordings/` and replayed headless. The physical gates below are run by a human at each stage gate:
-
-- 60 s full-screen traversal: 0 false clicks or matches
-- 20 pinches: at least 19 fire exactly once, at the pre-pinch position
-- 30 s idle jitter: within ±3 px
-- 10 casts of the custom gesture: at least 8 fire within 500 ms
-- kill and relaunch: the profile restores with no re-setup
-
-The full table is in `docs/build-plan.md` section 4.
+Physical acceptance criteria are checked by a human at stage gates (PROGRESS.md lists what is still deferred). Everything else is a pytest, mostly driven by real sessions in `recordings/` (`traversal_first`, `traversal`, `idle`, `exits`) and synthetic hands from `tests/synthetic.py` (`make_hand`, `stream`). The build plan's validation rows exist as headless tests: zero false clicks, scrolls, and spell matches on every recording; idle jitter; a calibrated small box reaching every edge; kill-and-relaunch; exit and re-entry timing. New thresholds must keep all of them passing. Add new recordings with `scripts/record_session.py` and keep old ones as fixtures rather than overwriting them.
 
 ## Scope guardrails
 
-These are out of scope; treat them as roadmap items and do not build them:
-
-- Windows or Linux support
-- an on-screen keyboard
-- multiple custom gestures or macros
-- voice or eye tracking
-- per-app profiles
-- an installer or code signing
-- macOS Accessibility API integration
-- any cloud features
-- multi-monitor or two-hand control
-
-After the hour-16 freeze (CONJ-19), only config changes are allowed. Venue thresholds go in `venue.json`.
+Out of scope, so do not build: Windows or Linux support, an on-screen keyboard, multiple custom gestures or macros, voice or eye tracking, per-app profiles, an installer or code signing, macOS Accessibility API integration, any cloud features, multi-monitor or two-hand control. After the hour-16 freeze (CONJ-19) only `venue.json` changes.
 
 ## Git workflow
 
-The remote is `github.com:hiratinspace/Conjure` (private), on the `main` branch. After each meaningful change, commit and push it. One commit per ticket, titled `CONJ-n: <summary>`, with a body that says what changed and why. Never commit anything in `docs/`.
+The remote is `github.com:hiratinspace/Conjure` (private), on the `main` branch. Commit and push after each meaningful change, titled `CONJ-n: <summary>` when it belongs to a ticket, with a body that says what changed and why. Never commit anything in `docs/`. Recordings in `recordings/` and voice clips in `audio/voice/` are committed; `profile.json`, `logs/`, and `audio/cache/` are not.
