@@ -44,6 +44,9 @@ PROFILE_PATH = ROOT / "profile.json"
 # Spellbook demo screen (CONJ-16): one offline HTML file
 SPELLBOOK_PATH = ROOT / "spellbook" / "index.html"
 
+# Demo-day overrides (CONJ-19), applied at startup by pipeline/venue.py
+VENUE_PATH = ROOT / "venue.json"
+
 # Recordings (record/replay harness)
 RECORDINGS_DIR = ROOT / "recordings"
 

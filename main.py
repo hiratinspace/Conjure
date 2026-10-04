@@ -49,6 +49,8 @@ def parse_args(argv):
     parser.add_argument("--replay", metavar="PATH", help="run from a JSONL recording instead of the camera")
     parser.add_argument("--profile", metavar="PATH", default=str(config.PROFILE_PATH),
                         help="profile file (calibration, spell, settings)")
+    parser.add_argument("--venue", metavar="PATH", default=str(config.VENUE_PATH),
+                        help="demo-day threshold overrides (default venue.json)")
     parser.add_argument("--no-inject", action="store_true", help="dry run: never move the real cursor or click")
     parser.add_argument("--inject", action="store_true", help="with --replay: drive the real cursor from the recording")
     parser.add_argument("--spellbook", action="store_true",
@@ -224,6 +226,11 @@ def run_pipeline(args, engine, timer, permissions, on_frame, should_stop):
 
 
 def run(args):
+    from pathlib import Path
+
+    from pipeline.venue import apply_venue
+
+    _, venue_errors, stage_mode = apply_venue(Path(args.venue), config)
     timer = StageTimer(config.FRAME_BUDGET_MS, config.TIMING_LOG_INTERVAL_S)
     screen_size = main_screen_size()
     dry_run = args.no_inject or (args.replay and not args.inject)
@@ -237,6 +244,10 @@ def run(args):
     engine.store = store
     if warning:
         engine.notice = warning
+    if stage_mode:
+        modes.set_click_mode(Mode(stage_mode))
+    if venue_errors:
+        engine.notice = f"venue.json has {len(venue_errors)} problem(s); see the terminal."
     feedback = make_feedback(engine, modes, enabled=not dry_run)
     log.info("screen %dx%d, %s", *screen_size, "dry run (no real input)" if dry_run else "driving the real cursor")
 
