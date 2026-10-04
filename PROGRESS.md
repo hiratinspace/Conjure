@@ -9,7 +9,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | CONJ-1 | Project scaffold & dependency install | A | done (1 laptop) | Verified on the M1 laptop. Second-laptop AC waived: only one laptop available. |
 | CONJ-2 | macOS Camera + Accessibility permissions | A | done | All checks pass from Terminal.app on the M1. Second-laptop AC waived (one laptop). |
 | CONJ-3 | Webcam capture loop + debug preview | A | done | Phase A gate: 30 fps with preview on (work ~28 ms: track ~15, preview ~13), 30 fps with preview hidden via `p` while capture continues. |
-| CONJ-4 | MediaPipe hand landmark extraction | A | code done | Tasks API HandLandmarker, num_hands=1 (MediaPipe's ROI tracking keeps the locked hand sticky and skips palm detection), plus a sticky `select_hand` gate; confidence gate in config. JSONL record/replay harness + `scripts/record_session.py` presets. Phase A gate: overlay renders on either hand (pass); labels were swapped, fixed with SWAP_HANDEDNESS. Two-hand stickiness check and recordings pending. |
+| CONJ-4 | MediaPipe hand landmark extraction | A | done | Tasks API HandLandmarker, num_hands=1 (MediaPipe's ROI tracking keeps the locked hand sticky and skips palm detection), plus a sticky `select_hand` gate; confidence gate in config. JSONL record/replay harness + `scripts/record_session.py` presets. Phase A gate: overlay renders on either hand (pass); labels were swapped, fixed with SWAP_HANDEDNESS. Two-hand stickiness passes live. |
 | CONJ-5 | Hand-to-cursor mapping | B | todo | |
 | CONJ-6 | One Euro filter + precision mode | B | todo | |
 | CONJ-7 | Pinch click with hysteresis | C (Dev A) | todo | |
@@ -26,6 +26,12 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | CONJ-18 | ElevenLabs voices + offline fallback | E | todo | |
 | CONJ-19 | Feature-freeze QA + venue rehearsal | F | todo | |
 | CONJ-20 | Backup video + runbook | F | todo | |
+
+## Stage gates
+
+| Gate | Status | Evidence / pending |
+| --- | --- | --- |
+| Phase A (CONJ-1..4) | **passed with deferrals** | Live: 30 fps with preview, track ~15 ms, either hand, sticky with two hands. Recorded: `traversal`, `idle`. **Deferred by the user** (build continues meanwhile): `exits`, `pinches`, `small_range` recordings. |
 
 ## Shared contracts (frozen before Phase C)
 
