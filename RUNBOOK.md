@@ -50,7 +50,7 @@ The comparison slide and the measured numbers are in `PITCH.md`.
 
 ## Panic key
 
-**F8** pauses Conjure from any app, instantly; F8 again resumes. Use it the moment the cursor does something you did not intend, then say "paused" and carry on. Every run also writes `logs/conjure-<time>.log`; if something went wrong in rehearsal, that file says what.
+**F8** pauses Conjure from any app, instantly; F8 again resumes. It needs **Input Monitoring** for Terminal (System Settings > Privacy & Security > Input Monitoring), which `check_permissions.py` now tests; the launch log says "panic key armed" when it works. Use it the moment the cursor does something you did not intend, then say "paused" and carry on. Every run also writes `logs/conjure-<time>.log`; if something went wrong in rehearsal, that file says what.
 
 ## Fallback ladder
 

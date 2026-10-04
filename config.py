@@ -100,7 +100,7 @@ PRECISION_GAIN = 0.3  # cursor gain when the hand is nearly still (1.0 disables 
 PRECISION_SPEED_PX_S = 60  # at or below this hand speed, full precision gain
 FAST_SPEED_PX_S = 400  # at or above this, gain 1 and the cursor re-anchors to the hand
 REANCHOR_RATE = 0.15  # fraction of the precision offset removed per fast frame
-JITTER_STILL_SPEED_PX_S = 150  # live jitter metric: a hand whose median speed is below this counts as still
+JITTER_STILL_SPEED_PX_S = 150  # live jitter metric: a hand whose median speed (base px/s) is below this is still
 PRECISION_RAMP_S = 0.2  # gain glides to its new value over ~this long; snapping feels haunted
 POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinch latch)
 STILL_DEADBAND_PX = 6  # sticky cursor: it holds still until the hand moves this far, so tremor cannot
@@ -117,8 +117,9 @@ TOUCH_DOWN_STRAIGHTNESS = 0.75  # bends below this = touch down
 TOUCH_UP_STRAIGHTNESS = 0.88  # straightens above this = lift (hysteresis gap)
 TOUCH_ARM_MS = 150  # point this long before a touch can count (a curled resting hand never taps)
 TOUCH_MIN_MS = 80  # shorter touches are tremor blips
-TOUCH_MAX_SPEED_PX_S = 250  # a touch only counts with the hand nearly still (aim, settle, tap). Measured:
-# false touch-downs in the recordings happened at 300-1500 px/s as the finger curled mid-movement
+TOUCH_MAX_SPEED_PX_S = 120  # a touch only counts with the hand nearly still (aim, settle, tap), in base px/s.
+# Measured: false touch-downs in the recordings happened at 300-1500 screen px/s (~140-700 base) as the
+# finger curled mid-movement
 TOUCH_DRAG_HOLD_MS = 200  # press this long before moving to drag; a touch that slides sooner is cancelled
 TAP_MAX_MS = 450  # touch and lift within this = tap = left click
 LONG_PRESS_MS = 700  # touch and hold still this long = right click
@@ -141,7 +142,9 @@ PINCH_RELEASE_RATIO = 0.40  # opening above this ends it (wide hysteresis gap = 
 PINCH_HOLD_MS = 80  # minimum time closed; shorter is a flicker
 PINCH_REQUIRE_OPEN_FINGERS = False  # optional stricter rule; off because it blocks curled-hand pinches
 PINCH_QUICK_CLOSE_MS = 200  # fingers must go from open (>= release ratio) to closed within this long
-PINCH_MAX_SPEED_PX_S = 1500  # no pinch starts during a fast sweep (hand leaving the frame, flinging)
+PINCH_MAX_SPEED_PX_S = 1000  # no pinch starts during a fast sweep. Hand speed is in base px/s (1000 = one
+# frame height per second), the same whichever pointer is active. Sweep on all fixtures: 1000 gives 99 of 111
+# real pinches with 0 false clicks; 1500 gives 102 but sits near where false clicks began in earlier data
 PINCH_OPEN_EXTENSION = 1.4  # other fingers' mean extension must exceed this (curled hand != pinch).
 # 1.2 let through 0.16-0.37 s fingertip contacts with half-open fingers (1.21-1.32) in the second
 # traversal recording; open-finger pinches measure ~1.8-2.1.

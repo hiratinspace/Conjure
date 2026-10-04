@@ -92,3 +92,31 @@ def test_pill_shows_the_pending_action():
     engine.next_action.set("right")
     result = engine.step(0.0, stream([(0.1, dict())])[0][1])
     assert result.next_action == "next: right click"
+
+
+def test_choice_is_kept_when_the_click_is_dropped_by_the_refractory_period():
+    engine, injector = dwell_engine()
+    engine.actions.refractory_s = 10.0  # make the next click certain to be dropped
+    engine.actions._t_last_click = 0.0
+    engine.next_action.set("right")
+    events, t = run(engine, settle((0.5, 0.7)), start=1.0)
+    assert events == [] and engine.next_action.choice == "right"  # dropped, so still pending
+    engine.actions.refractory_s = 0.0
+    events2, _ = run(engine, settle((0.6, 0.6)), start=t + 0.1)
+    assert [e.action for e in events2] == [Action.RIGHT]
+
+
+def test_locked_drag_survives_lifting_the_hand_but_not_a_user_pause():
+    from pipeline.modes import HAND_LOST, USER
+    engine, injector = dwell_engine()
+    engine.next_action.set("drag")
+    events, t = run(engine, settle((0.4, 0.7)))
+    assert [e.action for e in events] == [Action.DRAG_START]
+    for i in range(20):  # hand out of view: auto-pause, but the button stays held
+        engine.step(t + 0.1 + i / 30, None)
+    assert engine.modes.paused and engine.actions.dragging
+    assert injector.actions() == [("press", "left")]
+    from pipeline import settings_model
+    settings_model.toggle_user_pause(engine)  # a deliberate pause (panel or F8) does let go
+    assert not engine.actions.dragging and injector.actions()[-1] == ("release", "left")
+    assert USER in engine.modes.pause_reasons

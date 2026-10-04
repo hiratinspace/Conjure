@@ -18,7 +18,7 @@ import time
 
 from pipeline.events import Action
 from pipeline.injector import LEFT, RIGHT
-from pipeline.modes import Mode
+from pipeline.modes import USER, Mode
 
 log = logging.getLogger("conjure.actions")
 
@@ -32,6 +32,7 @@ class ActionMapper:
         self.modes = modes
         self.refractory_s = refractory_s
         self.suppressed = 0  # clicks dropped by the refractory period (metrics)
+        self.locked = False  # a next-action drag lock: keep the button held while the hand is out of view
         self._t_last_click = None
         self.dragging = False
         self._listeners = []
@@ -41,11 +42,21 @@ class ActionMapper:
         """listener(event) is called after each applied event."""
         self._listeners.append(listener)
 
+    def drop_drag(self):
+        """Let go of a held button, if any (a deliberate pause, a failure, a mode switch)."""
+        if not self.dragging:
+            return
+        self.injector.release(LEFT)
+        self.dragging = False
+        self.locked = False
+        log.info("drag dropped: button released")
+
     def _on_mode_change(self, _old, new):
-        if new == Mode.PAUSED and self.dragging:
-            self.injector.release(LEFT)
-            self.dragging = False
-            log.info("paused mid-drag: button released")
+        if new != Mode.PAUSED or not self.dragging:
+            return
+        if self.locked and USER not in self.modes.pause_reasons:
+            return  # a locked drag survives the hand leaving view, like lifting a mouse mid-drag
+        self.drop_drag()
 
     def handle(self, event, t=None):
         """Apply one ClickEvent at frame time t. Returns True if it was applied."""
@@ -82,6 +93,7 @@ class ActionMapper:
                     return False
                 self.injector.release(LEFT)
                 self.dragging = False
+                self.locked = False
         log.info("%s at %.0f,%.0f", action.value, x, y)
         for listener in self._listeners:
             listener(event)

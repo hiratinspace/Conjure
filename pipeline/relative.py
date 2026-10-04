@@ -39,6 +39,45 @@ def smoothstep(edge0, edge1, x):
     return f * f * (3 - 2 * f)
 
 
+class HandSpeed:
+    """Smoothed hand speed in base px/s (1000 = one camera-frame height per second), independent of
+    pointer style, calibration, and screen size. Every speed gate (pinch, touch, jitter metric)
+    reads this, so the gates mean the same thing whichever pointer is active."""
+
+    def __init__(self, min_cutoff, beta, d_cutoff):
+        self.euro = OneEuroFilter2D(min_cutoff, beta, d_cutoff)
+        self._t = None
+
+    @property
+    def speed(self):
+        return self.euro.speed
+
+    def reset(self):
+        self.euro.reset()
+        self._t = None
+
+    def update(self, point, t):
+        dt = t - self._t if self._t is not None and t > self._t else 1.0 / 30.0
+        self.euro(point, dt)
+        self._t = t
+        return self.euro.speed
+
+
+class GateView:
+    """What detectors see: hand speed in base px/s plus the active pointer's cursor history."""
+
+    def __init__(self, hand_speed, pointer):
+        self._hand_speed = hand_speed
+        self.pointer = pointer
+
+    @property
+    def speed(self):
+        return self._hand_speed.speed
+
+    def position_at(self, t):
+        return self.pointer.position_at(t)
+
+
 class RelativePointer:
     def __init__(self, min_cutoff, beta, d_cutoff, screen_size, history_size, dead_speed, slow_speed, fast_speed,
                  low_gain, high_gain, flat_gain=1.5, sensitivity=1.0, accelerate=True):
@@ -77,10 +116,10 @@ class RelativePointer:
         self._t = None
 
     def gain(self, speed):
+        if speed <= self.dead_speed:  # the dead zone applies with acceleration on or off: tremor never moves it
+            return 0.0
         if self.precision_gain >= 1.0:
             return self.flat_gain * self.sensitivity
-        if speed <= self.dead_speed:
-            return 0.0
         if speed < self.slow_speed:
             g = self.low_gain * smoothstep(self.dead_speed, self.slow_speed, speed)
         else:

@@ -74,3 +74,14 @@ def test_camera_loss_is_retried_with_a_notice_and_a_pause(monkeypatch):
     assert notices and "Camera lost" in notices[0] and "Retrying" in notices[0]
     assert any(paused for img_none, paused, _ in seen if img_none)  # paused while the camera is gone
     assert sum(1 for img_none, _, _ in seen if not img_none) == 3 + 5 + 5  # frames from every camera ran
+
+
+def test_a_camera_that_never_starts_fails_fast_with_the_real_error(monkeypatch):
+    monkeypatch.setattr(main, "make_frame_source", lambda _c: FrameSource(
+        0, 640, 480, 30, True, 0, 0.5, open_capture=lambda _i: FakeCapture([], opened=False), clock=FakeClock(1 / 30)))
+    monkeypatch.setattr(config, "CAMERA_RETRY_S", 0.0)
+    engine = make_engine(RecordingInjector(), StageTimer(33.0, 1e9), SCREEN, ModeState(Mode.PINCH))
+    args = type("A", (), {"replay": None, "record": None, "camera": 0})()
+    with pytest.raises(CameraError, match="Privacy & Security"):
+        main.run_pipeline(args, engine, StageTimer(33.0, 1e9), None, lambda *a: False, lambda: False)
+    assert "Retrying" not in engine.notice

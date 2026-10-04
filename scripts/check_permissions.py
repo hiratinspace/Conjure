@@ -46,6 +46,25 @@ def accessibility_trusted():
     return bool(lib.AXIsProcessTrusted())
 
 
+def check_input_monitoring():
+    """The F8 panic key needs Input Monitoring (separate from Accessibility): a global key listener
+    starts but dies at once without it."""
+    try:
+        from pynput import keyboard
+        listener = keyboard.Listener(on_press=lambda k: None)
+        listener.daemon = True
+        listener.start()
+        listener.wait()
+        time.sleep(0.4)
+        if listener.running:
+            listener.stop()
+            return True, "granted (F8 panic key will work)"
+        return False, ("NOT granted: System Settings > Privacy & Security > Input Monitoring > enable this "
+                       "terminal app, then restart it. Only the F8 panic key needs it.")
+    except Exception as e:
+        return False, f"could not test ({e})"
+
+
 def check_camera(index, seconds=2.0):
     import cv2
 
@@ -114,6 +133,7 @@ def main():
 
     results = [("Accessibility trusted", trusted, "granted" if trusted else
                 f"NOT granted: System Settings > Privacy & Security > Accessibility > enable {app}, then restart it")]
+    results.append(("Input Monitoring (panic key)", *check_input_monitoring()))
     if not args.skip_camera:
         ok, msg = check_camera(args.camera)
         if not ok:

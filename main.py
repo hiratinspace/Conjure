@@ -207,6 +207,7 @@ def make_engine(injector, timer, screen_size, modes=None, pointer_style=None):
                   config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN, make_touch(),
                   make_tuner())
     engine.pointers = {"direct": direct, "mouse": mouse}
+    engine.base_mapper = mouse[0]  # hand speed in frame units, whichever pointer is active
     engine.set_pointer_style(pointer_style or config.POINTER_STYLE)
     return engine
 
@@ -274,11 +275,13 @@ def run_pipeline(args, engine, timer, permissions, on_frame, should_stop):
     try:
         with make_tracker() as tracker:
             attempt = 0
+            first = True
             while not should_stop():
                 source = make_frame_source(args.camera)
                 try:
                     with source:
-                        engine.notice = ""
+                        if engine.notice.startswith("Camera lost"):
+                            engine.notice = ""
                         run_loop(live_stream(source, tracker, timer), engine, timer, recorder, lambda: source.fps,
                                  on_frame, should_stop, permissions)
                         return
@@ -286,8 +289,9 @@ def run_pipeline(args, engine, timer, permissions, on_frame, should_stop):
                     if source.frames >= config.CAMERA_HEALTHY_FRAMES:
                         attempt = 0  # it worked for a while: this is a new outage, not the same one
                     attempt += 1
-                    if attempt > config.CAMERA_MAX_RETRIES:
-                        raise
+                    if attempt > config.CAMERA_MAX_RETRIES or (attempt == 1 and source.frames == 0 and first):
+                        raise  # a camera that never delivered a frame at launch is a setup problem: say so now
+                    first = False
                     engine.recover(e)
                     engine.modes.pause(HAND_LOST)  # nothing may click while the camera is gone
                     engine.notice = f"Camera lost ({e}). Retrying... ({attempt}/{config.CAMERA_MAX_RETRIES})"
@@ -353,7 +357,7 @@ def run(args):
                    tutorial=engine.tutorial is not None)
         return False
 
-    if config.PANIC_KEY:
+    if config.PANIC_KEY and not dry_run:
         from pipeline import settings_model
         from pipeline.panic_key import start_panic_key
 

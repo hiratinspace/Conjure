@@ -41,26 +41,35 @@ class NextAction:
         for listener in self._listeners:
             listener(choice)
 
-    def _consume(self):
+    def translate(self, event):
+        """Translate one detector event into the events to perform. Returns (events, used_choice).
+        The choice is not spent here: call commit() once the click was actually applied, so a click
+        dropped by the refractory period or a pause does not silently reset it."""
+        if event.action != Action.LEFT:
+            return [event], False
+        if self.actions.dragging:  # drag lock: a plain click ends the drag
+            self.actions.locked = False
+            return [ClickEvent(Action.DRAG_END, event.position)], False
         choice = self.choice
+        if choice == Action.RIGHT.value:
+            return [ClickEvent(Action.RIGHT, event.position)], True
+        if choice == Action.DOUBLE.value:
+            return [ClickEvent(Action.DOUBLE, event.position)], True
+        if choice == DRAG:
+            self.actions.locked = True  # survives the hand leaving view: "lifting the mouse" mid-drag
+            return [ClickEvent(Action.DRAG_START, event.position)], True
+        return [event], False
+
+    def commit(self):
+        """The remapped click happened: fall back to a left click unless sticky."""
         if not self.sticky:
             self.set(Action.LEFT.value)
-        return choice
 
     def apply(self, event):
-        """Translate one event from a detector into the events to perform."""
-        if event.action != Action.LEFT:
-            return [event]
-        if self.actions.dragging:  # drag lock: a plain click ends the drag
-            return [ClickEvent(Action.DRAG_END, event.position)]
-        choice = self._consume()
-        if choice == Action.RIGHT.value:
-            return [ClickEvent(Action.RIGHT, event.position)]
-        if choice == Action.DOUBLE.value:
-            return [ClickEvent(Action.DOUBLE, event.position)]
-        if choice == DRAG:
-            return [ClickEvent(Action.DRAG_START, event.position)]
-        return [event]
+        events, used = self.translate(event)
+        if used:
+            self.commit()
+        return events
 
     def label(self):
         if self.actions.dragging:

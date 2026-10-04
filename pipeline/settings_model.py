@@ -73,6 +73,7 @@ def toggle_user_pause(engine):
     if USER in engine.modes.pause_reasons:
         engine.modes.resume(USER)
     else:
+        engine.actions.drop_drag()  # even if auto-pause already holds the mode at PAUSED
         engine.modes.pause(USER)
 
 

@@ -23,6 +23,7 @@ from pipeline.gestures import normalize
 from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
 from pipeline.next_action import NextAction
+from pipeline.relative import GateView, HandSpeed
 from pipeline.events import Action
 from pipeline.profile_schema import FilterSettings, GestureTemplate, PointerSettings, Profile, Settings
 
@@ -71,6 +72,9 @@ class Engine:
         self.edge_freeze_margin = edge_freeze_margin
         self.pointers = {}  # style -> (mapper, filter); see set_pointer_style
         self.pointer_style = None
+        self.hand_speed = HandSpeed(config.FILTER_MIN_CUTOFF, config.FILTER_BETA, config.FILTER_D_CUTOFF)
+        self.base_mapper = None  # control point -> base px, for hand speed (set by make_engine)
+        self.gates = GateView(self.hand_speed, pointer_filter)
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
         self.store = None  # ProfileStore; when set, persist() saves after every change
         self.calibrated = False  # False while the naive default box is in use
@@ -119,6 +123,7 @@ class Engine:
             raise ValueError(f"unknown pointer style {style!r}")
         sensitivity = self.mapper.calibration.sensitivity
         self.mapper, self.filter = self.pointers[style]
+        self.gates = GateView(self.hand_speed, self.filter)
         self.pointer_style = style
         self.filter.reset()
         self.set_sensitivity(sensitivity)
@@ -165,6 +170,8 @@ class Engine:
 
     def set_dead_speed(self, dead, slow=None):
         """Resting threshold of the mouse-style pointer (auto-tune), with the careful band scaled to match."""
+        if "mouse" not in self.pointers:
+            return
         pointer = self.pointers["mouse"][1]
         pointer.dead_speed = dead
         pointer.slow_speed = slow if slow is not None else max(config.TUNE_MIN_SLOW, dead * config.TUNE_SLOW_RATIO)
@@ -213,9 +220,12 @@ class Engine:
 
     def _emit(self, events, result, t=None):
         for raw in events:
-            for event in self.next_action.apply(raw):
+            translated, used_choice = self.next_action.translate(raw)
+            for event in translated:
                 if not self.actions.handle(event, t):
                     continue
+                if used_choice:
+                    self.next_action.commit()  # the choice is spent only once its click really happened
                 result.events.append(event)
                 if event.action in (Action.LEFT, Action.RIGHT, Action.DOUBLE, Action.DRAG_START):
                     self.clicks += 1
@@ -276,8 +286,11 @@ class Engine:
         if hand is None:
             self.tutorial.update(None)
             self.filter.reset()
+            self.hand_speed.reset()
             self.pinch.reset(self.cursor or (0, 0))
             return result
+        if self.base_mapper is not None:
+            self.hand_speed.update(self.base_mapper.target(hand), t)
         target = self.tutorial.target(hand)
         self.cursor = target
         result.cursor = target
@@ -286,7 +299,7 @@ class Engine:
             result.naive_clicks.append(target)
         shadow_cursor = self.filter.update(self.mapper.target(hand), t)
         pose = analyze(hand, self.aspect, self.edge_margin)
-        shadow = self.pinch.update(pose, t, shadow_cursor, self.filter)
+        shadow = self.pinch.update(pose, t, shadow_cursor, self.gates)
         self.shadow_clicks += sum(1 for e in shadow if e.action in (Action.LEFT, Action.RIGHT, Action.DRAG_START))
         return result
 
@@ -310,14 +323,10 @@ class Engine:
             if self.cursor is not None:
                 self._emit(self._detectors_reset(self.modes.mode), result)
             speed = None
-            if hand is not None:
-                target = self.mapper.target(hand)
-                mouse = self.pointers.get("mouse", (None, self.filter))[1]
-                saved = getattr(mouse, "cursor", None)
-                mouse.update(self.pointers["mouse"][0].target(hand) if "mouse" in self.pointers else target, t)
-                if saved is not None:
-                    mouse.cursor = saved  # measuring only: the cursor stays put
-                speed = mouse.speed
+            if hand is not None and self.base_mapper is not None:
+                speed = self.hand_speed.update(self.base_mapper.target(hand), t)
+            else:
+                self.hand_speed.reset()
             self.tuner.update(speed, t)
             if self.tuner.state == "done":
                 dead, slow, p95 = self.tuner.result
@@ -366,6 +375,7 @@ class Engine:
 
         if hand is None:
             self.filter.reset()
+            self.hand_speed.reset()
             self.scroll.reset()
             self._emit(self._detectors_reset(mode), result)
             result.lines.append("no hand")
@@ -374,6 +384,8 @@ class Engine:
         with self.timer.stage("map"):
             pose = analyze(hand, self.aspect, self.edge_margin)
             target = self.mapper.target(hand)
+            if self.base_mapper is not None:
+                self.hand_speed.update(self.base_mapper.target(hand), t)
             self.ordinary.append(normalize(hand, self.aspect))
         if self.cursor is None:
             self.cursor = getattr(self.filter, "cursor", None) or target
@@ -406,17 +418,17 @@ class Engine:
             result.lines.append("hand near the camera edge: cursor held")
             with self.timer.stage("gesture"):
                 if mode == Mode.PINCH:
-                    self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result, t)
+                    self._emit(self.pinch.update(pose, t, self.cursor, self.gates), result, t)
             return result
         with self.timer.stage("filter"):
             self.cursor = self.filter.update(target, t)
         result.cursor = self.cursor
-        self._recent.append((self.cursor, self.filter.speed))
+        self._recent.append((self.cursor, self.hand_speed.speed))
         with self.timer.stage("inject"):
             self.injector.move(*self.cursor)
         with self.timer.stage("gesture"):
             if mode == Mode.TOUCH:
-                self._emit(self.touch.update(hand, t, self.cursor, self.filter), result, t)
+                self._emit(self.touch.update(hand, t, self.cursor, self.gates), result, t)
                 result.lines.append(self.touch.status())
                 progress, state = self.touch.progress()
                 if state == "touch":
@@ -425,7 +437,7 @@ class Engine:
                 else:
                     result.pinch_progress, result.pinch_state = progress, state
             elif mode == Mode.PINCH:
-                self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result, t)
+                self._emit(self.pinch.update(pose, t, self.cursor, self.gates), result, t)
                 result.lines.append(self.pinch.status())
                 result.pinch_progress, result.pinch_state = self.pinch.progress()
             elif mode == Mode.DWELL:
@@ -433,7 +445,7 @@ class Engine:
                 result.dwell_progress = self.dwell.progress
                 result.lines.append(self.dwell.status())
             elif mode == Mode.CUSTOM:
-                fired = self.matcher.update(hand, t, self.filter)
+                fired = self.matcher.update(hand, t, self.gates)
                 self._emit(fired, result, t)
                 if fired:
                     result.spell = self.matcher.last_match
@@ -443,5 +455,5 @@ class Engine:
 
         x, y = self.cursor
         result.lines.append(f"{hand.handedness} hand  conf {hand.confidence:.2f}  cursor {x:.0f},{y:.0f}")
-        result.lines.append(f"speed {self.filter.speed:.0f} px/s  gain {self.filter.current_gain:.2f}")
+        result.lines.append(f"hand {self.hand_speed.speed:.0f}/s  gain {self.filter.current_gain:.2f}")
         return result
