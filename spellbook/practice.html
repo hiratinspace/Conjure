@@ -9,40 +9,72 @@
   Twelve targets of three sizes appear one at a time; the page records time per hit, misses (clicks that
   land outside the target), and throughput in bits per second (ISO 9241-9 style: sum of log2(D/W + 1)
   divided by total movement time). Works with any click mode, including dwell.
+  Palette: the Conjure logo (deep navy, sky-blue gradient, white).
 -->
 <style>
-  :root { --lapis: #1d2f6f; --lapis-deep: #14214f; --gold: #d9a92e; --gold-soft: #f0cf73; --vellum: #f1e8d2;
-          --rubric: #b8352a; --ink: #0d1533; --font: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif; }
+  :root {
+    --navy: #060c1c; --navy-2: #0c1630; --navy-3: #13203f;
+    --sky: #5d9cfe; --sky-light: #88b9fd; --sky-deep: #385993;
+    --white: #f5f8ff; --muted: #9fb3d9;
+    --font: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
-  body { background: radial-gradient(ellipse at 50% 30%, var(--lapis) 0%, var(--lapis-deep) 75%); color: var(--vellum);
-         font: 26px/1.45 var(--font); overflow: hidden; user-select: none; }
+  body {
+    background: radial-gradient(ellipse at 50% 40%, var(--navy-2) 0%, var(--navy) 70%);
+    color: var(--white); font: 24px/1.45 var(--font); overflow: hidden; user-select: none;
+  }
   button { font: inherit; color: inherit; cursor: pointer; min-width: 96px; min-height: 96px; }
-  button:focus-visible { outline: 4px solid var(--gold-soft); outline-offset: 4px; }
+  button:focus-visible { outline: 4px solid var(--sky-light); outline-offset: 4px; }
   .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; padding: 24px; }
   .center[hidden] { display: none; }
-  h1 { font-size: 56px; margin: 0 0 .3em; color: var(--gold-soft); font-weight: 600; }
+  .mark { width: 120px; height: 120px; margin-bottom: 8px; }
+  h1 { font-size: 52px; margin: 0 0 .25em; font-weight: 700; letter-spacing: -.01em;
+       background: linear-gradient(100deg, var(--white) 0%, var(--sky-light) 100%);
+       -webkit-background-clip: text; background-clip: text; color: transparent; }
   p { max-width: 28em; margin: 0 0 1em; }
-  .big { min-width: 260px; min-height: 120px; padding: 0 36px; border: 3px solid var(--gold); border-radius: 18px;
-         background: rgba(13, 21, 51, .55); font-size: 32px; }
-  .big:hover { background: rgba(217, 169, 46, .18); }
-  .target { position: absolute; border-radius: 50%; border: 4px solid var(--gold); background: var(--rubric);
-            box-shadow: 0 0 30px rgba(240, 207, 115, .5); transform: translate(-50%, -50%); padding: 0; min-width: 0; min-height: 0; }
-  .target.hit { background: var(--gold); transition: background .1s; }
-  .hud { position: fixed; top: 20px; left: 0; right: 0; text-align: center; font-size: 24px; opacity: .85; }
-  table { border-collapse: collapse; margin: 16px auto; font-size: 26px; }
-  td { padding: 8px 20px; border-bottom: 1px solid rgba(240, 207, 115, .3); }
-  td:first-child { text-align: left; opacity: .85; }
-  td:last-child { text-align: right; color: var(--gold-soft); font-weight: 600; }
-  .note { font-size: 20px; opacity: .7; max-width: 34em; }
-  a { color: var(--gold-soft); }
+  .big {
+    min-width: 260px; min-height: 110px; padding: 0 40px; border: 0; border-radius: 22px;
+    background: linear-gradient(135deg, var(--sky) 0%, var(--sky-light) 100%); color: var(--navy);
+    font-size: 30px; font-weight: 700; box-shadow: 0 12px 40px rgba(93, 156, 254, .35);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .big:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(93, 156, 254, .5); }
+  .ghost { background: transparent; color: var(--sky-light); border: 3px solid var(--sky-deep); box-shadow: none; }
+  .ghost:hover { border-color: var(--sky); box-shadow: none; }
+  .target {
+    position: absolute; border-radius: 50%; padding: 0; min-width: 0; min-height: 0; border: 0;
+    background: radial-gradient(circle at 35% 30%, #ffffff 0%, var(--sky-light) 30%, var(--sky) 65%, var(--sky-deep) 100%);
+    box-shadow: 0 0 0 6px rgba(93, 156, 254, .25), 0 0 40px rgba(93, 156, 254, .6);
+    transform: translate(-50%, -50%);
+  }
+  .target.hit { background: var(--white); transition: background .1s; }
+  .hud { position: fixed; top: 22px; left: 0; right: 0; text-align: center; font-size: 22px; color: var(--muted); }
+  .card { background: var(--navy-3); border: 1px solid rgba(136, 185, 253, .25); border-radius: 24px; padding: 28px 36px;
+          margin: 8px auto 20px; min-width: min(640px, 90vw); }
+  table { border-collapse: collapse; width: 100%; font-size: 24px; }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(136, 185, 253, .15); }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { text-align: left; color: var(--muted); }
+  td:last-child { text-align: right; color: var(--white); font-weight: 700; font-variant-numeric: tabular-nums; }
+  tr.key td:last-child { color: var(--sky-light); font-size: 30px; }
+  .note { font-size: 18px; color: var(--muted); max-width: 36em; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+  a { color: var(--sky-light); }
+  @media (prefers-reduced-motion: reduce) { .big { transition: none; } }
 </style>
 </head>
 <body>
 <div class="hud" id="hud"></div>
 
 <section class="center" id="intro">
+  <svg class="mark" viewBox="0 0 120 120" aria-hidden="true">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#385993"/><stop offset=".55" stop-color="#5d9cfe"/><stop offset="1" stop-color="#88b9fd"/></linearGradient></defs>
+    <path d="M14 78c10-10 24-14 40-12 10 1 18 2 24-1l20-12c6-3 12 3 8 9L84 80c-8 8-20 12-34 10-10-1-20 0-30 4z" fill="url(#g)"/>
+    <path d="M58 22l22 30-11 1 6 14-6 3-6-14-8 8z" fill="#f5f8ff"/>
+    <path d="M94 26l2 6 6 2-6 2-2 6-2-6-6-2 6-2z M40 40l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z" fill="#88b9fd"/>
+  </svg>
   <h1>Target practice</h1>
   <p>Twelve targets will appear one at a time: large, medium, and small. Click each as quickly and accurately as you can, with whichever click mode you use.</p>
   <p class="note">Clicks that land outside the target count as misses. Nothing is sent anywhere; the results stay on this page.</p>
@@ -51,10 +83,12 @@
 
 <section class="center" id="results" hidden>
   <h1>Your result</h1>
-  <table id="table"></table>
+  <div class="card"><table id="table"></table></div>
   <p class="note" id="verdict"></p>
-  <button class="big" id="again">Try again</button>
-  <p class="note"><a href="index.html#7">Back to the spellbook</a></p>
+  <div class="row">
+    <button class="big" id="again">Try again</button>
+    <button class="big ghost" id="back">Back to the spellbook</button>
+  </div>
 </section>
 
 <script>
@@ -69,7 +103,6 @@
   let hits = [], misses = 0;
 
   function plan() {
-    // Each size four times, shuffled, each at a random position away from the previous one.
     const sizes = [];
     for (let r = 0; r < ROUNDS; r++) sizes.push(SIZES[r % SIZES.length]);
     for (let i = sizes.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [sizes[i], sizes[j]] = [sizes[j], sizes[i]]; }
@@ -122,7 +155,7 @@
   function finish() {
     target = null;
     hud.textContent = "";
-    const timed = hits.filter(h => h.d !== null);               // the first target has no movement distance
+    const timed = hits.filter(h => h.d !== null);
     const time = timed.reduce((s, h) => s + h.dt, 0);
     const bits = timed.reduce((s, h) => s + Math.log2(h.d / h.size + 1), 0);
     const tp = time > 0 ? bits / time : 0;
@@ -130,14 +163,14 @@
     const median = times[Math.floor(times.length / 2)];
     const bySize = SIZES.map(s => { const hs = hits.filter(h => h.size === s); return [s, hs.length ? (hs.reduce((a, h) => a + h.dt, 0) / hs.length) : 0]; });
     const rows = [
+      ["Throughput", `${tp.toFixed(2)} bits/s`, true],
       ["Targets hit", `${hits.length} of ${ROUNDS}`],
       ["Misses (clicks outside a target)", `${misses}`],
       ["Error rate", `${(100 * misses / (hits.length + misses)).toFixed(1)}%`],
       ["Median time per target", `${median.toFixed(2)} s`],
       ...bySize.map(([s, avg]) => [`Average time, ${s} px targets`, `${avg.toFixed(2)} s`]),
-      ["Throughput", `${tp.toFixed(2)} bits/s`],
     ];
-    document.getElementById("table").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+    document.getElementById("table").innerHTML = rows.map(([k, v, key]) => `<tr${key ? ' class="key"' : ""}><td>${k}</td><td>${v}</td></tr>`).join("");
     document.getElementById("verdict").textContent =
       "Throughput follows ISO 9241-9: the sum of log2(distance / target width + 1) over the targets, divided by the total time. " +
       "A desktop mouse scores about 4 to 5 bits/s; published mid-air hand pointing is near 5 bits/s. Read the numbers out loud for the judges.";
@@ -151,6 +184,7 @@
   }
   document.getElementById("start").addEventListener("click", e => { e.stopPropagation(); start(); });
   document.getElementById("again").addEventListener("click", e => { e.stopPropagation(); start(); });
+  document.getElementById("back").addEventListener("click", e => { e.stopPropagation(); location.href = "index.html#7"; });
 })();
 </script>
 </body>
