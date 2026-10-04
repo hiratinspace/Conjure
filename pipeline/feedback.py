@@ -54,6 +54,10 @@ class Feedback:
         if self.settings.voice:
             self.voice.speak(name)
 
+    def on_next_action(self, choice):
+        if self.settings.voice and choice != "left":
+            self.voice.speak({"right": "Right click next", "double": "Double click next", "drag": "Drag next"}[choice])
+
     def on_mode(self, old, new):
         if new == Mode.PAUSED or old == Mode.PAUSED:
             word = "Paused" if new == Mode.PAUSED else "Resumed"

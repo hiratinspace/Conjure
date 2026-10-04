@@ -20,6 +20,7 @@ import config
 from pipeline.events import Action, ClickEvent
 from pipeline.gesture_recorder import DONE
 from pipeline.modes import CLICK_MODES, USER, Mode
+from pipeline.action_bar import ActionBar
 from pipeline.overlay import Overlay
 from pipeline.settings_panel import BG, FG, BigButton, SettingsPanel
 from pipeline.tutorial import NaivePointer
@@ -81,10 +82,11 @@ class App:
         self._photo = None
         self._polls = 0
         self.thread = None
+        self.action_bar = ActionBar(self.root, engine, screen_size)
         self.panel = SettingsPanel(self.root, engine, {
             "calibrate": self.calibrate, "record_spell": self.record_spell,
             "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit,
-            "tutorial": self.toggle_tutorial, "metrics": self.toggle_metrics},
+            "tutorial": self.toggle_tutorial, "metrics": self.toggle_metrics, "actions": self.toggle_action_bar},
             feedback.settings, feedback.toggle)
         if show_preview:
             self.toggle_preview()
@@ -127,6 +129,12 @@ class App:
 
     def toggle_metrics(self):
         self.engine.submit(lambda e: setattr(e, "show_metrics", not e.show_metrics))
+
+    def toggle_action_bar(self):
+        if self.action_bar.visible:
+            self.action_bar.hide()
+        else:
+            self.action_bar.show()
 
     def toggle_panel(self):
         if self.panel.visible:
@@ -239,6 +247,8 @@ class App:
         self.overlay.draw(snap, self.paused_message(snap), notice, trail, ripples, flash, naive)
         if self._polls % PANEL_REFRESH_EVERY == 0:
             self.panel.refresh()
+            if self.action_bar.visible:
+                self.action_bar.refresh()
         self._polls += 1
         if self.preview_label is not None and snap.preview is not None and self._polls % PREVIEW_EVERY == 0:
             self._photo = to_photo(snap.preview)

@@ -22,6 +22,7 @@ from pipeline.cursor_mapper import CONTROL_POINT, Box, BoxCalibration
 from pipeline.gestures import normalize
 from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
+from pipeline.next_action import NextAction
 from pipeline.events import Action
 from pipeline.profile_schema import FilterSettings, GestureTemplate, Profile, Settings
 
@@ -41,6 +42,7 @@ class StepResult:
     pinch_progress: float = None  # 0 = fingers open .. 1 = closed enough to engage (pinch mode only)
     pinch_state: str = ""  # open / pending / confirmed / dragging
     tracking: str = ""  # status pill: "tracking", "edge", "paused", "no hand"
+    next_action: str = ""  # pill suffix: "next: right click", "click to drop", or empty
     metrics: dict = field(default_factory=dict)  # live metrics overlay (filled by main's frame loop)
     naive_clicks: list = field(default_factory=list)  # tutorial mode: where the naive detector "clicked"
     prompt: str = ""  # big instruction text for the overlay (gesture recording, calibration)
@@ -55,6 +57,7 @@ class Engine:
         self.filter = pointer_filter
         self.injector = injector
         self.actions = actions
+        self.next_action = NextAction(actions)  # what the next plain click becomes (right, double, drag lock)
         self.modes = modes
         self.pinch = pinch
         self.dwell = dwell
@@ -191,8 +194,10 @@ class Engine:
             fn(self)
 
     def _emit(self, events, result, t=None):
-        for event in events:
-            if self.actions.handle(event, t):
+        for raw in events:
+            for event in self.next_action.apply(raw):
+                if not self.actions.handle(event, t):
+                    continue
                 result.events.append(event)
                 if event.action in (Action.LEFT, Action.RIGHT, Action.DOUBLE, Action.DRAG_START):
                     self.clicks += 1
@@ -316,6 +321,7 @@ class Engine:
             self._emit(self._detectors_reset(self._last_mode), result)
             self._last_mode = mode
         result.lines.append(f"mode: {mode.value}")
+        result.next_action = self.next_action.label()
 
         if hand is None:
             self.filter.reset()

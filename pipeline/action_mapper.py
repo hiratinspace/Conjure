@@ -73,6 +73,8 @@ class ActionMapper:
             elif action == Action.DOUBLE:
                 self.injector.click(LEFT, 2)
             elif action == Action.DRAG_START:
+                if self.dragging:
+                    return False  # already holding the button
                 self.injector.press(LEFT)
                 self.dragging = True
             elif action == Action.DRAG_END:

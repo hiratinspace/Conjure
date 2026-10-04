@@ -55,7 +55,7 @@ def badge_text(snapshot):
         return ""
     status = STATUS.get(snapshot.tracking, ("", ""))[1]
     mode = MODE_LABELS.get(snapshot.mode, snapshot.mode)
-    return "  |  ".join(part for part in (status, mode) if part)
+    return "  |  ".join(part for part in (status, mode, snapshot.next_action) if part)
 
 
 def pinch_dot_arc(progress):

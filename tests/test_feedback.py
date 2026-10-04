@@ -63,6 +63,13 @@ def test_mode_changes_and_pauses_are_spoken():
     assert voice.spoken == ["Dwell mode", "Paused", "Resumed"]
 
 
+def test_next_action_choices_are_spoken_except_the_default():
+    fb, _, voice = make()
+    fb.on_next_action("right")
+    fb.on_next_action("left")
+    assert voice.spoken == ["Right click next"]
+
+
 def test_every_effect_can_be_switched_off():
     fb, player, voice = make()
     for name in ("sound", "voice"):

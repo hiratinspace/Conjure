@@ -158,6 +158,7 @@ def make_feedback(engine, modes, enabled):
     feedback = Feedback(player, make_voice(player), config.CLICK_SOUND, config.SPELL_SOUND, settings, sounds)
     engine.actions.subscribe(feedback.on_click)
     engine.spell_listeners.append(feedback.on_spell)
+    engine.next_action.subscribe(feedback.on_next_action)
     modes.subscribe(feedback.on_mode)
     return feedback
 
