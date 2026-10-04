@@ -153,5 +153,7 @@ def test_precision_gain_glides_instead_of_snapping():
         f.update((x, 450), i * DT)
         gains.append(f.current_gain)
     assert gains[0] > 0.6  # one frame later: still near full gain, no snap
-    assert all(a >= b for a, b in zip(gains, gains[1:]))  # monotonic glide down
+    falling = gains[gains.index(max(gains)):]  # it may still be finishing its climb toward 1.0 when the hand stops
+    assert all(b <= a + 1e-9 for a, b in zip(falling, falling[1:]))  # then a monotonic glide down
+    assert max(a - b for a, b in zip(falling, falling[1:])) < 0.1  # no step bigger than 0.1 per frame
     assert gains[-1] < 0.4  # settled toward precision gain within ~0.8 s (speed itself decays smoothly)
