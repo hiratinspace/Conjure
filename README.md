@@ -85,7 +85,7 @@ On screen you always see a status indicator (tracking, near edge, paused, no han
 | On-device | ✓ | ✓ | ✓ | ✓ | **✓** |
 | On macOS | ✓ | ✗ | ✗ ² | ✓ | **✓** |
 
-<sub>¹ Consumer tiers map from a 15-gesture library; custom training is sold to OEMs. ² "On the way" per the vendor. ? = not documented. Verified October 2026; sources in [`PITCH.md`](PITCH.md).</sub>
+<sub>¹ Consumer tiers map from a 15-gesture library; custom training is sold to OEMs. ² "On the way" per the vendor. ? = not documented. Verified against each product's documentation in October 2026.</sub>
 
 ## Quick start
 
