@@ -4,8 +4,9 @@ macOS requires every window (Tk and OpenCV alike) on the main thread, so the
 camera, tracker, and engine run in `PipelineThread`, and this app polls
 UiState to draw the overlay and the preview window.
 
-Preview window keys: p hides it, m cycles the click mode, g records a spell, c calibrates,
-q quits.
+The settings panel (shown at startup) is the main control surface. Preview
+window keys: p hides it, m cycles the click mode, g records a spell,
+c calibrates, s shows the settings panel, q quits.
 """
 
 import logging
@@ -16,16 +17,17 @@ import tkinter as tk
 
 import config
 from pipeline.gesture_recorder import DONE
-from pipeline.modes import CLICK_MODES, Mode
+from pipeline.modes import CLICK_MODES, USER, Mode
 from pipeline.overlay import Overlay
+from pipeline.settings_panel import BG, FG, BigButton, SettingsPanel
 
 log = logging.getLogger("conjure.app")
 
 POLL_MS = 33
 PREVIEW_EVERY = 2  # refresh the preview image every Nth poll (~15 Hz)
+PANEL_REFRESH_EVERY = 5  # refresh the settings panel every Nth poll (~6 Hz)
 NOTICE_S = 6.0
 BIG_FONT = ("Helvetica", 22, "bold")
-BUTTON = dict(font=BIG_FONT, width=12, height=2, padx=10, pady=10)  # >= 60 px targets (CONJ-14 dogfooding)
 
 
 def to_photo(frame_bgr):
@@ -69,6 +71,9 @@ class App:
         self._photo = None
         self._polls = 0
         self.thread = None
+        self.panel = SettingsPanel(self.root, engine, {
+            "calibrate": self.calibrate, "record_spell": self.record_spell,
+            "toggle_preview": self.toggle_preview, "hide": self.toggle_panel, "quit": self.quit})
         if show_preview:
             self.toggle_preview()
 
@@ -84,19 +89,24 @@ class App:
     def toggle_preview(self):
         if self.preview_win is None:
             self.preview_win = tk.Toplevel(self.root)
-            self.preview_win.title("Conjure preview (p hide, m mode, g spell, c calibrate, q quit)")
+            self.preview_win.title("Conjure preview (p hide, m mode, g spell, c calibrate, s settings, q quit)")
             self.preview_win.protocol("WM_DELETE_WINDOW", self.toggle_preview)
             self.preview_label = tk.Label(self.preview_win, bg="black")
             self.preview_label.pack()
             for key, fn in (("p", self.toggle_preview), ("m", self.cycle_mode), ("g", self.record_spell),
-                            ("c", self.calibrate),
-                            ("q", self.quit)):
+                            ("c", self.calibrate), ("s", self.toggle_panel), ("q", self.quit)):
                 self.preview_win.bind(f"<KeyPress-{key}>", lambda _e, fn=fn: fn())
             self.ui.preview_visible = True
         else:
             self.ui.preview_visible = False
             self.preview_win.destroy()
             self.preview_win = self.preview_label = self._photo = None
+
+    def toggle_panel(self):
+        if self.panel.visible:
+            self.panel.hide()
+        else:
+            self.panel.show()
 
     def cycle_mode(self):
         current = self.modes.click_mode
@@ -120,22 +130,21 @@ class App:
 
     def _open_naming(self):
         """'Name your spell': big stock-name buttons (no typing needed) plus an optional typed name."""
-        win = self.naming_win = tk.Toplevel(self.root)
+        win = self.naming_win = tk.Toplevel(self.root, bg=BG)
         win.title("Name your spell")
         win.attributes("-topmost", True)
-        tk.Label(win, text="Name your spell", font=("Helvetica", 30, "bold"), pady=16).pack()
-        grid = tk.Frame(win)
+        tk.Label(win, text="Name your spell", font=("Helvetica", 30, "bold"), bg=BG, fg=FG, pady=16).pack()
+        grid = tk.Frame(win, bg=BG)
         grid.pack(padx=20, pady=10)
         for i, name in enumerate(config.STOCK_SPELL_NAMES):
-            tk.Button(grid, text=name, command=lambda n=name: self._name_chosen(n), **BUTTON).grid(
+            BigButton(grid, name, lambda n=name: self._name_chosen(n), width=11).grid(
                 row=i // 3, column=i % 3, padx=8, pady=8)
-        row = tk.Frame(win)
+        row = tk.Frame(win, bg=BG)
         row.pack(pady=10)
         entry = tk.Entry(row, font=BIG_FONT, width=16)
         entry.pack(side="left", padx=8)
-        tk.Button(row, text="Use typed name", command=lambda: self._name_chosen(entry.get().strip()),
-                  **BUTTON).pack(side="left")
-        tk.Button(win, text="Discard", command=self._discard_recording, **BUTTON).pack(pady=(0, 16))
+        BigButton(row, "Use typed name", lambda: self._name_chosen(entry.get().strip()), width=14).pack(side="left")
+        BigButton(win, "Discard", self._discard_recording).pack(pady=(0, 16))
         win.protocol("WM_DELETE_WINDOW", self._discard_recording)
 
     def _close_naming(self):
@@ -161,7 +170,9 @@ class App:
     def paused_message(self, snap):
         if self.modes.mode != Mode.PAUSED:
             return None
-        return "Paused: raise your hand to continue" if not snap.hand_visible else "Paused"
+        if USER in self.modes.pause_reasons:
+            return "Paused: press Resume in the Conjure panel"
+        return "Paused: raise your hand to continue"
 
     def _poll(self):
         if self.thread is not None and self.thread.stop_event.is_set():
@@ -175,6 +186,8 @@ class App:
             self._notice_until = time.monotonic() + NOTICE_S
         notice = self._notice if time.monotonic() < self._notice_until else ""
         self.overlay.draw(snap, self.paused_message(snap), notice)
+        if self._polls % PANEL_REFRESH_EVERY == 0:
+            self.panel.refresh()
         self._polls += 1
         if self.preview_label is not None and snap.preview is not None and self._polls % PREVIEW_EVERY == 0:
             self._photo = to_photo(snap.preview)
