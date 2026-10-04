@@ -31,8 +31,10 @@ class FeedbackSettings:
 
 
 class Feedback:
-    def __init__(self, player, voice, click_sound, spell_sound, settings=None):
+    def __init__(self, player, voice, click_sound, spell_sound, settings=None, sounds=None):
+        """sounds: optional low-latency SoundBank for the short click and spell sounds."""
         self.player = player
+        self.sounds = sounds
         self.voice = voice
         self.click_sound = click_sound
         self.spell_sound = spell_sound
@@ -42,13 +44,13 @@ class Feedback:
         if event.action in (Action.SCROLL, Action.DRAG_END):
             return
         if self.settings.sound:
-            self.player.play_file(self.click_sound)
+            self._play(self.click_sound)
         if self.settings.voice and self.settings.voice_clicks and event.action != Action.DRAG_START:
             self.voice.speak({Action.RIGHT: "Right click", Action.DOUBLE: "Double click"}.get(event.action, "Click"))
 
     def on_spell(self, name):
         if self.settings.sound:
-            self.player.play_file(self.spell_sound)
+            self._play(self.spell_sound)
         if self.settings.voice:
             self.voice.speak(name)
 
@@ -59,6 +61,12 @@ class Feedback:
             word = MODE_WORDS[new]
         if self.settings.voice:
             self.voice.speak(word)
+
+    def _play(self, path):
+        if self.sounds is not None:
+            self.sounds.play(path)
+        else:
+            self.player.play_file(path)
 
     def toggle(self, name):
         setattr(self.settings, name, not getattr(self.settings, name))

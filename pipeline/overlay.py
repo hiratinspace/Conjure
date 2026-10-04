@@ -40,10 +40,26 @@ def trail_color(i, n):
     return "#%02x%02x%02x" % tuple(round(a + (b - a) * f) for a, b in zip(lo, hi))
 
 
+STATUS = {  # tracking state -> (dot color, label)
+    "tracking": ("#4cd964", "Tracking"),
+    "edge": ("#f5a623", "Near edge"),
+    "paused": ("#ff3b30", "Paused"),
+    "no hand": ("#8e8e93", "No hand"),
+}
+MODE_LABELS = {"pinch": "Pinch", "dwell": "Dwell", "custom": "Spell", "paused": ""}
+
+
 def badge_text(snapshot):
     if not snapshot.mode:
         return ""
-    return f"Conjure: {snapshot.mode}"
+    status = STATUS.get(snapshot.tracking, ("", ""))[1]
+    mode = MODE_LABELS.get(snapshot.mode, snapshot.mode)
+    return "  |  ".join(part for part in (status, mode) if part)
+
+
+def pinch_dot_arc(progress):
+    """Pie extent for the pinch dot: fills clockwise as the fingers close."""
+    return ring_arc(progress)
 
 
 def make_click_through(title):
@@ -113,9 +129,27 @@ class Overlay:
             start, extent = ring_arc(snap.dwell_progress)
             c.create_arc(x - r, y - r, x + r, y + r, start=start, extent=extent, style="arc",
                          outline=RING_FILL, width=RING_WIDTH)
+        if snap.pinch_progress is not None and snap.cursor is not None and snap.pinch_progress > 0.05:
+            x, y = snap.cursor[0] + 26, snap.cursor[1] + 26
+            r = 9
+            done = snap.pinch_state in ("confirmed", "dragging")
+            c.create_oval(x - r, y - r, x + r, y + r, outline=RING_FILL, width=2)
+            start, extent = pinch_dot_arc(snap.pinch_progress)
+            c.create_arc(x - r, y - r, x + r, y + r, start=start, extent=extent, style="pieslice",
+                         fill=RING_FILL if done else BADGE_FG, outline="")
         badge = badge_text(snap)
         if badge:
-            c.create_text(self.w - 16, 16, text=badge, anchor="ne", fill=BADGE_FG, font=("Helvetica", 16, "bold"))
+            color = STATUS.get(snap.tracking, (BADGE_FG,))[0]
+            text = c.create_text(self.w - 16, 16, text=badge, anchor="ne", fill=BADGE_FG,
+                                 font=("Helvetica", 16, "bold"))
+            x0, y0, x1, y1 = c.bbox(text)
+            c.create_rectangle(x0 - 34, y0 - 8, x1 + 12, y1 + 8, fill=BANNER_BG, outline=color, width=2)
+            c.create_oval(x0 - 24, (y0 + y1) / 2 - 6, x0 - 12, (y0 + y1) / 2 + 6, fill=color, outline="")
+            c.tag_raise(text)
+        if snap.metrics:
+            m = snap.metrics
+            lines = "   ".join(f"{k} {v}" for k, v in m.items())
+            c.create_text(16, self.h - 16, text=lines, anchor="sw", fill=BADGE_FG, font=("Menlo", 14))
         if not snap.permission_ok:
             self._banner("Accessibility permission missing: clicks are being dropped", WARN_BG, y=60)
         elif paused_message:

@@ -34,6 +34,10 @@ class UiSnapshot:
     message: str = ""
     recorder_state: str = ""
     gesture_name: str = ""
+    pinch_progress: float = None
+    pinch_state: str = ""
+    tracking: str = ""
+    metrics: dict = field(default_factory=dict)
     preview: object = None  # annotated BGR frame, only while the preview is visible
 
 
@@ -54,7 +58,9 @@ class UiState:
         snap = UiSnapshot(cursor=result.cursor, dwell_progress=result.dwell_progress, mode=mode,
                           hand_visible=hand is not None, permission_ok=permission_ok, fps=fps,
                           lines=list(result.lines), prompt=result.prompt, message=result.message,
-                          recorder_state=recorder_state, gesture_name=gesture_name, preview=preview)
+                          recorder_state=recorder_state, gesture_name=gesture_name,
+                          pinch_progress=result.pinch_progress, pinch_state=result.pinch_state,
+                          tracking=result.tracking, metrics=dict(result.metrics), preview=preview)
         with self._lock:
             self._snapshot = snap
             self._events.extend(result.events)

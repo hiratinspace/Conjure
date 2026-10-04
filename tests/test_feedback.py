@@ -119,3 +119,25 @@ def test_spell_cast_reaches_the_ui_as_an_event():
 def test_trail_fades_from_violet_to_gold():
     assert trail_color(0, 10) != trail_color(9, 10)
     assert trail_color(9, 10) == "#f5c542"
+
+
+def test_short_sounds_use_the_low_latency_bank_when_given():
+    class Bank:
+        def __init__(self):
+            self.played = []
+
+        def play(self, path):
+            self.played.append(path)
+    player, voice, bank = FakePlayer(), FakeVoice(), Bank()
+    fb = Feedback(player, voice, "click.aiff", "spell.aiff", sounds=bank)
+    fb.on_click(ClickEvent(Action.LEFT, (0, 0)))
+    assert bank.played == ["click.aiff"] and player.played == []
+
+
+def test_sound_bank_preloads_system_sounds():
+    import config
+    from pipeline.audio import SoundBank
+    bank = SoundBank(FakePlayer())
+    bank.preload(config.CLICK_SOUND, config.SPELL_SOUND)
+    if bank._appkit is not None:
+        assert all(s is not None for s in bank._sounds.values())

@@ -34,6 +34,10 @@ class StepResult:
     events: list = field(default_factory=list)  # ClickEvents emitted this frame
     dwell_progress: float = None  # 0..1 while a dwell is counting down (drives the ring)
     spell: str = ""  # name of the custom gesture cast this frame (spell flash, voice)
+    pinch_progress: float = None  # 0 = fingers open .. 1 = closed enough to engage (pinch mode only)
+    pinch_state: str = ""  # open / pending / confirmed / dragging
+    tracking: str = ""  # status pill: "tracking", "edge", "paused", "no hand"
+    metrics: dict = field(default_factory=dict)  # live metrics overlay (filled by main's frame loop)
     prompt: str = ""  # big instruction text for the overlay (gesture recording, calibration)
     message: str = ""  # secondary text under the prompt
     lines: list = field(default_factory=list)  # overlay text
@@ -186,6 +190,7 @@ class Engine:
         if not self.auto_pause.update(hand):
             hand = None  # a hand at the very edge of the frame is a hand leaving
         mode = self.modes.mode
+        result.tracking = "paused" if mode == Mode.PAUSED else "tracking" if hand is not None else "no hand"
         if mode != self._last_mode:
             self._emit(self._detectors_reset(self._last_mode), result)
             self._last_mode = mode
@@ -229,6 +234,7 @@ class Engine:
             # Near the frame edge landmarks degrade: hold the cursor rather than follow guesses.
             self.filter.reset()
             result.cursor = self.cursor
+            result.tracking = "edge"
             result.lines.append("hand near the camera edge: cursor held")
             with self.timer.stage("gesture"):
                 if mode == Mode.PINCH:
@@ -243,6 +249,7 @@ class Engine:
             if mode == Mode.PINCH:
                 self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result, t)
                 result.lines.append(self.pinch.status())
+                result.pinch_progress, result.pinch_state = self.pinch.progress()
             elif mode == Mode.DWELL:
                 self._emit(self.dwell.update(self.cursor, t), result, t)
                 result.dwell_progress = self.dwell.progress

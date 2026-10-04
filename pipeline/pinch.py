@@ -157,6 +157,17 @@ class PinchDetector:
             events = self.right.update(pose, t, cursor, pointer_filter)
         return events
 
+    def progress(self):
+        """(0..1 how far the fingers have closed toward engaging, state) for the overlay dot."""
+        for ch in (self.left, self.right):
+            if ch.active:
+                return 1.0, ch.state
+        r = self.left.ratio
+        if r is None:
+            return None, ""
+        span = self.left.release - self.left.engage
+        return min(1.0, max(0.0, (self.left.release - r) / span)), OPEN
+
     def status(self):
         for ch in (self.left, self.right):
             if ch.active:

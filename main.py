@@ -127,12 +127,14 @@ def make_voice(player):
 
 def make_feedback(engine, modes, enabled):
     """Sounds and voice for clicks, spells, and mode changes. Silent for dry runs and replays."""
-    from pipeline.audio import AudioPlayer
+    from pipeline.audio import AudioPlayer, SoundBank
     from pipeline.feedback import Feedback, FeedbackSettings
 
     player = AudioPlayer()
     settings = FeedbackSettings() if enabled else FeedbackSettings(trail=True, sound=False, voice=False)
-    feedback = Feedback(player, make_voice(player), config.CLICK_SOUND, config.SPELL_SOUND, settings)
+    sounds = SoundBank(player)
+    sounds.preload(config.CLICK_SOUND, config.SPELL_SOUND)
+    feedback = Feedback(player, make_voice(player), config.CLICK_SOUND, config.SPELL_SOUND, settings, sounds)
     engine.actions.subscribe(feedback.on_click)
     engine.spell_listeners.append(feedback.on_spell)
     modes.subscribe(feedback.on_mode)

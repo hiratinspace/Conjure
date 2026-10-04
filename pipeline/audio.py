@@ -14,6 +14,39 @@ import threading
 log = logging.getLogger("conjure.audio")
 
 
+class SoundBank:
+    """Short sounds preloaded with AppKit's NSSound: playback starts in a few ms, unlike spawning
+    afplay (~50-100 ms). Falls back to `fallback.play_file` when AppKit is unavailable."""
+
+    def __init__(self, fallback):
+        self.fallback = fallback
+        self._sounds = {}
+        try:
+            import AppKit
+            self._appkit = AppKit
+        except ImportError:
+            self._appkit = None
+
+    def _sound(self, path):
+        path = str(path)
+        if path not in self._sounds:
+            self._sounds[path] = self._appkit.NSSound.alloc().initWithContentsOfFile_byReference_(path, True)
+        return self._sounds[path]
+
+    def preload(self, *paths):
+        if self._appkit is not None:
+            for p in paths:
+                self._sound(p)
+
+    def play(self, path):
+        sound = self._sound(path) if self._appkit is not None else None
+        if sound is None:
+            self.fallback.play_file(path)
+            return
+        sound.stop()
+        sound.play()
+
+
 class AudioPlayer:
     """Plays queued jobs one at a time on a daemon thread. A job is a list of argv to run in order."""
 

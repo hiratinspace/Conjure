@@ -13,9 +13,28 @@ def test_ring_fills_clockwise_from_twelve_oclock():
     assert ring_arc(1.5) == (90.0, -360.0)
 
 
-def test_badge_names_the_mode():
-    assert badge_text(UiSnapshot(mode="dwell")) == "Conjure: dwell"
+def test_status_pill_shows_tracking_state_and_mode():
+    assert badge_text(UiSnapshot(mode="dwell", tracking="tracking")) == "Tracking  |  Dwell"
+    assert badge_text(UiSnapshot(mode="paused", tracking="paused")) == "Paused"
+    assert badge_text(UiSnapshot(mode="pinch")) == "Pinch"
     assert badge_text(UiSnapshot()) == ""
+
+
+def test_engine_reports_pinch_progress_and_tracking_state():
+    from main import make_engine
+    from pipeline.injector import RecordingInjector
+    from pipeline.modes import Mode, ModeState
+    from pipeline.timing import StageTimer
+    from tests.synthetic import stream
+
+    engine = make_engine(RecordingInjector(), StageTimer(33.0, 1e9), (1440, 900), ModeState(Mode.PINCH))
+    frames = stream([(0.3, dict(pinch=0.0)), (0.3, dict(pinch=lambda f: 0.9 * f)), (0.3, dict(pinch=0.95)),
+                     (0.2, None)])
+    results = [engine.step(t, h) for t, h in frames]
+    progress = [r.pinch_progress for r in results[:27] if r.pinch_progress is not None]
+    assert progress[0] == 0.0 and max(progress) == 1.0  # fills as the fingers close
+    assert any(r.pinch_state == "confirmed" for r in results)
+    assert results[0].tracking == "tracking" and results[-1].tracking == "no hand"
 
 
 def test_publish_annotates_preview_only_while_visible():
