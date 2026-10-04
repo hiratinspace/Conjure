@@ -4,11 +4,15 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 ## Waiting on you (in order)
 
-1. **First live run of the full app** (~5 min): `python main.py --preview --spellbook` from Terminal.app. Check the overlay lets clicks through and the panel works; try Touch mode taps, long-press, and drag, then pinch, dwell, and scroll. Report anything odd.
-2. **Phase A-C physical gates** (~10 min): record `pinches` and `small_range` (`scripts/record_session.py`), tell me the real pinch count, then calibrate, record a spell, and cast it 10 times.
-3. **CONJ-18** (~2 min): in the terminal where the key is already set, run `python scripts/pregenerate_voices.py`, then `git add audio/voice && git commit -m "Add pre-generated voice clips" && git push` (or tell me and I commit). The key is only in your shell, so this step is yours.
-4. **CONJ-19/20**: rehearsal at the venue per RUNBOOK.md, tune `venue.json`, pick `STAGE_CLICK_MODE`, record the backup video.
-5. Answer the open questions below.
+Everything below was built while you were away and has NOT been tried with a live hand. Expect to tune.
+
+1. **Permissions (1 min):** `python scripts/check_permissions.py`. It now also checks Input Monitoring, which the F8 panic key needs.
+2. **Live run (10 min):** `python main.py --preview --spellbook`. In order: press **Tune** in the panel and hold still 5 s; move the cursor like a mouse on a small pad (does it feel right? flicks far enough? still at rest?); pinch to click; press **Right** on the small action bar, then click something (a right click with no gesture); try **Drag**, carry, click to drop; press **F8** (everything pauses) and F8 again. Say what felt wrong, and paste the summary of `python scripts/pinch_lab.py` if clicks miss.
+3. **Voice clips (2 min):** in the terminal where the key is set, `python scripts/pregenerate_voices.py`, then `git add audio/voice && git commit -m "Add pre-generated voice clips" && git push`.
+4. **Spell (5 min):** **Record spell**, cast 10 times, count hits.
+5. **Measure yourself:** last spellbook page, run the 12-target test, note the throughput number for the pitch.
+6. **Rehearsal and backup video** per RUNBOOK.md; set `STAGE_CLICK_MODE` in `venue.json`.
+7. Open questions: did you pinch around 8.3 s into the second traversal recording (I now assume yes)? Should spells be motions (built) or held poses only (also works)?
 
 ## Tickets
 

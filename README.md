@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-296%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-300%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -182,7 +182,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/              offline demo page and the target-practice test
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  296 headless tests
+tests/                  300 headless tests
 ```
 
 </details>
@@ -190,7 +190,7 @@ tests/                  296 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 296 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 300 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation
