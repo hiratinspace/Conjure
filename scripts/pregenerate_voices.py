@@ -45,9 +45,11 @@ def main():
     parser.add_argument("--force", action="store_true", help="re-render clips that already exist")
     args = parser.parse_args()
 
+    from pipeline.secrets import load_secrets
+    load_secrets(config.SECRETS_PATH)
     key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
     if not key:
-        print("ELEVENLABS_API_KEY is not set. Export it in this shell first (see --help).")
+        print("ELEVENLABS_API_KEY is not set. Export it in this shell, or create secrets.env (see README).")
         return 1
     voice = ElevenLabsVoice(key, os.environ.get("ELEVENLABS_VOICE_ID", config.ELEVENLABS_VOICE_ID),
                             config.ELEVENLABS_MODEL_ID, [], config.VOICE_CACHE_DIR, None, SilentVoice(), 10.0)

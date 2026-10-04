@@ -12,9 +12,10 @@ __pycache__/
 venv/
 *.egg-info/
 
-# Secrets
+# Secrets (never committed)
 .env
 .env.*
+secrets.env
 
 # Local user data
 profile.json

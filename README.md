@@ -124,7 +124,7 @@ This opens the Conjure panel, the on-screen overlay, and the spellbook demo page
 3. Pinch to click: Conjure starts in **Pinch** mode. Other modes in the panel: **Touch**, **Dwell**, or **Spell** (press **Record spell** first). For a right click, double-click, or drag without a pinch, choose it on the action bar first.
 4. Work through the spellbook pages, then **Measure yourself**.
 
-**Optional: spoken feedback.** Set `ELEVENLABS_API_KEY` in your shell for ElevenLabs voices. Without it, Conjure uses the built-in macOS voice.
+**Optional: spoken feedback.** Put your ElevenLabs key in a file named `secrets.env` next to `main.py` (one line: `ELEVENLABS_API_KEY=...`; the file is gitignored and never read by anything but Conjure), or export the variable in your shell. Without it, Conjure uses the built-in macOS voice.
 
 <details>
 <summary><b>Command-line options and keyboard shortcuts</b></summary>

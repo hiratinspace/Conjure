@@ -375,6 +375,9 @@ def run(args):
 
 
 def main(argv=None):
+    from pipeline.secrets import load_secrets
+
+    load_secrets(config.SECRETS_PATH)
     args = parse_args(sys.argv[1:] if argv is None else argv)
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
