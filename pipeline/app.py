@@ -85,6 +85,7 @@ class App:
         self.thread = None
         self.action_bar = ActionBar(self.root, engine, screen_size)
         self._bar_manual = False  # the user toggled the bar: stop auto showing/hiding it
+        self._panel_requested = False  # set from the hotkey thread; acted on in _poll (Tk's thread)
         self.action_bar.hide()
         self.panel = SettingsPanel(self.root, engine, {
             "calibrate": self.calibrate, "record_spell": self.record_spell,
@@ -140,6 +141,10 @@ class App:
             self.action_bar.hide()
         else:
             self.action_bar.show()
+
+    def request_panel(self):
+        """Hotkey (any thread): show the panel on the next poll."""
+        self._panel_requested = True
 
     def toggle_panel(self):
         if self.panel.visible:
@@ -251,6 +256,9 @@ class App:
         if self.thread is not None and self.thread.stop_event.is_set():
             self.quit()
             return
+        if self._panel_requested:
+            self._panel_requested = False
+            self.panel.show()
         snap = self.ui.snapshot()
         if snap.recorder_state == DONE and self.naming_win is None:
             self._open_naming()

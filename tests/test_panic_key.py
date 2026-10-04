@@ -47,6 +47,38 @@ def test_panic_key_submits_the_toggle_on_the_configured_key(monkeypatch):
     assert engine.submitted == [toggle, toggle]
 
 
+def test_extra_hotkey_calls_its_callback_once_per_press(monkeypatch):
+    pressed = {}
+
+    class Listener:
+        running = True
+
+        def __init__(self, on_press, on_release):
+            pressed["on_press"], pressed["on_release"] = on_press, on_release
+            self.daemon = False
+
+        def start(self):
+            pass
+
+        def wait(self):
+            pass
+
+    fake_keyboard = types.SimpleNamespace(Key=types.SimpleNamespace(f8="F8", f9="F9"), KeyCode=None,
+                                          Listener=Listener)
+    monkeypatch.setitem(__import__("sys").modules, "pynput.keyboard", fake_keyboard)
+    monkeypatch.setitem(__import__("sys").modules, "pynput", types.SimpleNamespace(keyboard=fake_keyboard))
+    monkeypatch.setattr(panic_key.time, "sleep", lambda s: None)
+    calls = []
+    engine = FakeEngine()
+    panic_key.start_panic_key("f8", engine, lambda e: None, {"f9": lambda: calls.append("panel")})
+    pressed["on_press"]("F9")
+    pressed["on_press"]("F9")  # autorepeat
+    assert calls == ["panel"] and engine.submitted == []
+    pressed["on_release"]("F9")
+    pressed["on_press"]("F9")
+    assert calls == ["panel", "panel"]
+
+
 def test_a_listener_that_dies_without_input_monitoring_is_reported(monkeypatch, caplog):
     class Listener:
         running = False

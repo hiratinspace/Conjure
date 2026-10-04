@@ -67,7 +67,8 @@ class SettingsPanel:
         self.feedback_settings = feedback_settings
         self.win = tk.Toplevel(root, bg=BG)
         self.win.title("Conjure")
-        self.win.attributes("-topmost", True)
+        # A normal window, not always-on-top: it must not cover the page being controlled. F9 or the
+        # preview's s key brings it back; the small action bar and the overlay are the only floating things.
         self.win.resizable(False, False)
         self.win.protocol("WM_DELETE_WINDOW", actions["hide"])
         self.values = {}
@@ -189,7 +190,13 @@ class SettingsPanel:
 
     def show(self):
         self.win.deiconify()
+        try:  # an accessory app's window only comes forward if the app activates
+            import AppKit
+            AppKit.NSApp.activateIgnoringOtherApps_(True)
+        except Exception:
+            pass
         self.win.lift()
+        self.win.focus_force()
 
     def hide(self):
         self.win.withdraw()

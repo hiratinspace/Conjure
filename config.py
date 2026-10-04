@@ -92,6 +92,7 @@ SENSITIVITY = 1.0  # >1 shrinks the box: less hand travel per screen width
 
 # Demo insurance
 PANIC_KEY = "f8"  # pauses or resumes Conjure from any app (empty string disables)
+PANEL_KEY = "f9"  # brings the Conjure panel to the front from any app
 LOG_DIR = ROOT / "logs"  # each run also logs to logs/conjure-<timestamp>.log (gitignored)
 
 # Injection

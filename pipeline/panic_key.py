@@ -1,4 +1,4 @@
-"""Panic key: one global key pauses or resumes Conjure from anywhere.
+"""Global hotkeys: F8 pauses or resumes Conjure from anywhere; F9 brings the panel back.
 
 If the cursor runs wild on stage, the operator presses the key (F8 by
 default) and all input stops at once, through the same user pause the
@@ -16,29 +16,38 @@ import time
 log = logging.getLogger("conjure.panic")
 
 
-def start_panic_key(key_name, engine, toggle):
-    """Start the global listener. Returns the listener, or None if it could not start."""
+def start_panic_key(key_name, engine, toggle, extra=None):
+    """Start the global listener: `key_name` toggles the pause via engine.submit(toggle); `extra` maps
+    other key names to plain callbacks (called on the listener thread, so they must only set flags).
+    Returns the listener, or None if it could not start."""
     try:
         from pynput import keyboard
     except Exception:
         log.warning("pynput keyboard unavailable: no panic key")
         return None
-    try:
-        key = getattr(keyboard.Key, key_name.lower())
-    except AttributeError:
-        key = keyboard.KeyCode.from_char(key_name)
 
-    armed = [True]  # holding the key down autorepeats on macOS: toggle once per press, re-arm on release
+    def resolve(name):
+        try:
+            return getattr(keyboard.Key, name.lower())
+        except AttributeError:
+            return keyboard.KeyCode.from_char(name)
+
+    key = resolve(key_name)
+    extra_keys = {resolve(name): fn for name, fn in (extra or {}).items()}
+    armed = {k: True for k in [key] + list(extra_keys)}  # autorepeat: act once per press, re-arm on release
 
     def on_press(pressed):
-        if pressed == key and armed[0]:
-            armed[0] = False
-            engine.submit(toggle)
-            log.warning("panic key (%s): pause toggled", key_name)
+        if pressed in armed and armed[pressed]:
+            armed[pressed] = False
+            if pressed == key:
+                engine.submit(toggle)
+                log.warning("panic key (%s): pause toggled", key_name)
+            else:
+                extra_keys[pressed]()
 
     def on_release(released):
-        if released == key:
-            armed[0] = True
+        if released in armed:
+            armed[released] = True
 
     try:
         listener = keyboard.Listener(on_press=on_press, on_release=on_release)

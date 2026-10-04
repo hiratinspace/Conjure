@@ -138,7 +138,7 @@ This opens the Conjure panel, the on-screen overlay, and the spellbook demo page
 | `--venue FILE` | Threshold overrides for a demo venue (default `venue.json`) |
 | `--profile FILE` | Where calibration, the spell, and settings are saved |
 
-**F8** anywhere pauses or resumes Conjure (a panic key for live demos; needs Input Monitoring for the terminal app, which the permission check tests). Each run writes a log to `logs/`.
+**F8** anywhere pauses or resumes Conjure (a panic key for live demos), and **F9** brings the Conjure panel to the front. Both need Input Monitoring for the terminal app, which the permission check tests. Each run writes a log to `logs/`.
 
 Keys in the preview window: `p` hide preview, `m` cycle click mode, `g` record a spell, `c` calibrate, `s` settings panel, `t` tutorial mode, `k` metrics, `q` quit.
 

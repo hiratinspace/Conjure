@@ -365,8 +365,10 @@ def run(args):
         from pipeline import settings_model
         from pipeline.panic_key import start_panic_key
 
-        start_panic_key(config.PANIC_KEY, engine, settings_model.toggle_user_pause)
     app = App(ui, modes, engine, feedback, screen_size, show_preview=args.preview)
+    if config.PANIC_KEY and not dry_run:
+        start_panic_key(config.PANIC_KEY, engine, settings_model.toggle_user_pause,
+                        {config.PANEL_KEY: app.request_panel} if config.PANEL_KEY else None)
     if args.quit_after:
         app.root.after(int(args.quit_after * 1000), app.quit)
     app.run(lambda should_stop: run_pipeline(args, engine, timer, permissions, on_frame, should_stop))
