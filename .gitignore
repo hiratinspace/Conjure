@@ -31,3 +31,7 @@ logs/
 
 # Runtime voice cache (pre-generated clips in audio/voice ARE committed)
 audio/cache/
+
+# Submission media and draft text (kept local)
+media/
+DEVPOST.md
