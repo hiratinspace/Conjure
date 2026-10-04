@@ -126,7 +126,8 @@ def make_scroll():
 
 def make_gesture_recorder():
     return GestureRecorder(config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.GESTURE_COUNTDOWN_S,
-                           config.GESTURE_SAMPLE_S, config.GESTURE_ACTIVE_THRESHOLD, config.GESTURE_MARGIN_FRAMES,
+                           config.GESTURE_SAMPLE_S, config.GESTURE_ACTIVE_THRESHOLD, config.GESTURE_PLATEAU_FRACTION,
+                           config.GESTURE_MAX_SAMPLE_FRAMES, config.GESTURE_MIN_SAMPLE_FRAMES,
                            config.GESTURE_THRESHOLD_SCALE, config.GESTURE_THRESHOLD_FLOOR,
                            config.GESTURE_THRESHOLD_CEILING, config.GESTURE_DISTINCT_FACTOR)
 

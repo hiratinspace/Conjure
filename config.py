@@ -184,7 +184,9 @@ SCROLL_MAX_RATE = 60.0  # steps per second
 GESTURE_COUNTDOWN_S = 3.0  # "rest your hand in its normal shape" before each sample; its first half is the rest shape
 GESTURE_SAMPLE_S = 3.0  # recording window per sample
 GESTURE_ACTIVE_THRESHOLD = 0.25  # frames differing from rest by more than this are the gesture
-GESTURE_MARGIN_FRAMES = 3  # kept on each side of the trimmed gesture
+GESTURE_PLATEAU_FRACTION = 0.5  # the held shape: frames at least this fraction of the sample's peak distance from rest
+GESTURE_MAX_SAMPLE_FRAMES = 30  # ~1 s: a long hold is cut to this around its peak, so casting never needs a long hold
+GESTURE_MIN_SAMPLE_FRAMES = 3  # a shorter plateau is a tracking blip, not a shape the user held
 GESTURE_THRESHOLD_SCALE = 1.5  # match threshold = this x the largest difference between the 3 samples
 GESTURE_THRESHOLD_FLOOR = 0.15
 GESTURE_THRESHOLD_CEILING = 0.35  # real movement came within 0.40 of a curl gesture (exits recording)

@@ -99,7 +99,8 @@ def test_three_samples_make_a_template_with_trimmed_samples():
     assert rec.state == DONE
     samples, threshold, warnings = rec.result()
     assert len(samples) == 3
-    assert all(10 <= len(s) <= 40 for s in samples)  # trimmed to the ~0.8 s motion, not the 2 s window
+    # trimmed to the shape held at the peak of the ~0.8 s motion, never the whole 3 s window
+    assert all(config.GESTURE_MIN_SAMPLE_FRAMES <= len(s) <= config.GESTURE_MAX_SAMPLE_FRAMES for s in samples)
     assert config.GESTURE_THRESHOLD_FLOOR <= threshold <= config.GESTURE_THRESHOLD_CEILING
     assert warnings == []
 
@@ -198,3 +199,28 @@ def test_three_casts_that_do_not_look_alike_are_rejected_and_redone():
 def test_consistent_casts_pass_the_quality_gate():
     rec = run_recorder(recorder_frames([curl_points] * 3))
     assert rec.state == DONE and rec.rejected_sets == 0
+
+
+def held_shape_frames(takes, rest_s=config.GESTURE_COUNTDOWN_S, sample_s=config.GESTURE_SAMPLE_S):
+    """Three takes of one shape (open -> curled), each (ramp_s, hold_s): a flick, a slow change with a hold,
+    a change held to the end of the window. The transitions differ on every take; the shape does not."""
+    segments = []
+    for ramp, hold in takes:
+        segments.append((rest_s + 0.05, dict(points=OPEN)))
+        segments += [(0.3, dict(points=OPEN)), (ramp, dict(points=lambda f: blend(OPEN, CURLED, f))),
+                     (hold, dict(points=CURLED))]
+        left = sample_s + 0.05 - 0.3 - ramp - hold
+        if left > 0:
+            segments += [(min(ramp, left), dict(points=lambda f: blend(CURLED, OPEN, f))),
+                         (max(0.0, left - ramp), dict(points=OPEN))]
+    return stream(segments)
+
+
+def test_the_same_shape_held_for_different_times_passes_the_gate():
+    """The real bug: three honest repeats of one shape, with a different speed and hold each time, were
+    rejected as inconsistent because the transitions were compared too. Only the held shape counts."""
+    rec = run_recorder(held_shape_frames([(0.2, 0.15), (0.6, 1.5), (0.3, 2.5)]))
+    assert rec.state == DONE and rec.rejected_sets == 0
+    samples, threshold, _ = rec.result()
+    assert all(config.GESTURE_MIN_SAMPLE_FRAMES <= len(s) <= config.GESTURE_MAX_SAMPLE_FRAMES for s in samples)
+    assert threshold <= config.GESTURE_THRESHOLD_CEILING

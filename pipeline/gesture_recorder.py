@@ -4,10 +4,15 @@ Flow for each of the 3 samples, driven frame by frame by the engine:
   COUNTDOWN (`countdown_s`): hold your hand naturally; the last part of the
       countdown is captured as the "rest" shape.
   RECORD (`sample_s`): perform the gesture.
-The sample is trimmed to the frames whose shape differs from rest by more
-than `active_threshold` (plus a small margin). If no frame does, the motion
-was indistinguishable from the user's normal hand: the sample is rejected
-with a message and recorded again. Losing the hand mid-sample also repeats it.
+A spell is a hand shape, so the sample is trimmed to the shape the user
+held: the frames around the peak distance from rest that stay within
+`plateau_fraction` of that peak, cut to `max_frames` around the peak. The
+transitions into and out of the shape are left out on purpose: their timing
+differs on every take (a quick flick, a slow change, a long hold), and keeping
+them made three honest repeats of one shape fail the consistency gate. If no
+frame differs from rest by more than `active_threshold`, the motion was
+indistinguishable from the user's normal hand: the sample is rejected with a
+message and recorded again. Losing the hand mid-sample also repeats it.
 
 Quality gate: after the third sample the three are compared with each
 other. If they would need a threshold above the ceiling to match each other,
@@ -40,13 +45,15 @@ SAMPLES = 3
 
 
 class GestureRecorder:
-    def __init__(self, aspect, countdown_s, sample_s, active_threshold, margin_frames, threshold_scale,
-                 threshold_floor, threshold_ceiling, distinct_factor):
+    def __init__(self, aspect, countdown_s, sample_s, active_threshold, plateau_fraction, max_frames, min_frames,
+                 threshold_scale, threshold_floor, threshold_ceiling, distinct_factor):
         self.aspect = aspect
         self.countdown_s = countdown_s
         self.sample_s = sample_s
         self.active_threshold = active_threshold
-        self.margin_frames = margin_frames
+        self.plateau_fraction = plateau_fraction
+        self.max_frames = max_frames
+        self.min_frames = min_frames
         self.threshold_scale = threshold_scale
         self.threshold_floor = threshold_floor
         self.threshold_ceiling = threshold_ceiling
@@ -104,11 +111,11 @@ class GestureRecorder:
                 self.state = RECORD
                 self._t_state = t
                 self._frames = []
-                self.prompt = f"Spell sample {n} of {SAMPLES}: now change your hand's shape!"
+                self.prompt = f"Spell sample {n} of {SAMPLES}: make the shape and hold it for a second!"
                 log.info("recorder: sample %d window open", n)
             return
 
-        self.prompt = f"Spell sample {n} of {SAMPLES}: now change your hand's shape!"
+        self.prompt = f"Spell sample {n} of {SAMPLES}: make the shape and hold it for a second!"
         self._frames.append(frame)
         if elapsed >= self.sample_s:
             self._finish_sample(t)
@@ -123,18 +130,23 @@ class GestureRecorder:
                      len(self.samples) + 1, max(dist), self.active_threshold)
             self._begin_countdown(t)
             return
-        lo = max(0, active[0] - self.margin_frames)
-        hi = min(len(self._frames), active[-1] + 1 + self.margin_frames)
+        lo, hi = self._plateau(dist)
+        if hi - lo < self.min_frames:
+            self.message = "That shape went by too fast to see. Make the shape and hold it for a moment."
+            log.info("recorder: sample %d rejected, plateau of %d frames is shorter than %d",
+                     len(self.samples) + 1, hi - lo, self.min_frames)
+            self._begin_countdown(t)
+            return
         self.samples.append(np.array(self._frames[lo:hi]))
         self.rests.append(rest)
         self.message = ""
-        log.info("recorder: sample %d accepted (%d frames, peak distance %.2f)", len(self.samples), hi - lo, max(dist))
+        log.info("recorder: sample %d accepted (%d frames held of %d active, peak distance %.2f)",
+                 len(self.samples), hi - lo, len(active), max(dist))
         if len(self.samples) == SAMPLES and not self._consistent():
             self.rejected_sets += 1
             self.samples, self.rests = [], []
             self.message = ("Those three didn't look alike: use one clear shape change and repeat it the same "
                             "way each time.")
-            log.info("recorder: three samples rejected as inconsistent, starting over")
             self._begin_countdown(t)
             return
         if len(self.samples) == SAMPLES:
@@ -144,9 +156,29 @@ class GestureRecorder:
         else:
             self._begin_countdown(t)
 
+    def _plateau(self, dist):
+        """[lo, hi) of the held shape: the frames around the peak that stay within plateau_fraction of it,
+        cut to max_frames around the peak."""
+        peak = int(np.argmax(dist))
+        floor = max(self.active_threshold, self.plateau_fraction * dist[peak])
+        lo = peak
+        while lo > 0 and dist[lo - 1] >= floor:
+            lo -= 1
+        hi = peak + 1
+        while hi < len(dist) and dist[hi] >= floor:
+            hi += 1
+        if hi - lo > self.max_frames:
+            lo = max(lo, peak - self.max_frames // 2)
+            hi = min(hi, lo + self.max_frames)
+        return lo, hi
+
     def _consistent(self):
-        spread = max(sequence_distance(a, b) for a, b in itertools.combinations(self.samples, 2))
-        return spread * self.threshold_scale <= self.threshold_ceiling
+        pairs = [sequence_distance(a, b) for a, b in itertools.combinations(self.samples, 2)]
+        spread = max(pairs)
+        ok = spread * self.threshold_scale <= self.threshold_ceiling
+        log.info("recorder: sample spread %s, need each <= %.2f: %s", " ".join(f"{p:.2f}" for p in pairs),
+                 self.threshold_ceiling / self.threshold_scale, "consistent" if ok else "rejected, starting over")
+        return ok
 
     def result(self, ordinary=None):
         """(samples as nested lists, threshold, warnings). Only valid once state == DONE.
