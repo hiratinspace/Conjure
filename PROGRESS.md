@@ -2,6 +2,14 @@
 
 Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pending) · `done` (all ACs verified) · `blocked`
 
+## Waiting on you (in order)
+
+1. **First live run of the full app** (~5 min): `python main.py --preview --spellbook` from Terminal.app. Check the overlay lets clicks through, the panel works, and pinch, dwell (ring visible), and scroll behave. Report anything odd.
+2. **Phase A-C physical gates** (~10 min): record `pinches` and `small_range` (`scripts/record_session.py`), tell me the real pinch count, then calibrate, record a spell, and cast it 10 times.
+3. **CONJ-18** (~2 min): `export ELEVENLABS_API_KEY=...` in your shell, run `python scripts/pregenerate_voices.py`, and tell me the summary line (I commit the clips).
+4. **CONJ-19/20**: rehearsal at the venue per RUNBOOK.md, tune `venue.json`, pick `STAGE_CLICK_MODE`, record the backup video.
+5. Answer the open questions below.
+
 ## Tickets
 
 | Ticket | Title | Phase | Status | Notes |
