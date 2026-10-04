@@ -20,7 +20,7 @@ log = logging.getLogger("conjure.overlay")
 
 RING_RADIUS = 30
 RING_WIDTH = 6
-RING_TRACK = P.SKY_DEEP
+RING_TRACK = P.BORDER
 NAIVE_RED = P.RED
 RING_FILL = P.SKY_LIGHT
 BANNER_BG = P.NAVY_3
@@ -171,5 +171,5 @@ class Overlay:
         item = c.create_text(self.w / 2, y, text=text, fill=BANNER_FG, font=("Helvetica", size, "bold"),
                              width=self.w * 0.8, justify="center")
         x0, y0, x1, y1 = c.bbox(item)
-        rect = c.create_rectangle(x0 - 24, y0 - 14, x1 + 24, y1 + 14, fill=bg, outline=P.SKY_DEEP, width=2)
+        rect = c.create_rectangle(x0 - 24, y0 - 14, x1 + 24, y1 + 14, fill=bg, outline=P.BORDER, width=2)
         c.tag_raise(item, rect)

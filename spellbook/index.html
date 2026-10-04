@@ -12,7 +12,7 @@
 <style>
   :root {
     --navy: #060c1c; --navy-2: #0c1630; --navy-3: #13203f;
-    --sky: #5d9cfe; --sky-light: #88b9fd; --sky-deep: #385993;
+    --sky: #5d9cfe; --sky-light: #88b9fd; --sky-deep: #385993; --border: #4a7ac8;
     --white: #f5f8ff; --muted: #9fb3d9;
     --target: 96px;
     --font: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -35,7 +35,7 @@
   .seals { position: fixed; top: 22px; left: 0; right: 0; display: flex; justify-content: center; gap: 18px; }
   .seal {
     width: 26px; height: 26px; border-radius: 50%;
-    border: 2px solid var(--sky-deep); background: transparent;
+    border: 2px solid var(--border); background: transparent;
   }
   .seal.done { background: var(--sky); border-color: var(--sky); box-shadow: 0 0 16px rgba(93, 156, 254, .7); }
   .seal.here { outline: 2px solid var(--white); outline-offset: 4px; }
@@ -69,7 +69,7 @@
   /* Targets */
   .rune {
     width: 150px; height: 150px; border-radius: 50%;
-    border: 3px solid var(--sky-deep); background: var(--navy-3);
+    border: 3px solid var(--border); background: var(--navy-3);
     font-size: 72px; color: var(--sky-light);
     transition: background .2s, box-shadow .2s, border-color .2s;
   }
@@ -78,7 +78,7 @@
 
   .big {
     min-width: 260px; min-height: 140px; padding: 0 36px;
-    border: 3px solid var(--sky-deep); border-radius: 22px; background: var(--navy-3);
+    border: 3px solid var(--border); border-radius: 22px; background: var(--navy-3);
     font-size: 32px; font-weight: 600;
     transition: border-color .15s, box-shadow .15s, transform .12s;
   }
@@ -90,14 +90,14 @@
   .stage.scrolling { flex-wrap: nowrap; }
   .scroll-box {
     width: min(560px, 40vw); height: 300px; overflow-y: auto;
-    padding: 24px 32px; border: 1px solid rgba(136, 185, 253, .3); border-radius: 22px;
+    padding: 24px 32px; border: 1px solid var(--border); border-radius: 22px;
     background: var(--navy-3); color: var(--white); font-size: 25px;
   }
   .scroll-box p { margin: 0 0 1em; }
   .scroll-buttons { display: flex; flex-direction: column; gap: 20px; }
   .scroll-buttons .big { min-width: 180px; min-height: 130px; }
 
-  .slot { position: relative; width: 220px; height: 220px; border: 3px dashed var(--sky-deep); border-radius: 50%;
+  .slot { position: relative; width: 220px; height: 220px; border: 3px dashed var(--border); border-radius: 50%;
           display: flex; align-items: center; justify-content: center; font-size: 90px; background: var(--navy-2); }
   .stone { width: 140px; height: 140px; border-radius: 50%; border: 3px solid var(--white);
            background: radial-gradient(circle at 35% 30%, #ffffff 0%, var(--sky-light) 35%, var(--sky) 75%, var(--sky-deep) 100%);
@@ -107,16 +107,16 @@
   .stone.dragging { position: fixed; z-index: 10; pointer-events: none; }
   .to { flex-direction: column; justify-content: flex-end; padding-bottom: 34px; border-style: dashed; color: inherit; }
   .pot { position: relative; width: 150px; height: 104px; border-radius: 10px 10px 75px 75px;
-         background: radial-gradient(circle at 40% 25%, #1c2c52, var(--navy) 70%); border: 3px solid var(--sky-deep); }
+         background: radial-gradient(circle at 40% 25%, #1c2c52, var(--navy) 70%); border: 3px solid var(--border); }
   .pot::before { content: ""; position: absolute; left: -12px; right: -12px; top: -14px; height: 22px;
-                 border-radius: 12px; background: var(--navy-3); border: 3px solid var(--sky-deep); }
+                 border-radius: 12px; background: var(--navy-3); border: 3px solid var(--border); }
   .pot::after { content: ""; position: absolute; left: 14px; right: 14px; top: -8px; height: 10px;
                 border-radius: 50%; background: var(--sky-light); box-shadow: 0 0 18px var(--sky); }
   .to .stone { position: absolute; width: 90px; height: 90px; margin-bottom: 60px; }
 
   /* Page controls */
   .controls { position: fixed; left: 6vw; right: 6vw; bottom: 26px; display: flex; justify-content: space-between; }
-  .turn { min-width: 220px; border: 3px solid var(--sky-deep); border-radius: 22px; background: var(--navy-2);
+  .turn { min-width: 220px; border: 3px solid var(--border); border-radius: 22px; background: var(--navy-2);
           font-size: 28px; font-weight: 600; transition: border-color .15s; }
   .turn:hover { border-color: var(--sky); }
   .turn:disabled { opacity: .3; cursor: default; }

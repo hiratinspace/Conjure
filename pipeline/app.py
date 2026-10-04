@@ -190,7 +190,7 @@ class App:
         row = tk.Frame(body, bg=BG)
         row.pack(pady=(10, 6))
         entry = tk.Entry(row, font=BIG_FONT, width=14, bg=P.NAVY_3, fg=FG, insertbackground=FG, relief="flat",
-                         highlightthickness=2, highlightbackground=P.SKY_DEEP, highlightcolor=P.SKY)
+                         highlightthickness=2, highlightbackground=P.BORDER, highlightcolor=P.SKY)
         entry.pack(side="left", padx=(0, 8), ipady=14)
         entry.bind("<Return>", lambda _e: self._name_chosen(entry.get().strip()))
         BigButton(row, "Use this name", lambda: self._name_chosen(entry.get().strip()), width=12).pack(side="left")

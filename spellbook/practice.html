@@ -14,7 +14,7 @@
 <style>
   :root {
     --navy: #060c1c; --navy-2: #0c1630; --navy-3: #13203f;
-    --sky: #5d9cfe; --sky-light: #88b9fd; --sky-deep: #385993;
+    --sky: #5d9cfe; --sky-light: #88b9fd; --sky-deep: #385993; --border: #4a7ac8;
     --white: #f5f8ff; --muted: #9fb3d9;
     --font: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
   }
@@ -41,7 +41,7 @@
     transition: transform .12s, box-shadow .12s;
   }
   .big:hover { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(93, 156, 254, .5); }
-  .ghost { background: transparent; color: var(--sky-light); border: 3px solid var(--sky-deep); box-shadow: none; }
+  .ghost { background: transparent; color: var(--sky-light); border: 3px solid var(--border); box-shadow: none; }
   .ghost:hover { border-color: var(--sky); box-shadow: none; }
   .target {
     position: absolute; border-radius: 50%; padding: 0; min-width: 0; min-height: 0; border: 0;
@@ -51,7 +51,7 @@
   }
   .target.hit { background: var(--white); transition: background .1s; }
   .hud { position: fixed; top: 22px; left: 0; right: 0; text-align: center; font-size: 22px; color: var(--muted); }
-  .card { background: var(--navy-3); border: 1px solid rgba(136, 185, 253, .25); border-radius: 24px; padding: 28px 36px;
+  .card { background: var(--navy-3); border: 1px solid var(--border); border-radius: 24px; padding: 28px 36px;
           margin: 8px auto 20px; min-width: min(640px, 90vw); }
   table { border-collapse: collapse; width: 100%; font-size: 24px; }
   td { padding: 10px 14px; border-bottom: 1px solid rgba(136, 185, 253, .15); }
