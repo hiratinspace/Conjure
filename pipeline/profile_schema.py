@@ -73,6 +73,7 @@ class PointerSettings:
     style: str = config.POINTER_STYLE  # "mouse" | "direct"
     dead_speed: float = None  # auto-tuned resting threshold (base px/s), None = config default
     pinch_close_ms: int = None  # auto-tuned pinch snap window, None = config default
+    pinch_engage: float = None  # auto-tuned engage ratio (release = engage + hysteresis), None = default
     feel: str = "balanced"  # mouse-pointer preset: "precise" | "balanced" | "fast"
 
 
@@ -169,9 +170,12 @@ def _parse_pointer(obj):
     close = obj.get("pinch_close_ms")
     if close is not None:
         close = _number(obj, "pinch_close_ms", lo=50, hi=2000, integer=True)
+    engage = obj.get("pinch_engage")
+    if engage is not None:
+        engage = _number(obj, "pinch_engage", lo=0.05, hi=0.6)
     feel = obj.get("feel", "balanced")
     _require(feel in ("precise", "balanced", "fast"), f"bad feel {feel!r}")
-    return PointerSettings(style=style, dead_speed=dead, pinch_close_ms=close, feel=feel)
+    return PointerSettings(style=style, dead_speed=dead, pinch_close_ms=close, pinch_engage=engage, feel=feel)
 
 
 def profile_from_dict(obj):

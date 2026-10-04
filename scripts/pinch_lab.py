@@ -58,6 +58,12 @@ def main():
     screen = main_screen_size()
     injector = RecordingInjector()
     engine = make_engine(injector, StageTimer(1e9, 1e9), screen, ModeState(Mode.PINCH))
+    from pipeline.profile_store import ProfileStore
+    profile, _ = ProfileStore(config.PROFILE_PATH).load()
+    engine.apply_profile(profile)  # the same tuned thresholds the app uses
+    print(f"thresholds: engage {engine.pinch.left.engage:.2f}, release {engine.pinch.left.release:.2f}, "
+          f"snap window {(engine.pinch.left.quick_close_s or 0) * 1000:.0f} ms"
+          + (" (tuned to you)" if engine.pinch_engage or engine.pinch_close_s else " (defaults; press Tune in the app)"))
     left = engine.pinch.left
     clicks, blocked, flash_until = 0, {}, 0.0
     last_reason = ""

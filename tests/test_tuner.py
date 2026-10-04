@@ -122,3 +122,38 @@ def test_bad_pointer_section_rejects_the_profile():
     d["pointer"] = {"style": "joystick"}
     with pytest.raises(ProfileError):
         profile_from_dict(d)
+
+
+def test_fingertips_that_do_not_quite_meet_get_a_looser_engage_ratio():
+    from tests.test_pinch import ramp
+    e = engine()
+    e.tuner.start()
+    shallow = [(0.1, dict(pinch=ramp(0.0, 0.75))), (0.2, dict(pinch=0.75)), (0.1, dict(pinch=ramp(0.75, 0.0)))]
+    # pinch=0.75 leaves the tips ~0.3 hand-sizes apart: never below the default 0.25 engage ratio
+    frames = stream([(2.2, dict()), (5.3, dict()), (0.5, dict()), *shallow, (0.4, dict()), *shallow,
+                     (0.4, dict()), *shallow, (0.5, dict())])
+    for t, h in frames:
+        e.step(t, h)
+    assert e.pinch_engage is not None and e.pinch_engage > config.PINCH_ENGAGE_RATIO
+    assert e.pinch.left.release == pytest.approx(e.pinch_engage + config.TUNE_HYSTERESIS)
+    # A shallow pinch now clicks for this person.
+    from tests.test_pinch import run as run_pinch
+    events, _, _, _ = run_pinch(stream([(0.5, dict(pinch=0.0)), (0.06, dict(pinch=ramp(0.0, 0.75))),
+                                        (0.2, dict(pinch=0.75)), (0.1, dict(pinch=ramp(0.75, 0.0)))]))
+    assert events == []  # defaults: not a pinch
+    events = [x for t, h in stream([(0.5, dict(pinch=0.0)), (0.06, dict(pinch=ramp(0.0, 0.75))),
+                                    (0.2, dict(pinch=0.75)), (0.1, dict(pinch=ramp(0.75, 0.0)))], start=50.0)
+              for x in e.step(t, h).events]
+    assert [x.action.value for x in events] == ["left"]  # tuned: a click
+
+
+def test_deep_pinchers_keep_the_default_engage_ratio():
+    from tests.test_pinch import ramp
+    e = engine()
+    e.tuner.start()
+    deep = [(0.07, dict(pinch=ramp(0.0, 0.95))), (0.2, dict(pinch=0.95)), (0.1, dict(pinch=ramp(0.95, 0.0)))]
+    frames = stream([(2.2, dict()), (5.3, dict()), (0.5, dict()), *deep, (0.4, dict()), *deep, (0.4, dict()),
+                     *deep, (0.5, dict())])
+    for t, h in frames:
+        e.step(t, h)
+    assert e.pinch_engage == pytest.approx(config.PINCH_ENGAGE_RATIO)

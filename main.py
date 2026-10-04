@@ -142,7 +142,8 @@ def make_tuner():
                  config.TUNE_MAX_DEAD, config.TUNE_SLOW_RATIO, config.TUNE_MIN_SLOW, config.TUNE_MOVING_SPEED,
                  config.PINCH_ENGAGE_RATIO, config.PINCH_RELEASE_RATIO, config.TUNE_PINCHES,
                  config.TUNE_PINCH_TIMEOUT_S, config.TUNE_PINCH_MARGIN, config.TUNE_MIN_CLOSE_MS / 1000,
-                 config.TUNE_MAX_CLOSE_MS / 1000)
+                 config.TUNE_MAX_CLOSE_MS / 1000, config.TUNE_ENGAGE_MARGIN, config.TUNE_MAX_ENGAGE,
+                 config.TUNE_HYSTERESIS)
 
 
 def make_calibrator():

@@ -79,6 +79,9 @@ TUNE_PINCH_TIMEOUT_S = 12.0
 TUNE_PINCH_MARGIN = 1.5
 TUNE_MIN_CLOSE_MS = 150  # the window never gets tighter than this ...
 TUNE_MAX_CLOSE_MS = 450  # ... or looser than this (slow drifts would start counting as pinches)
+TUNE_ENGAGE_MARGIN = 1.3  # engage ratio = this x the loosest of the three pinches, never below the default ...
+TUNE_MAX_ENGAGE = 0.38  # ... and never above this (fingertips that never meet)
+TUNE_HYSTERESIS = 0.15  # release ratio = engage + this
 
 # Cursor mapping (CONJ-5). Naive box until the user calibrates (CONJ-12): inset 15% so the
 # cursor reaches every screen edge while the hand stays fully in frame (tracking drops at

@@ -82,6 +82,7 @@ class Engine:
         self.calibrated = False  # False while the naive default box is in use
         self.tuned = False  # True once the resting threshold came from the user's own hand
         self.pinch_close_s = None  # auto-tuned pinch window, None = config default
+        self.pinch_engage = None  # auto-tuned engage ratio, None = config default
         self.feel = "balanced"  # mouse-pointer preset name
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.spell_listeners = []  # fn(name) called when the custom gesture is cast
@@ -181,6 +182,8 @@ class Engine:
             self.set_dead_speed(profile.pointer.dead_speed)
         if profile.pointer.pinch_close_ms is not None:
             self.set_pinch_close(profile.pointer.pinch_close_ms / 1000)
+        if profile.pointer.pinch_engage is not None:
+            self.set_pinch_engage(profile.pointer.pinch_engage)
         if profile.pointer.feel in config.MOUSE_FEELS and "mouse" in self.pointers:
             low, high, fast = config.MOUSE_FEELS[profile.pointer.feel]
             pointer = self.pointers["mouse"][1]
@@ -193,6 +196,11 @@ class Engine:
         """Pinch snap window from the user's own pinches (auto-tune)."""
         self.pinch.configure(quick_close_s=seconds)
         self.pinch_close_s = seconds
+
+    def set_pinch_engage(self, engage):
+        """Engage ratio from the user's own pinches; release keeps the same hysteresis gap."""
+        self.pinch.configure(engage=engage, release=engage + config.TUNE_HYSTERESIS)
+        self.pinch_engage = engage
 
     def set_dead_speed(self, dead, slow=None):
         """Resting threshold of the mouse-style pointer (auto-tune), with the careful band scaled to match."""
@@ -218,6 +226,7 @@ class Engine:
         pointer = PointerSettings(style=self.pointer_style or config.POINTER_STYLE,
                                   dead_speed=mouse.dead_speed if (mouse and self.tuned) else None,
                                   pinch_close_ms=round(self.pinch_close_s * 1000) if self.pinch_close_s else None,
+                                  pinch_engage=self.pinch_engage,
                                   feel=self.feel)
         return Profile(calibration=calibration, gestures=list(self.gestures), settings=settings, pointer=pointer)
 
@@ -380,8 +389,10 @@ class Engine:
                 parts = [f"Tuned to your hand: resting tremor {p95:.0f}, threshold {dead:.0f}"]
                 if self.tuner.pinch_close_s is not None:
                     self.set_pinch_close(self.tuner.pinch_close_s)
+                    engage, _ = self.tuner.pinch_engage_out
+                    self.set_pinch_engage(engage)
                     parts.append(f"your pinches close in up to {max(self.tuner.close_times) * 1000:.0f} ms, "
-                                 f"window set to {self.tuner.pinch_close_s * 1000:.0f} ms")
+                                 f"window set to {self.tuner.pinch_close_s * 1000:.0f} ms, engage at {engage:.2f}")
                 else:
                     parts.append("no pinch was seen, so the pinch window is unchanged")
                 self.tuner.cancel()

@@ -8,10 +8,12 @@ resting hand does (the 95th percentile times `margin`, clamped), with the
 "careful movement" band scaled to match.
 
 Then a second phase measures how the user pinches: they pinch three times,
-naturally, and the time each pinch takes to close (from fingertips apart to
+naturally. The time each pinch takes to close (from fingertips apart to
 touching) sets the pinch "snap" window at `pinch_margin` x the slowest one,
-clamped. A slow pincher is no longer locked out by a window tuned on someone
-else's hand.
+clamped, and how far the fingertips actually get sets the engage ratio
+(`engage_margin` x the loosest pinch, never tighter than the default). A slow
+pincher, or one whose fingertips do not quite meet, is no longer locked out
+by thresholds tuned on someone else's hand.
 
 Driven by the engine one frame at a time, like the calibrator: COUNTDOWN
 (get comfortable), MEASURE (hold still), PINCHES (pinch three times), DONE. Frames with no hand do not
@@ -27,7 +29,7 @@ IDLE, COUNTDOWN, MEASURE, PINCHES, DONE = "idle", "countdown", "measure", "pinch
 class Tuner:
     def __init__(self, countdown_s, measure_s, margin, min_dead, max_dead, slow_ratio, min_slow, moving_speed,
                  pinch_engage=0.25, pinch_release=0.40, pinches_wanted=3, pinch_timeout_s=12.0, pinch_margin=1.5,
-                 min_close_s=0.15, max_close_s=0.45):
+                 min_close_s=0.15, max_close_s=0.45, engage_margin=1.3, max_engage=0.38, hysteresis=0.15):
         self.countdown_s = countdown_s
         self.measure_s = measure_s
         self.margin = margin
@@ -43,10 +45,17 @@ class Tuner:
         self.pinch_margin = pinch_margin
         self.min_close_s = min_close_s
         self.max_close_s = max_close_s
+        self.engage_margin = engage_margin
+        self.max_engage = max_engage
+        self.hysteresis = hysteresis
         self.pinch_close_s = None  # set after the pinch phase, None if no pinch was seen
+        self.pinch_engage_out = None  # (engage, release) after the pinch phase, None if unchanged
         self.close_times = []
+        self.min_ratios = []  # how far each pinch closed
         self._t_open = None
         self._closed = False
+        self._min_ratio = None
+        self._t_min = None
         self.state = IDLE
         self.prompt = ""
         self.message = ""
@@ -108,20 +117,25 @@ class Tuner:
         self.result = (dead, slow, p95)
         self.state = PINCHES
         self._t_state = t
-        self.close_times, self._t_open, self._closed = [], None, False
+        self.close_times, self.min_ratios, self._t_open, self._closed = [], [], None, False
         self.message = ""
 
     def _update_pinches(self, ratio, t):
+        """A pinch is a dip of the ratio below `pinch_release` and back. Its close time runs from the last
+        open sample to the moment the fingers reach their closest; its depth is that closest ratio."""
         n = len(self.close_times)
         self.prompt = f"Tune: now pinch {self.pinches_wanted} times, the way that feels natural... {n}/{self.pinches_wanted}"
         if ratio is not None:
             if ratio >= self.pinch_release:
-                self._t_open = t
-                self._closed = False
-            elif ratio < self.pinch_engage and not self._closed:
-                self._closed = True
-                if self._t_open is not None and t - self._t_open < 1.0:
-                    self.close_times.append(t - self._t_open)
+                if self._closed and self._min_ratio is not None and self._t_open is not None:
+                    self.close_times.append(self._t_min - self._t_open)
+                    self.min_ratios.append(self._min_ratio)
+                self._t_open, self._closed, self._min_ratio = t, False, None
+            elif self._t_open is not None and t - self._t_open < 1.5:
+                if self._min_ratio is None or ratio < self._min_ratio:
+                    self._min_ratio, self._t_min = ratio, t
+                if ratio < self.max_engage:  # closed enough to be a pinch for someone
+                    self._closed = True
         if len(self.close_times) >= self.pinches_wanted or t - self._t_state >= self.pinch_timeout_s:
             self._finish_pinches()
 
@@ -129,8 +143,12 @@ class Tuner:
         if self.close_times:
             slowest = max(self.close_times)
             self.pinch_close_s = min(self.max_close_s, max(self.min_close_s, self.pinch_margin * slowest))
+            loosest = max(self.min_ratios)
+            engage = min(self.max_engage, max(self.pinch_engage, self.engage_margin * loosest))
+            self.pinch_engage_out = (engage, engage + self.hysteresis)
         else:
-            self.pinch_close_s = None  # keep the default; the hint explains
+            self.pinch_close_s = None  # keep the defaults; the hint explains
+            self.pinch_engage_out = None
         self.state = DONE
         self.prompt = ""
         self.message = ""
