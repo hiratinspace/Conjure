@@ -10,7 +10,7 @@ Conjure is an 18-hour hackathon project. It turns a webcam into a mouse replacem
 - `docs/backlog.md`: tickets CONJ-1 to CONJ-20, each with dependencies and acceptance criteria
 - `docs/build-plan.md`: shared contracts, build order (Phases A to F), stage gates, validation table
 
-When they conflict, build-plan.md governs order, backlog.md governs "done" (acceptance criteria are the definition of done), and scope.md governs intent. `PROGRESS.md` tracks ticket status, stage gates, decisions (with the measurements behind them), and open questions; keep it current and read its decisions before changing any threshold. `RUNBOOK.md` is the demo-day procedure.
+When they conflict, build-plan.md governs order, backlog.md governs "done" (acceptance criteria are the definition of done), and scope.md governs intent. `PROGRESS.md` tracks ticket status, stage gates, decisions (with the measurements behind them), and open questions; keep it current and read its decisions before changing any threshold. `RUNBOOK.md` is the demo-day procedure (local only, gitignored like `docs/`).
 
 ## Stack and constraints
 

@@ -1,5 +1,6 @@
-# Planning docs (kept local)
+# Planning docs and the demo runbook (kept local)
 docs/
+RUNBOOK.md
 
 # Python
 __pycache__/

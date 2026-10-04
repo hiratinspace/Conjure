@@ -198,7 +198,6 @@ python -m pytest -q   # 300 tests, about 8 seconds, no camera needed
 | File | Contents |
 | --- | --- |
 | [`PITCH.md`](PITCH.md) | Measured numbers, the sourced comparison, and lines for the demo |
-| [`RUNBOOK.md`](RUNBOOK.md) | Demo-day checklists, the 3-minute script, and the fallback plan |
 | [`PROGRESS.md`](PROGRESS.md) | Build status, decisions, and the measurements behind them |
 | [`CLAUDE.md`](CLAUDE.md) | Developer guide to the architecture and conventions |
 
