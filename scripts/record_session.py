@@ -32,6 +32,9 @@ PRESETS = {
                  "(jitter test)"),
     "exits": (70, "Move your hand fully out of the frame and back in, 10 times: about 3 s out, 3 s in. "
                   "(auto-pause test)"),
+    "taps": (90, "Touch mode practice. Point with your index finger, hold still, and tap the air (bend and straighten) "
+                 "exactly 20 times, about 2 s apart; then 3 long presses (hold the bend ~1 s); then 3 drags "
+                 "(press, pause, move, straighten). Count out loud."),
     "small_range": (30, "Rest your forearm on the desk. Move your hand only within a comfortable box of about "
                         "3 inches, tracing its edges and corners a few times. (calibration test)"),
 }
