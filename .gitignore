@@ -1,6 +1,9 @@
-# Planning docs and the demo runbook (kept local)
+# Planning docs, build log, pitch notes, runbook, assistant guide (kept local)
 docs/
 RUNBOOK.md
+PROGRESS.md
+PITCH.md
+CLAUDE.md
 
 # Python
 __pycache__/

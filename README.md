@@ -193,14 +193,6 @@ tests/                  300 headless tests
 python -m pytest -q   # 300 tests, about 8 seconds, no camera needed
 ```
 
-## Documentation
-
-| File | Contents |
-| --- | --- |
-| [`PITCH.md`](PITCH.md) | Measured numbers, the sourced comparison, and lines for the demo |
-| [`PROGRESS.md`](PROGRESS.md) | Build status, decisions, and the measurements behind them |
-| [`CLAUDE.md`](CLAUDE.md) | Developer guide to the architecture and conventions |
-
 ## Roadmap
 
 Built in 18 hours, so deliberately focused: macOS only, one screen, one hand, one recorded spell. Next:
