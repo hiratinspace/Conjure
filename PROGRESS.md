@@ -6,7 +6,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 1. **First live run of the full app** (~5 min): `python main.py --preview --spellbook` from Terminal.app. Check the overlay lets clicks through and the panel works; try Touch mode taps, long-press, and drag, then pinch, dwell, and scroll. Report anything odd.
 2. **Phase A-C physical gates** (~10 min): record `pinches` and `small_range` (`scripts/record_session.py`), tell me the real pinch count, then calibrate, record a spell, and cast it 10 times.
-3. **CONJ-18** (~2 min): `export ELEVENLABS_API_KEY=...` in your shell, run `python scripts/pregenerate_voices.py`, and tell me the summary line (I commit the clips).
+3. **CONJ-18** (~2 min): in the terminal where the key is already set, run `python scripts/pregenerate_voices.py`, then `git add audio/voice && git commit -m "Add pre-generated voice clips" && git push` (or tell me and I commit). The key is only in your shell, so this step is yours.
 4. **CONJ-19/20**: rehearsal at the venue per RUNBOOK.md, tune `venue.json`, pick `STAGE_CLICK_MODE`, record the backup video.
 5. Answer the open questions below.
 
@@ -90,6 +90,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 - **Double-click, steadiness, and reach (user feedback 2026-10-04).** Double-click: the user's double pinches land 0.37-0.77 s and up to ~20 px apart; the 0.5 s / 8 px mouse tolerance caught 1 of 10. Now 0.8 s / 30 px, and the second click is placed on the first (phone-style). Steadiness: a 6 px sticky deadband on the filter output (not fed back into the filter: an early version accumulated lag) holds the cursor perfectly still in 72% of settled idle frames; edges still reachable. Reach: default box halved (0.5 x 0.5 of the frame) and calibration starts automatically when none is saved. Pinch results essentially unchanged (98 of 111), still 0 false clicks.
 
 - **Mouse-style pointer is the default (user: "too shaky and moves too fast; I want it to feel like a mouse on a small pad").** Root cause: absolute mapping needs a high gain to cover the screen from a small area, which magnifies tremor. Relative motion with acceleration resolves it: resting-hand jitter measures 50-150 base px/s and real movement 300-2400, so motion below 100 is ignored, 250 gets 0.6x, 1500+ gets 3x. On idle the cursor is still in 94% of settled frames (3 px wander in 16 s); traversal still covers the screen; real pinches and zero false clicks unchanged. Dropping the hand out of view lifts the mouse. Direct (calibrated box) stays as a panel toggle. Also fixed a dwell bug found on the way: re-arming was measured from the dwell's start, not the click, so a slowly drifting cursor could click the same target twice.
+
+- **Resilience (autonomous session 2026-10-04).** Engine.step never raises: a failing frame releases any held button, resets motion state, logs, and returns an empty result; errors reset after a good frame. Camera loss retries every 2 s with an on-screen notice and input paused, up to 30 times; the retry counter resets only after 60 healthy frames (an early version reset it on every open and could loop forever).
 
 ## Granted runners (CONJ-2 AC)
 

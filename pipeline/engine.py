@@ -77,6 +77,8 @@ class Engine:
         self.shadow_clicks = 0  # clicks Conjure's own detector would have made during tutorial mode
         self.clicks = 0  # clicks applied this session
         self._recent = deque(maxlen=30)  # (cursor, speed) for the live jitter metric
+        self.frames_seen = 0
+        self.frame_errors = 0  # consecutive failed frames (reset by a good one)
         self.ordinary = deque(maxlen=ORDINARY_FRAMES)
         self._commands = queue.Queue()
         self.timer = timer
@@ -195,6 +197,24 @@ class Engine:
                 if event.action in (Action.LEFT, Action.RIGHT, Action.DOUBLE, Action.DRAG_START):
                     self.clicks += 1
 
+    def recover(self, error):
+        """A frame failed. Release anything held, forget motion state, and keep going: a demo must
+        not die on one bad frame. Returns the number of consecutive failures so far."""
+        self.frame_errors += 1
+        log.exception("frame %d failed (%d in a row): %s", self.frames_seen, self.frame_errors, error)
+        try:
+            if self.actions.dragging:
+                self.injector.release()
+                self.actions.dragging = False
+            self.filter.reset()
+            self.scroll.reset()
+            self.pinch.reset(self.cursor or (0, 0))
+            self.dwell.reset()
+            self.matcher.reset()
+        except Exception:  # recovery itself must never raise
+            log.exception("recovery failed")
+        return self.frame_errors
+
     def set_tutorial(self, naive_pointer):
         """Turn tutorial mode on (a NaivePointer) or off (None)."""
         self.tutorial = naive_pointer
@@ -248,6 +268,19 @@ class Engine:
         return result
 
     def step(self, t, hand):
+        """One frame. Never raises: a failing frame is logged, state is reset, and an empty result returned."""
+        self.frames_seen += 1
+        try:
+            result = self._step(t, hand)
+            self.frame_errors = 0
+            return result
+        except Exception as e:
+            self.recover(e)
+            result = StepResult(cursor=self.cursor)
+            result.lines.append("frame error (recovered)")
+            return result
+
+    def _step(self, t, hand):
         self._run_commands()
         result = StepResult()
         if self.calibrator.active:

@@ -72,6 +72,10 @@ SENSITIVITY = 1.0  # >1 shrinks the box: less hand travel per screen width
 
 # Injection
 PERMISSION_CHECK_INTERVAL_S = 2.0
+# Camera loss (unplugged, grabbed by another app): retry instead of ending the session
+CAMERA_RETRY_S = 2.0
+CAMERA_MAX_RETRIES = 30  # ~1 minute, then give up and exit with the error
+CAMERA_HEALTHY_FRAMES = 60  # a camera that delivered this many frames counts as recovered (retries reset)
 
 # Smoothing + precision (CONJ-6). Tuned on recordings/idle.jsonl and traversal.jsonl:
 # settled-idle jitter 4.8 px raw -> 1.3 px mean, fast-sweep lag ~14 px (about one frame).

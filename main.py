@@ -11,6 +11,7 @@ Engine, so every stage after the tracker runs identically on recorded sessions.
 import argparse
 import logging
 import sys
+import time
 
 import numpy as np
 
@@ -27,7 +28,7 @@ from pipeline.gesture_matcher import GestureMatcher
 from pipeline.gesture_recorder import GestureRecorder
 from pipeline.hand_tracker import HandTracker
 from pipeline.injector import PynputInjector, RecordingInjector
-from pipeline.modes import Mode, ModeState
+from pipeline.modes import HAND_LOST, Mode, ModeState
 from pipeline.permissions import PermissionWatch, main_screen_size
 from pipeline.pinch import PinchDetector
 from pipeline.profile_store import ProfileStore
@@ -225,7 +226,7 @@ def run_loop(stream, engine, timer, recorder, fps_fn, on_frame, should_stop, per
 def cv2_preview_frame(preview):
     """on_frame for --no-ui: the synchronous OpenCV preview window."""
     def on_frame(image, hand, result, fps):
-        if not preview.enabled:
+        if not preview.enabled or image is None:
             return False
         if hand is not None:
             draw_hand(image, hand)
@@ -234,22 +235,45 @@ def cv2_preview_frame(preview):
 
 
 def run_pipeline(args, engine, timer, permissions, on_frame, should_stop):
-    """Open the source (camera or replay) and run until it ends or should_stop()."""
+    """Open the source (camera or replay) and run until it ends or should_stop().
+
+    A camera that stops delivering frames (unplugged, grabbed by another app, permission revoked)
+    is retried every CAMERA_RETRY_S with a notice on screen, instead of ending the session."""
     if args.replay:
         log.info("replaying %s", args.replay)
         run_loop(replay_stream(args.replay), engine, timer, None, lambda: timer.last_summary.get("fps", 0.0),
                  on_frame, should_stop, permissions)
         return
     recorder = None
-    source = make_frame_source(args.camera)
+    if args.record:
+        recorder = LandmarkRecorder(args.record, name="manual",
+                                    frame_size=[config.CAMERA_WIDTH, config.CAMERA_HEIGHT], mirror=config.MIRROR)
+        log.info("recording to %s", args.record)
     try:
-        with source, make_tracker() as tracker:
-            if args.record:
-                recorder = LandmarkRecorder(args.record, name="manual",
-                                            frame_size=[config.CAMERA_WIDTH, config.CAMERA_HEIGHT], mirror=config.MIRROR)
-                log.info("recording to %s", args.record)
-            run_loop(live_stream(source, tracker, timer), engine, timer, recorder, lambda: source.fps, on_frame,
-                     should_stop, permissions)
+        with make_tracker() as tracker:
+            attempt = 0
+            while not should_stop():
+                source = make_frame_source(args.camera)
+                try:
+                    with source:
+                        engine.notice = ""
+                        run_loop(live_stream(source, tracker, timer), engine, timer, recorder, lambda: source.fps,
+                                 on_frame, should_stop, permissions)
+                        return
+                except CameraError as e:
+                    if source.frames >= config.CAMERA_HEALTHY_FRAMES:
+                        attempt = 0  # it worked for a while: this is a new outage, not the same one
+                    attempt += 1
+                    if attempt > config.CAMERA_MAX_RETRIES:
+                        raise
+                    engine.recover(e)
+                    engine.modes.pause(HAND_LOST)  # nothing may click while the camera is gone
+                    engine.notice = f"Camera lost ({e}). Retrying... ({attempt}/{config.CAMERA_MAX_RETRIES})"
+                    log.warning("camera lost: %s (retry %d in %.0f s)", e, attempt, config.CAMERA_RETRY_S)
+                    on_frame(None, None, engine.step(time.monotonic(), None), 0.0)
+                    deadline = time.monotonic() + config.CAMERA_RETRY_S
+                    while time.monotonic() < deadline and not should_stop():
+                        time.sleep(0.1)
     finally:
         if recorder is not None:
             recorder.close()

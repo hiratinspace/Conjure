@@ -51,6 +51,7 @@ class FrameSource:
         self._open_capture = open_capture
         self._clock = clock
         self._cap = None
+        self.frames = 0  # frames delivered since open()
 
     @property
     def fps(self):
@@ -86,6 +87,7 @@ class FrameSource:
         if self.mirror:
             frame = cv2.flip(frame, 1)
         self.fps_counter.tick(t)
+        self.frames += 1
         return frame, t
 
     def close(self):
