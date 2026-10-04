@@ -244,8 +244,8 @@ class App:
         if self.modes.mode != Mode.PAUSED:
             return None
         if USER in self.modes.pause_reasons:
-            return "Paused: press Resume in the Conjure panel"
-        return "Paused: raise your hand to continue"
+            return "Paused: press Resume or F8"
+        return "Paused: raise your hand"
 
     def _poll(self):
         if self.thread is not None and self.thread.stop_event.is_set():

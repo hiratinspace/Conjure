@@ -16,6 +16,7 @@ def test_ring_fills_clockwise_from_twelve_oclock():
 def test_status_pill_shows_tracking_state_and_mode():
     assert badge_text(UiSnapshot(mode="dwell", tracking="tracking")) == "Tracking  |  Dwell"
     assert badge_text(UiSnapshot(mode="paused", tracking="paused")) == "Paused"
+    assert badge_text(UiSnapshot(mode="paused", tracking="paused"), "Paused: raise your hand") == "Paused: raise your hand"
     assert badge_text(UiSnapshot(mode="pinch")) == "Pinch"
     assert badge_text(UiSnapshot()) == ""
 

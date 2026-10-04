@@ -52,10 +52,13 @@ STATUS = {  # tracking state -> (dot color, label)
 MODE_LABELS = {"touch": "Touch", "pinch": "Pinch", "dwell": "Dwell", "custom": "Spell", "paused": ""}
 
 
-def badge_text(snapshot):
+def badge_text(snapshot, paused_label=""):
+    """The pill: tracking state (with the pause reason when paused), click mode, pending action."""
     if not snapshot.mode:
         return ""
     status = STATUS.get(snapshot.tracking, ("", ""))[1]
+    if snapshot.tracking == "paused" and paused_label:
+        status = paused_label
     mode = MODE_LABELS.get(snapshot.mode, snapshot.mode)
     return "  |  ".join(part for part in (status, mode, snapshot.next_action) if part)
 
@@ -148,7 +151,7 @@ class Overlay:
             start, extent = pinch_dot_arc(snap.pinch_progress)
             c.create_arc(x - r, y - r, x + r, y + r, start=start, extent=extent, style="pieslice",
                          fill=NAIVE_RED if blocked else RING_FILL if done else BADGE_FG, outline="")
-        badge = badge_text(snap)
+        badge = badge_text(snap, paused_message or "")
         if badge:
             color = STATUS.get(snap.tracking, (BADGE_FG,))[0]
             text = c.create_text(self.w - 16, 16, text=badge, anchor="ne", fill=BADGE_FG,
@@ -163,8 +166,7 @@ class Overlay:
             c.create_text(16, self.h - 16, text=lines, anchor="sw", fill=BADGE_FG, font=("Menlo", 14))
         if not snap.permission_ok:
             self._banner("Accessibility permission missing: clicks are being dropped", WARN_BG, y=46, size=16)
-        elif paused_message:
-            self._banner(paused_message, BANNER_BG, y=46, size=16)  # the pill says "Paused"; this says why
+        # Paused is shown by the pill alone (with the reason); no banner.
 
     def _banner(self, text, bg, y, size=28):
         c = self.canvas
