@@ -73,7 +73,22 @@ PRECISION_RAMP_S = 0.2  # gain glides to its new value over ~this long; snapping
 POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinch latch)
 
 # Click modes (contract: pipeline/modes.py)
-DEFAULT_CLICK_MODE = "pinch"  # "pinch" | "dwell" | "custom"
+DEFAULT_CLICK_MODE = "touch"  # "touch" | "pinch" | "dwell" | "custom"
+
+# Touch mode: tap with the index finger like a touchscreen (pipeline/touch.py).
+# Straightness = |MCP->tip| / finger length: pointing frames measure 0.95-1.0 in the recordings,
+# bent fingers 0.3-0.6.
+TOUCH_HOVER_STRAIGHTNESS = 0.90  # finger this straight = pointing (armed)
+TOUCH_DOWN_STRAIGHTNESS = 0.75  # bends below this = touch down
+TOUCH_UP_STRAIGHTNESS = 0.88  # straightens above this = lift (hysteresis gap)
+TOUCH_ARM_MS = 150  # point this long before a touch can count (a curled resting hand never taps)
+TOUCH_MIN_MS = 80  # shorter touches are tremor blips
+TOUCH_MAX_SPEED_PX_S = 250  # a touch only counts with the hand nearly still (aim, settle, tap). Measured:
+# false touch-downs in the recordings happened at 300-1500 px/s as the finger curled mid-movement
+TOUCH_DRAG_HOLD_MS = 200  # press this long before moving to drag; a touch that slides sooner is cancelled
+TAP_MAX_MS = 450  # touch and lift within this = tap = left click
+LONG_PRESS_MS = 700  # touch and hold still this long = right click
+TOUCH_DRAG_PX = 30  # touch and move this far = drag
 
 # Dwell (CONJ-8)
 DWELL_MS = 800  # hold still this long to click

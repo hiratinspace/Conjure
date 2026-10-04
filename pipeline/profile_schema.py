@@ -10,7 +10,7 @@ it.
       "calibration": {"x_min", "x_max", "y_min", "y_max"} | null,   # frame coords; null = default box
       "gestures": [{"name", "samples": [3][T][21][3], "threshold"}],
       "settings": {
-        "click_mode": "pinch" | "dwell" | "custom",
+        "click_mode": "touch" | "pinch" | "dwell" | "custom",
         "dwell_ms": int, "dwell_radius_px": int,
         "filter": {"min_cutoff", "beta", "precision_gain"},
         "sensitivity": float

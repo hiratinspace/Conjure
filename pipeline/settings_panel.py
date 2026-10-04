@@ -68,12 +68,13 @@ class SettingsPanel:
         modes = tk.Frame(self.win, bg=BG)
         modes.grid(row=2, column=0, columnspan=4, pady=6)
         self.mode_buttons = {}
-        for i, (mode, label) in enumerate(((Mode.PINCH, "Pinch"), (Mode.DWELL, "Dwell"), (Mode.CUSTOM, "Spell"))):
-            b = BigButton(modes, label, lambda m=mode: self._submit(sm.set_click_mode, m.value))
-            b.grid(row=0, column=i, padx=6)
+        for i, (mode, label) in enumerate(((Mode.TOUCH, "Touch"), (Mode.PINCH, "Pinch"), (Mode.DWELL, "Dwell"),
+                                           (Mode.CUSTOM, "Spell"))):
+            b = BigButton(modes, label, lambda m=mode: self._submit(sm.set_click_mode, m.value), width=6)
+            b.grid(row=0, column=i, padx=5)
             self.mode_buttons[mode] = b
-        self.pause_button = BigButton(modes, "Pause", lambda: self._submit(sm.toggle_user_pause))
-        self.pause_button.grid(row=0, column=3, padx=6)
+        self.pause_button = BigButton(modes, "Pause", lambda: self._submit(sm.toggle_user_pause), width=6)
+        self.pause_button.grid(row=0, column=4, padx=5)
 
         rows = [
             ("sensitivity", "Sensitivity", sm.step_sensitivity),

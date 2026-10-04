@@ -2,6 +2,7 @@ import json
 import types
 
 import config
+from pipeline.modes import CLICK_MODES
 from pipeline.venue import apply_venue
 
 
@@ -52,4 +53,4 @@ def test_the_committed_venue_file_is_valid_against_config():
     cfg = types.SimpleNamespace(**{k: getattr(config, k) for k in dir(config) if k.isupper()})
     applied, errors, mode = apply_venue(config.VENUE_PATH, cfg)
     assert errors == []
-    assert mode in ("pinch", "dwell", "custom")
+    assert mode in [m.value for m in CLICK_MODES]

@@ -7,6 +7,7 @@ normalized units). Shape options:
   finger: which finger pinches with the thumb ("index" or "middle")
   curled: middle, ring, and pinky folded into the palm (a loose fist)
   v_pose: index and middle extended, ring and pinky folded (the scroll pose)
+  bend:   0 = index finger straight (pointing), 1 = index bent down (a touch)
 """
 
 from pipeline.landmarks import LandmarkFrame
@@ -28,8 +29,15 @@ _FOLDED = {  # joints pulled back toward the palm
 }
 
 
-def hand_points(pinch=0.0, finger="index", curled=False, v_pose=False):
+_INDEX_BENT = {6: (-0.37, 1.35), 7: (-0.33, 1.1), 8: (-0.3, 1.25)}  # tip curled back under the PIP
+
+
+def hand_points(pinch=0.0, finger="index", curled=False, v_pose=False, bend=0.0):
     pts = list(_OPEN_HAND)
+    if bend:
+        for i, (bx, by) in _INDEX_BENT.items():
+            ox, oy = pts[i]
+            pts[i] = (ox + bend * (bx - ox), oy + bend * (by - oy))
     if curled:
         for i, p in _FOLDED.items():
             pts[i] = p

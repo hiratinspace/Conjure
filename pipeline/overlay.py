@@ -47,7 +47,7 @@ STATUS = {  # tracking state -> (dot color, label)
     "paused": ("#ff3b30", "Paused"),
     "no hand": ("#8e8e93", "No hand"),
 }
-MODE_LABELS = {"pinch": "Pinch", "dwell": "Dwell", "custom": "Spell", "paused": ""}
+MODE_LABELS = {"touch": "Touch", "pinch": "Pinch", "dwell": "Dwell", "custom": "Spell", "paused": ""}
 
 
 def badge_text(snapshot):
@@ -140,7 +140,7 @@ class Overlay:
         if snap.pinch_progress is not None and snap.cursor is not None and snap.pinch_progress > 0.05:
             x, y = snap.cursor[0] + 26, snap.cursor[1] + 26
             r = 9
-            done = snap.pinch_state in ("confirmed", "dragging")
+            done = snap.pinch_state in ("confirmed", "dragging", "touch", "drag", "held")
             c.create_oval(x - r, y - r, x + r, y + r, outline=RING_FILL, width=2)
             start, extent = pinch_dot_arc(snap.pinch_progress)
             c.create_arc(x - r, y - r, x + r, y + r, start=start, extent=extent, style="pieslice",

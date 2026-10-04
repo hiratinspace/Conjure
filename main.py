@@ -32,6 +32,7 @@ from pipeline.permissions import PermissionWatch, main_screen_size
 from pipeline.pinch import PinchDetector
 from pipeline.profile_store import ProfileStore
 from pipeline.scroll import ScrollDetector
+from pipeline.touch import TouchDetector
 from pipeline.preview import QUIT, Preview, draw_hand
 from pipeline.recorder import LandmarkRecorder, replay
 from pipeline.timing import StageTimer
@@ -80,6 +81,14 @@ def make_pointer_filter(screen_size):
 def make_pinch():
     return PinchDetector(config.PINCH_ENGAGE_RATIO, config.PINCH_RELEASE_RATIO, config.PINCH_HOLD_MS / 1000,
                          config.PINCH_OPEN_EXTENSION, config.DRAG_START_PX, config.PINCH_LATCH_LOOKBACK_S)
+
+
+def make_touch():
+    return TouchDetector(config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN,
+                         config.TOUCH_HOVER_STRAIGHTNESS, config.TOUCH_DOWN_STRAIGHTNESS, config.TOUCH_UP_STRAIGHTNESS,
+                         config.TOUCH_ARM_MS / 1000, config.TOUCH_MIN_MS / 1000, config.TAP_MAX_MS / 1000,
+                         config.LONG_PRESS_MS / 1000, config.TOUCH_DRAG_PX, config.TOUCH_MAX_SPEED_PX_S,
+                         config.TOUCH_DRAG_HOLD_MS / 1000)
 
 
 def make_scroll():
@@ -159,7 +168,7 @@ def make_engine(injector, timer, screen_size, modes=None):
                   AutoPause(modes, config.PAUSE_AFTER_FRAMES, config.RESUME_AFTER_FRAMES,
                             config.CONTROL_POINT_EDGE_MARGIN), timer,
                   config.EDGE_FREEZE_MARGIN,
-                  config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
+                  config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN, make_touch())
 
 
 def live_stream(source, tracker, timer):

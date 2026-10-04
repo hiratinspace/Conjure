@@ -1,10 +1,10 @@
 """FROZEN CONTRACT: the mode state machine (build-plan section 1).
 
-One enum, one owner. Pinch, dwell, custom-gesture, settings panel, and
+One enum, one owner. Touch, pinch, dwell, custom-gesture, settings panel, and
 auto-pause all read and write the mode through a single ModeState instance;
 nothing else may keep its own copy of "the current mode".
 
-The click mode (PINCH | DWELL | CUSTOM) and pausing are separate: pausing
+The click mode (TOUCH | PINCH | DWELL | CUSTOM) and pausing are separate: pausing
 remembers the click mode and resuming returns to it. Several things can pause
 at once (the hand left the frame, the user paused from the panel), so pauses
 are tracked by reason, and input resumes only when every reason is cleared.
@@ -16,13 +16,14 @@ from enum import Enum
 
 
 class Mode(str, Enum):
+    TOUCH = "touch"  # added after the build plan: tap with the index finger like a touchscreen
     PINCH = "pinch"
     DWELL = "dwell"
     CUSTOM = "custom"
     PAUSED = "paused"
 
 
-CLICK_MODES = (Mode.PINCH, Mode.DWELL, Mode.CUSTOM)
+CLICK_MODES = (Mode.TOUCH, Mode.PINCH, Mode.DWELL, Mode.CUSTOM)
 
 # Pause reasons
 HAND_LOST = "hand_lost"

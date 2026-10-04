@@ -50,7 +50,7 @@ class StepResult:
 
 class Engine:
     def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, matcher,
-                 calibrator, auto_pause, timer, edge_freeze_margin, aspect, edge_margin):
+                 calibrator, auto_pause, timer, edge_freeze_margin, aspect, edge_margin, touch=None):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -58,6 +58,7 @@ class Engine:
         self.modes = modes
         self.pinch = pinch
         self.dwell = dwell
+        self.touch = touch
         self.scroll = scroll
         self.recorder = recorder
         self.matcher = matcher
@@ -88,6 +89,8 @@ class Engine:
             return self.pinch.reset(self.cursor)
         if mode == Mode.DWELL:
             self.dwell.reset()
+        if mode == Mode.TOUCH and self.touch is not None and self.cursor is not None:
+            return self.touch.reset(self.cursor)
         if mode == Mode.CUSTOM:
             self.matcher.reset()
         return []
@@ -182,7 +185,7 @@ class Engine:
 
     def blocked(self):
         """Misfires prevented this session: pinch blips, curled-hand contacts, refractory drops."""
-        return self.pinch.blocked + self.actions.suppressed
+        return self.pinch.blocked + self.actions.suppressed + (self.touch.blocked if self.touch else 0)
 
     def jitter_px(self):
         """Cursor shake over the last second while the hand is nearly still, else None (moving)."""
@@ -313,7 +316,16 @@ class Engine:
         with self.timer.stage("inject"):
             self.injector.move(*self.cursor)
         with self.timer.stage("gesture"):
-            if mode == Mode.PINCH:
+            if mode == Mode.TOUCH:
+                self._emit(self.touch.update(hand, t, self.cursor, self.filter), result, t)
+                result.lines.append(self.touch.status())
+                progress, state = self.touch.progress()
+                if state == "touch":
+                    result.dwell_progress = progress  # ring around the cursor: hold for right click
+                    result.pinch_progress, result.pinch_state = 1.0, "confirmed"
+                else:
+                    result.pinch_progress, result.pinch_state = progress, state
+            elif mode == Mode.PINCH:
                 self._emit(self.pinch.update(pose, t, self.cursor, self.filter), result, t)
                 result.lines.append(self.pinch.status())
                 result.pinch_progress, result.pinch_state = self.pinch.progress()

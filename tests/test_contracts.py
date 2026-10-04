@@ -7,7 +7,7 @@ import config
 from pipeline.action_mapper import ActionMapper
 from pipeline.events import Action, ClickEvent
 from pipeline.injector import RecordingInjector
-from pipeline.modes import HAND_LOST, USER, Mode, ModeState
+from pipeline.modes import CLICK_MODES, HAND_LOST, USER, Mode, ModeState
 from pipeline.profile_schema import (SCHEMA_VERSION, ProfileError, default_profile, profile_from_dict,
                                      profile_to_dict)
 
@@ -15,7 +15,8 @@ from pipeline.profile_schema import (SCHEMA_VERSION, ProfileError, default_profi
 
 
 def test_mode_enum_is_exactly_the_four_modes():
-    assert [m.value for m in Mode] == ["pinch", "dwell", "custom", "paused"]
+    # TOUCH was added deliberately after the build plan (touchscreen-style taps).
+    assert [m.value for m in Mode] == ["touch", "pinch", "dwell", "custom", "paused"]
 
 
 def test_pause_remembers_click_mode_and_resume_restores_it():
@@ -133,7 +134,7 @@ def test_default_settings_come_from_config():
     s = default_profile().settings
     assert (s.click_mode, s.dwell_ms, s.dwell_radius_px, s.sensitivity) == (
         config.DEFAULT_CLICK_MODE, config.DWELL_MS, config.DWELL_RADIUS_PX, config.SENSITIVITY)
-    assert s.click_mode in ("pinch", "dwell", "custom")
+    assert s.click_mode in [m.value for m in CLICK_MODES]
 
 
 def test_top_level_fields_are_frozen():

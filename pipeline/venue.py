@@ -47,11 +47,11 @@ def apply_venue(path, cfg):
         if key.startswith("_"):
             continue
         if key == STAGE_CLICK_MODE:
-            if value in ("pinch", "dwell", "custom"):
+            if value in ("touch", "pinch", "dwell", "custom"):
                 stage_mode = value
                 applied.append(f"{key} = {value!r}")
             else:
-                errors.append(f"{key}: {value!r} is not pinch, dwell, or custom")
+                errors.append(f"{key}: {value!r} is not touch, pinch, dwell, or custom")
             continue
         if not key.isupper() or not hasattr(cfg, key):
             errors.append(f"{key}: no such setting in config.py")
