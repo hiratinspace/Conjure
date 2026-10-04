@@ -168,7 +168,7 @@ def test_engine_records_without_moving_or_clicking_and_keeps_ordinary_history():
             injected_while_recording += len(injector.calls) - before
     assert engine.recorder.state == DONE
     assert injected_while_recording == 0
-    assert any("change your hand's shape" in p for p in results)
+    assert any("make the shape and hold it" in p for p in results)
 
 
 def test_finishing_a_recording_names_and_stores_one_spell():
