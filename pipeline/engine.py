@@ -26,7 +26,8 @@ class StepResult:
 
 
 class Engine:
-    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, timer, aspect, edge_margin):
+    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, timer, aspect,
+                 edge_margin):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -34,6 +35,7 @@ class Engine:
         self.modes = modes
         self.pinch = pinch
         self.dwell = dwell
+        self.scroll = scroll
         self.timer = timer
         self.aspect = aspect
         self.edge_margin = edge_margin
@@ -63,6 +65,7 @@ class Engine:
 
         if hand is None:
             self.filter.reset()
+            self.scroll.reset()
             self._emit(self._detectors_reset(mode), result)
             result.lines.append("no hand")
             return result
@@ -70,12 +73,30 @@ class Engine:
         with self.timer.stage("map"):
             pose = analyze(hand, self.aspect, self.edge_margin)
             target = self.mapper.target(hand)
+        if self.cursor is None:
+            self.cursor = target
+        if mode == Mode.PAUSED:
+            self.scroll.reset()
+            self.filter.reset()
+            result.cursor = self.cursor
+            return result
+
+        with self.timer.stage("gesture"):
+            was_scrolling = self.scroll.active
+            scroll_events = self.scroll.update(hand, pose, t, self.cursor)
+        if self.scroll.active or was_scrolling:
+            # Cursor frozen while scrolling; forget the hand's travel so the pointer does not jump after.
+            if not was_scrolling:
+                self._emit(self._detectors_reset(mode), result)
+            self.filter.reset()
+            self._emit(scroll_events, result)
+            result.cursor = self.cursor
+            result.lines.append(self.scroll.status())
+            return result
+
         with self.timer.stage("filter"):
             self.cursor = self.filter.update(target, t)
         result.cursor = self.cursor
-        if mode == Mode.PAUSED:
-            return result
-
         with self.timer.stage("inject"):
             self.injector.move(*self.cursor)
         with self.timer.stage("gesture"):

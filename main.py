@@ -26,6 +26,7 @@ from pipeline.injector import PynputInjector, RecordingInjector
 from pipeline.modes import Mode, ModeState
 from pipeline.permissions import PermissionWatch, main_screen_size
 from pipeline.pinch import PinchDetector
+from pipeline.scroll import ScrollDetector
 from pipeline.preview import QUIT, Preview, draw_hand
 from pipeline.recorder import LandmarkRecorder, replay
 from pipeline.timing import StageTimer
@@ -69,6 +70,12 @@ def make_pinch():
                          config.PINCH_OPEN_EXTENSION, config.DRAG_START_PX, config.PINCH_LATCH_LOOKBACK_S)
 
 
+def make_scroll():
+    return ScrollDetector(config.SCROLL_EXTENDED, config.SCROLL_FOLDED, config.SCROLL_EXIT_EXTENDED,
+                          config.SCROLL_EXIT_FOLDED, config.SCROLL_ENTER_MS / 1000, config.SCROLL_EXIT_MS / 1000,
+                          config.SCROLL_DEAD_ZONE, config.SCROLL_GAIN, config.SCROLL_MAX_RATE)
+
+
 def make_injector(dry_run):
     if dry_run:
         return RecordingInjector()
@@ -79,7 +86,7 @@ def make_engine(injector, timer, screen_size, modes=None):
     modes = modes or ModeState(Mode(config.DEFAULT_CLICK_MODE))
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
     return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, ActionMapper(injector, modes),
-                  modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), timer,
+                  modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), make_scroll(), timer,
                   config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
 
 

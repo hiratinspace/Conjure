@@ -81,3 +81,14 @@ PINCH_LATCH_LOOKBACK_S = 0.5  # how far back the pre-pinch click position may be
 DRAG_START_PX = 25  # a confirmed pinch that moves this far becomes a drag (CONJ-9)
 DOUBLE_CLICK_INTERVAL_S = 0.5  # macOS default double-click speed
 DOUBLE_CLICK_RADIUS_PX = 8
+
+# Scroll (CONJ-9): two-finger V pose as a joystick. Extensions are fingertip-to-wrist / hand size.
+SCROLL_EXTENDED = 1.6  # index and middle above this ...
+SCROLL_FOLDED = 1.0  # ... and ring and pinky below this = V pose (never seen by accident in recordings)
+SCROLL_EXIT_EXTENDED = 1.4  # looser thresholds to stay in the pose (hysteresis)
+SCROLL_EXIT_FOLDED = 1.2
+SCROLL_ENTER_MS = 200  # hold the pose this long to start scrolling
+SCROLL_EXIT_MS = 150  # leave the pose this long to stop
+SCROLL_DEAD_ZONE = 0.15  # hand sizes of up/down travel that do nothing
+SCROLL_GAIN = 40.0  # scroll steps per second per hand size beyond the dead zone (1 step = 10 px)
+SCROLL_MAX_RATE = 60.0  # steps per second
