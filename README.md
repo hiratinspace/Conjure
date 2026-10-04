@@ -1,100 +1,198 @@
-# Conjure
+<div align="center">
 
-**A webcam mouse that learns your hand, instead of making your hand learn it.**
+<img src="assets/conjure-logo.png" alt="Conjure logo: a hand with a cursor above it" width="220">
 
-Conjure turns a standard laptop webcam into a full mouse replacement for people with limited hand mobility: tremor, arthritis, partial paralysis, repetitive strain injury. Your hand moves the cursor. You click with a pinch, by holding still, or with a gesture you record yourself. No extra hardware, no account, and no video ever leaves the laptop.
+### A webcam mouse that learns your hand, instead of making your hand learn it.
 
-Every other webcam pointer ships a fixed set of gestures and expects your hand to adapt. Conjure inverts that: any motion your hand can repeat reliably becomes a click.
+![macOS](https://img.shields.io/badge/platform-macOS%20(Apple%20Silicon)-1f2937?logo=apple&logoColor=white)
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
+![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
+![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
+![Tests](https://img.shields.io/badge/tests-239%20passing-2e7d32)
 
-## Measured, not claimed
+[Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
-Results from real recorded sessions in [`recordings/`](recordings/), reproducible with `python -m pytest`:
+</div>
 
-| | Typical webcam-mouse tutorial | Conjure |
-| --- | --- | --- |
-| False clicks during ~2.5 min of ordinary pointing (no click intended) | **41** | **0** |
-| Cursor shake with the hand at rest | 4.8 px | 1.3 px |
-| Custom gesture recognized (10 varied casts) | not possible | 8 or more of 10, within 500 ms |
-| Hand leaves view: input frozen | never | within 0.5 s, every time |
+---
 
-The tutorial approach misfires because it follows the fingertip (which moves when you pinch), measures the pinch in camera pixels (so leaning toward the camera "pinches"), and clicks the instant the fingers cross a line. Conjure fixes each of those, and the app's **tutorial mode** shows the difference live, side by side.
+Conjure turns a standard laptop webcam into a full mouse replacement for people with limited hand mobility: tremor, arthritis, partial paralysis, repetitive strain injury. Your hand moves the cursor, and you click with a pinch, by holding still, or with a gesture you record yourself.
 
-## What it does
+Every other webcam pointer ships a fixed set of gestures and expects your hand to adapt. **Conjure inverts that: any motion your hand can repeat reliably becomes a click.**
+
+## Highlights
+
+| | |
+| --- | --- |
+| **Your own click gesture** | Record any motion three times, name it, and it becomes a click. It works anywhere in the frame and at any distance from the camera. |
+| **Small, rested movements** | Range-of-motion calibration maps the area you can reach comfortably (about 3 inches, forearm on the table) to the whole screen. |
+| **Steady under tremor** | One Euro smoothing plus a precision mode that slows the cursor as your hand slows, so small targets stay reachable. |
+| **Clicks that don't misfire** | Size-normalized pinch, hysteresis, a hold time, and an open-fingers rule. Zero false clicks across every recorded session. |
+| **Never stuck** | Can't pinch? Hold still to click (dwell). Hand drops out of view? Everything pauses within half a second. |
+| **Private by design** | Video is processed on the laptop and never stored or sent. No account, no cloud. |
+
+## Measured results
+
+Measured on real recorded hand sessions ([`recordings/`](recordings/)) and reproducible with `python -m pytest`.
+
+| | Typical webcam-mouse tutorial | **Conjure** |
+| --- | :---: | :---: |
+| False clicks in ~2.5 min of ordinary pointing (no click intended) | 41 | **0** |
+| Cursor shake with the hand at rest | 4.8 px | **1.3 px** |
+| Custom gesture recognized, 10 varied casts | not possible | **8 or more, within 500 ms** |
+| Input frozen when the hand leaves view | never | **within 0.5 s, 13 of 13** |
+
+> **Why tutorials misfire.** They follow the fingertip, which moves when you pinch. They measure the pinch in camera pixels, so leaning toward the camera "pinches". And they click the instant the fingers cross a line. Conjure's **tutorial mode** reproduces that behavior live, side by side with its own detector, so you can see the difference on screen.
+
+## Gestures
 
 | Your hand | Result |
 | --- | --- |
-| Move it (small movements, forearm rested) | The cursor follows the knuckle at the base of your index finger, smoothed against tremor, with automatic slow-motion for small targets. |
-| Pinch thumb to index, other fingers open, then release | Left click, landing where the cursor was *before* you pinched. Two quick pinches make a double-click. |
-| Pinch thumb to middle finger | Right click. |
-| Pinch, hold, and move | Drag. |
-| Hold still for 0.8 s (dwell mode) | Left click, with a countdown ring so it never feels accidental. For hands that can't pinch. |
-| Your own recorded gesture (spell mode) | Left click. Record it 3 times, name it, and it works anywhere in the frame, at any distance from the camera. |
-| Two fingers up (V), then lift or lower your hand | Scroll. |
-| Drop your hand out of view | Everything pauses within half a second, so nothing can click while you rest. |
+| Move it (small movements, forearm rested) | The cursor follows the knuckle at the base of your index finger |
+| Thumb to index, other fingers open, then release | **Left click**, placed where the cursor was before you pinched |
+| Two quick pinches | **Double-click** |
+| Thumb to middle finger | **Right click** |
+| Pinch, hold, and move | **Drag** |
+| Hold still for 0.8 s *(dwell mode)* | **Left click**, after a countdown ring fills |
+| Your recorded gesture *(spell mode)* | **Left click**, with the spell's name shown and spoken |
+| Two fingers up (V), then lift or lower your hand | **Scroll** |
+| Hand out of view | **Pause**: nothing can click while you rest |
 
-**Range-of-motion calibration** maps the small area you can move in comfortably (about 3 inches, forearm on the table) onto the whole screen.
-
-**Feedback at all times:** a status indicator (tracking, near edge, paused, no hand), a pinch progress dot, a dwell countdown ring, a click sound, and the spell's name flashing on screen and spoken aloud (ElevenLabs, with an offline fallback).
+On screen you always see a status indicator (tracking, near edge, paused, no hand), a pinch progress dot, the dwell countdown ring, and a click sound for every click.
 
 ## How it compares
 
 | | Apple Head Pointer | Google Project Gameface | AirTouch | Tutorials | **Conjure** |
-| --- | --- | --- | --- | --- | --- |
+| --- | :---: | :---: | :---: | :---: | :---: |
 | Tracks | Head | Head + face | Hand | Hand | **Hand** |
-| Record your own gesture as a click | No | No | No (consumer tiers) | No | **Yes** |
-| Per-user range-of-motion calibration | No | No | Not documented | No | **Yes** |
-| Click without pinching | Yes (dwell) | Yes (face expressions) | Not documented | No | **Yes** |
-| Free and on-device | Yes | Yes | On-device, paid | Yes | **Yes** |
-| On macOS | Yes | No | Not yet | Yes | **Yes** |
+| Record your own gesture as a click | ✗ | ✗ | ✗ ¹ | ✗ | **✓** |
+| Per-user range-of-motion calibration | ✗ | ✗ | ? | ✗ | **✓** |
+| Click without pinching | ✓ dwell | ✓ face | ? | ✗ | **✓** |
+| Free | ✓ | ✓ | ✗ | ✓ | **✓** |
+| On-device | ✓ | ✓ | ✓ | ✓ | **✓** |
+| On macOS | ✓ | ✗ | ✗ ² | ✓ | **✓** |
 
-Sources and details: [`PITCH.md`](PITCH.md).
+<sub>¹ Consumer tiers map from a 15-gesture library; custom training is sold to OEMs. ² "On the way" per the vendor. ? = not documented. Verified October 2026; sources in [`PITCH.md`](PITCH.md).</sub>
 
 ## Quick start
 
-Requirements: a Mac with Apple Silicon, Python 3.11 or newer, a webcam.
+**Requirements:** a Mac with Apple Silicon, Python 3.11 or newer, a webcam.
+
+**1. Install**
 
 ```bash
 git clone https://github.com/hiratinspace/Conjure.git
 cd Conjure
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-
-python scripts/check_permissions.py   # grants and checks Camera + Accessibility
-python main.py --spellbook            # run Conjure and open the demo page
 ```
 
-macOS asks for **Camera** and **Accessibility** permission for your terminal app. Grant both, then quit and reopen the terminal. Without Accessibility the cursor can move but clicks are silently dropped, so the check script verifies a real click.
+**2. Grant permissions**
 
-First run:
+```bash
+python scripts/check_permissions.py
+```
 
-1. In the Conjure panel, press **Calibrate**, rest your forearm, and trace the edges of a small comfortable area.
-2. Pick a click mode: **Pinch**, **Dwell**, or **Spell** (press **Record spell** first).
-3. Work through the spellbook page that opened in your browser.
+macOS asks for **Camera** and **Accessibility** access for your terminal app. Grant both, then quit and reopen the terminal. The script verifies that a real click lands, because without Accessibility the cursor can move while clicks are silently dropped.
 
-Useful flags: `--preview` (camera view with landmarks), `--no-ui` (minimal fallback), `--replay recordings/idle.jsonl` (run from a recording, no camera). Optional spoken feedback: set `ELEVENLABS_API_KEY` in your shell; without it Conjure speaks with the built-in macOS voice.
+**3. Run**
+
+```bash
+python main.py --spellbook
+```
+
+This opens the Conjure panel, the on-screen overlay, and the spellbook demo page in your browser.
+
+**4. First session**
+
+1. Press **Calibrate**, rest your forearm, and trace the edges of a small, comfortable area.
+2. Choose a click mode: **Pinch**, **Dwell**, or **Spell** (press **Record spell** first).
+3. Work through the spellbook pages.
+
+**Optional: spoken feedback.** Set `ELEVENLABS_API_KEY` in your shell for ElevenLabs voices. Without it, Conjure uses the built-in macOS voice.
+
+<details>
+<summary><b>Command-line options and keyboard shortcuts</b></summary>
+
+| Flag | What it does |
+| --- | --- |
+| `--spellbook` | Also open the offline demo page |
+| `--preview` | Show the camera view with hand landmarks and live state |
+| `--replay FILE` | Run from a recorded session instead of the camera (no real input) |
+| `--no-ui` | Minimal fallback: no overlay, OpenCV preview only |
+| `--venue FILE` | Threshold overrides for a demo venue (default `venue.json`) |
+| `--profile FILE` | Where calibration, the spell, and settings are saved |
+
+Keys in the preview window: `p` hide preview, `m` cycle click mode, `g` record a spell, `c` calibrate, `s` settings panel, `t` tutorial mode, `k` metrics, `q` quit.
+
+</details>
 
 ## Privacy
 
-All video is processed on this laptop by MediaPipe and never stored or sent anywhere. The only network call in the codebase is the optional ElevenLabs text-to-speech request, isolated in one module (a test fails if any other module touches the network). We pinned MediaPipe 0.10.33 because a newer release added usage telemetry, and a test guards against it returning.
+- All video is processed on the laptop by MediaPipe and is never stored or sent anywhere.
+- The only network code is the optional ElevenLabs text-to-speech request, isolated in a single module. A test fails if any other module touches the network.
+- MediaPipe is pinned to 0.10.33 because a newer release added usage telemetry. A test guards against it returning.
 
-## How it is built
+## Architecture
 
-A single Python process. A worker thread runs the per-frame pipeline: camera, MediaPipe hand landmarks, then calibration mapping, One Euro smoothing with precision mode, then pinch, dwell, scroll, and gesture detectors that emit one shared click event type. The main thread runs a Tk interface: a transparent, click-through overlay and a settings panel with large targets, usable with Conjure itself. The whole pipeline after tracking also runs from recorded sessions, so the acceptance tests (zero false clicks, jitter, calibration reach, pause timing) run headless against real hand data.
+A single Python process. A worker thread runs the per-frame pipeline, and the main thread runs the interface: a transparent, click-through overlay and a settings panel with large targets that can be operated with Conjure itself.
+
+```mermaid
+flowchart LR
+    A[Webcam] --> B[MediaPipe<br/>hand landmarks]
+    B --> C[Calibration<br/>mapping]
+    C --> D[One Euro smoothing<br/>+ precision mode]
+    D --> E{Click mode}
+    E --> F[Pinch]
+    E --> G[Dwell]
+    E --> H[Your spell]
+    B --> I[Scroll and<br/>auto-pause]
+    F & G & H & I --> J[One shared<br/>click event]
+    J --> K[macOS input]
+```
+
+Everything after hand tracking also runs from recorded sessions, so the acceptance tests (zero false clicks, jitter, calibration reach, pause timing) run headless against real hand data.
+
+<details>
+<summary><b>Project layout</b></summary>
 
 ```
-camera -> hand tracker -> calibration -> smoothing -> pinch / dwell / spell / scroll -> clicks
+main.py                 entry point and wiring
+config.py               every tunable, with the measurement behind it
+venue.json              demo-day threshold overrides
+pipeline/               one module per stage: tracking, filter, pinch, dwell,
+                        gestures, calibration, overlay, settings panel, voice
+spellbook/index.html    offline demo page
+recordings/             real hand sessions used as test fixtures
+scripts/                permission check, session recorder, diagnostics, voice clips
+tests/                  239 headless tests
 ```
 
-Developer notes are in [`CLAUDE.md`](CLAUDE.md), build decisions and the measurements behind them in [`PROGRESS.md`](PROGRESS.md), and the demo-day procedure in [`RUNBOOK.md`](RUNBOOK.md).
+</details>
+
+## Testing
 
 ```bash
 python -m pytest -q   # 239 tests, about 8 seconds, no camera needed
 ```
 
-## Limitations and roadmap
+## Documentation
 
-Built in 18 hours, so deliberately narrow: macOS only, one screen, one hand, one recorded spell. Next on the roadmap: an on-screen keyboard for text entry, several spells mapped to different actions, and Windows and Linux support (the stack is cross-platform; only macOS is built and tested).
+| File | Contents |
+| --- | --- |
+| [`PITCH.md`](PITCH.md) | Measured numbers, the sourced comparison, and lines for the demo |
+| [`RUNBOOK.md`](RUNBOOK.md) | Demo-day checklists, the 3-minute script, and the fallback plan |
+| [`PROGRESS.md`](PROGRESS.md) | Build status, decisions, and the measurements behind them |
+| [`CLAUDE.md`](CLAUDE.md) | Developer guide to the architecture and conventions |
 
-## Credits
+## Roadmap
 
-Built solo in an 18-hour hackathon. Hand tracking by [MediaPipe](https://ai.google.dev/edge/mediapipe), smoothing by the [One Euro filter](https://gery.casiez.net/1euro/) (Casiez et al., 2012), voice by [ElevenLabs](https://elevenlabs.io).
+Built in 18 hours, so deliberately focused: macOS only, one screen, one hand, one recorded spell. Next:
+
+- [ ] On-screen keyboard for text entry
+- [ ] Several spells mapped to different actions
+- [ ] Windows and Linux support (the stack is cross-platform; only macOS is built and tested)
+
+## Acknowledgements
+
+Built solo in an 18-hour hackathon. Hand tracking by [MediaPipe](https://ai.google.dev/edge/mediapipe), smoothing by the [One Euro filter](https://gery.casiez.net/1euro/) (Casiez et al., 2012), and voice by [ElevenLabs](https://elevenlabs.io).
