@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-300%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-308%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -30,7 +30,8 @@ Every other webcam pointer ships a fixed set of gestures and expects your hand t
 | **Steady under tremor** | Tremor-speed motion is ignored entirely: on a recorded resting hand the cursor stays still in 94% of frames and wanders 3 px in 16 seconds. |
 | **Clicks you mean** | A pinch counts only when it snaps shut from open; accidental contacts drift. Zero false clicks across every recorded no-click session, measured. |
 | **Any click without a pinch** | Pick the next action on a big-button bar (Left, Right, Double, Drag) by dwell or any click, then click the target. Drag lock means nobody has to hold a pinch. |
-| **Tuned to your hand** | Press Tune, rest for five seconds, and the tremor threshold is set from your own hand, not a default. |
+| **Tuned to your hand** | Press Tune: rest five seconds, then pinch three times. Conjure sets its tremor threshold, its pinch speed window, and how far your fingertips need to close from *your* hand, not from a default. |
+| **A spell you can trust** | After you record a gesture, Conjure asks you to cast it three times and reports "recognized 3 of 3" before it is used. If not, it tells you to record a bigger motion. |
 | **Never stuck** | Can't pinch? Hold still to click (dwell). Hand drops out of view? Everything pauses within half a second. Camera unplugged? Conjure waits and reconnects. |
 | **Private by design** | Video is processed on the laptop and never stored or sent. No account, no cloud. |
 
@@ -118,8 +119,8 @@ This opens the Conjure panel, the on-screen overlay, and the spellbook demo page
 
 **4. First session**
 
-1. Press **Tune**, rest your forearm, and hold your hand still for five seconds: the tremor threshold is now yours.
-2. Move your hand like a mouse on a small pad. If you run out of room, drop your hand out of view and bring it back ("lift the mouse"). Adjust **Sensitivity** in the panel to taste.
+1. Press **Tune**: rest your forearm and hold still for five seconds, then pinch three times naturally. The thresholds are now yours.
+2. Move your hand like a mouse on a small pad. If you run out of room, drop your hand out of view and bring it back ("lift the mouse"). **Feel** in the panel (Precise, Balanced, Fast) and **Sensitivity** adjust it.
 3. Pinch to click: Conjure starts in **Pinch** mode. Other modes in the panel: **Touch**, **Dwell**, or **Spell** (press **Record spell** first). For a right click, double-click, or drag without a pinch, choose it on the action bar first.
 4. Work through the spellbook pages, then **Measure yourself**.
 
@@ -182,7 +183,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/              offline demo page and the target-practice test
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  300 headless tests
+tests/                  308 headless tests
 ```
 
 </details>
@@ -190,7 +191,7 @@ tests/                  300 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 300 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 308 tests, about 8 seconds, no camera needed
 ```
 
 ## Roadmap
