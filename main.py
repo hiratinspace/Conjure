@@ -103,16 +103,33 @@ def make_calibrator():
                       config.CALIBRATION_HIGH_PCT, config.CALIBRATION_MIN_SIZE)
 
 
+def make_voice(player):
+    """ElevenLabs in front of the offline voice when ELEVENLABS_API_KEY is set; offline only otherwise."""
+    import os
+
+    from pipeline.voice import LocalVoice
+
+    local = LocalVoice(player, [config.VOICE_DIR, config.VOICE_CACHE_DIR])
+    api_key = os.environ.get("ELEVENLABS_API_KEY", "").strip()
+    if not api_key:
+        log.info("voice: offline (set ELEVENLABS_API_KEY to enable ElevenLabs)")
+        return local
+    from pipeline.voice_elevenlabs import ElevenLabsVoice
+
+    log.info("voice: ElevenLabs with offline fallback")
+    return ElevenLabsVoice(api_key, os.environ.get("ELEVENLABS_VOICE_ID", config.ELEVENLABS_VOICE_ID),
+                           config.ELEVENLABS_MODEL_ID, [config.VOICE_DIR], config.VOICE_CACHE_DIR, player, local,
+                           config.TTS_DEADLINE_S)
+
+
 def make_feedback(engine, modes, enabled):
     """Sounds and voice for clicks, spells, and mode changes. Silent for dry runs and replays."""
     from pipeline.audio import AudioPlayer
     from pipeline.feedback import Feedback, FeedbackSettings
-    from pipeline.voice import LocalVoice
 
     player = AudioPlayer()
     settings = FeedbackSettings() if enabled else FeedbackSettings(trail=True, sound=False, voice=False)
-    feedback = Feedback(player, LocalVoice(player, config.VOICE_DIR), config.CLICK_SOUND, config.SPELL_SOUND,
-                        settings)
+    feedback = Feedback(player, make_voice(player), config.CLICK_SOUND, config.SPELL_SOUND, settings)
     engine.actions.subscribe(feedback.on_click)
     engine.spell_listeners.append(feedback.on_spell)
     modes.subscribe(feedback.on_mode)

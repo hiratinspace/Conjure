@@ -17,6 +17,9 @@ from pipeline.modes import Mode
 
 MODE_WORDS = {Mode.PINCH: "Pinch mode", Mode.DWELL: "Dwell mode", Mode.CUSTOM: "Spell mode",
               Mode.PAUSED: "Paused"}
+CLICK_WORDS = ["Click", "Right click", "Double click"]
+# Every fixed phrase Conjure can say; scripts/pregenerate_voices.py renders these plus the stock spell names.
+FIXED_PHRASES = list(MODE_WORDS.values()) + ["Resumed"] + CLICK_WORDS
 
 
 @dataclass

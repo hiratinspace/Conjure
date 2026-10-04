@@ -142,3 +142,9 @@ CLICK_RIPPLE_S = 0.35
 
 # Voice (CONJ-18): pre-generated clips live here, one <slug>.mp3 per phrase (committed)
 VOICE_DIR = ROOT / "audio" / "voice"
+VOICE_CACHE_DIR = ROOT / "audio" / "cache"  # clips fetched live at runtime (gitignored)
+
+# ElevenLabs (CONJ-18): the only network call. Key from the ELEVENLABS_API_KEY env var only.
+ELEVENLABS_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"  # premade "George"; override with ELEVENLABS_VOICE_ID
+ELEVENLABS_MODEL_ID = "eleven_flash_v2_5"  # lowest-latency model
+TTS_DEADLINE_S = 1.0  # total budget for a live request before the offline voice speaks instead
