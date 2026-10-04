@@ -24,13 +24,18 @@ spell is the UI's job (CONJ-17); saving is the profile store's (CONJ-13).
 the terminal.
 """
 
+import logging
+
 import numpy as np
 
 import itertools
 
 from pipeline.gestures import RESAMPLE_N, auto_threshold, normalize, sequence_distance, shape_distance
 
+log = logging.getLogger("conjure.recorder")
+
 IDLE, COUNTDOWN, RECORD, DONE = "idle", "countdown", "record", "done"
+HOW = "a hand shape, like opening a fist, a thumbs up, or a V. Moving the whole hand is pointing, not a spell."
 SAMPLES = 3
 
 
@@ -83,6 +88,7 @@ class GestureRecorder:
         if hand is None:
             if self.state == RECORD:
                 self.message = "Lost your hand: let's do that one again."
+                log.info("recorder: hand lost during sample %d, repeating", n)
             self._begin_countdown(t)
             self.prompt = f"Spell sample {n} of {SAMPLES}: show your hand to the camera"
             return
@@ -91,17 +97,18 @@ class GestureRecorder:
         elapsed = t - self._t_state
         if self.state == COUNTDOWN:
             left = self.countdown_s - elapsed
-            self.prompt = f"Spell sample {n} of {SAMPLES}: hold your hand naturally... {max(0, left):.0f}"
-            if left <= self.countdown_s / 2:
+            self.prompt = f"Spell sample {n} of {SAMPLES}: rest your hand in its normal shape... {max(0, left):.0f}"
+            if left >= self.countdown_s / 2:  # the first half, before the user starts to get ready
                 self._rest_frames.append(frame)
             if left <= 0:
                 self.state = RECORD
                 self._t_state = t
                 self._frames = []
-                self.prompt = f"Spell sample {n} of {SAMPLES}: cast your gesture now!"
+                self.prompt = f"Spell sample {n} of {SAMPLES}: now change your hand's shape!"
+                log.info("recorder: sample %d window open", n)
             return
 
-        self.prompt = f"Spell sample {n} of {SAMPLES}: cast your gesture now!"
+        self.prompt = f"Spell sample {n} of {SAMPLES}: now change your hand's shape!"
         self._frames.append(frame)
         if elapsed >= self.sample_s:
             self._finish_sample(t)
@@ -111,7 +118,9 @@ class GestureRecorder:
         dist = [shape_distance(f, rest) for f in self._frames]
         active = [i for i, d in enumerate(dist) if d > self.active_threshold]
         if not active:
-            self.message = "That looked just like your resting hand. Try a bigger or more distinct gesture."
+            self.message = f"No shape change seen. A spell is {HOW}"
+            log.info("recorder: sample %d rejected, no shape change (max distance from rest %.2f, need > %.2f)",
+                     len(self.samples) + 1, max(dist), self.active_threshold)
             self._begin_countdown(t)
             return
         lo = max(0, active[0] - self.margin_frames)
@@ -119,16 +128,19 @@ class GestureRecorder:
         self.samples.append(np.array(self._frames[lo:hi]))
         self.rests.append(rest)
         self.message = ""
+        log.info("recorder: sample %d accepted (%d frames, peak distance %.2f)", len(self.samples), hi - lo, max(dist))
         if len(self.samples) == SAMPLES and not self._consistent():
             self.rejected_sets += 1
             self.samples, self.rests = [], []
-            self.message = ("Those three didn't look alike: try a bigger, more distinct motion, "
-                            "and repeat it the same way each time.")
+            self.message = ("Those three didn't look alike: use one clear shape change and repeat it the same "
+                            "way each time.")
+            log.info("recorder: three samples rejected as inconsistent, starting over")
             self._begin_countdown(t)
             return
         if len(self.samples) == SAMPLES:
             self.state = DONE
             self.prompt = "Spell recorded! Now give it a name."
+            log.info("recorder: three samples accepted")
         else:
             self._begin_countdown(t)
 

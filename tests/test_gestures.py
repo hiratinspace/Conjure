@@ -108,7 +108,7 @@ def test_a_sample_with_no_distinct_motion_is_rejected_and_redone():
     rec = run_recorder(recorder_frames([curl_points, None]))
     assert len(rec.samples) == 1
     assert rec.state in (COUNTDOWN, RECORD)
-    assert "resting hand" in rec.message
+    assert "No shape change" in rec.message
 
 
 def test_losing_the_hand_mid_sample_repeats_it():
@@ -123,9 +123,9 @@ def test_prompts_guide_the_user():
     rec = make_gesture_recorder()
     rec.start()
     rec.update(make_hand(), 0.0)
-    assert "sample 1 of 3" in rec.prompt and "naturally" in rec.prompt
+    assert "sample 1 of 3" in rec.prompt and "normal shape" in rec.prompt
     rec.update(make_hand(), config.GESTURE_COUNTDOWN_S + 0.1)
-    assert rec.state == RECORD and "cast" in rec.prompt
+    assert rec.state == RECORD and "shape" in rec.prompt
 
 
 def test_cancel_returns_to_idle():
@@ -167,7 +167,7 @@ def test_engine_records_without_moving_or_clicking_and_keeps_ordinary_history():
             injected_while_recording += len(injector.calls) - before
     assert engine.recorder.state == DONE
     assert injected_while_recording == 0
-    assert any("cast your gesture" in p for p in results)
+    assert any("change your hand's shape" in p for p in results)
 
 
 def test_finishing_a_recording_names_and_stores_one_spell():

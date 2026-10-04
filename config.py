@@ -181,8 +181,8 @@ SCROLL_MAX_RATE = 60.0  # steps per second
 
 # Custom gesture recorder (CONJ-10). Shape distances are mean per-landmark distance in hand sizes.
 # Recorded hands vary 0.02 (at rest) to 0.21 (median, ordinary movement) within a second.
-GESTURE_COUNTDOWN_S = 2.0  # "hold your hand naturally" before each sample; its second half is the rest shape
-GESTURE_SAMPLE_S = 2.0  # recording window per sample
+GESTURE_COUNTDOWN_S = 3.0  # "rest your hand in its normal shape" before each sample; its first half is the rest shape
+GESTURE_SAMPLE_S = 3.0  # recording window per sample
 GESTURE_ACTIVE_THRESHOLD = 0.25  # frames differing from rest by more than this are the gesture
 GESTURE_MARGIN_FRAMES = 3  # kept on each side of the trimmed gesture
 GESTURE_THRESHOLD_SCALE = 1.5  # match threshold = this x the largest difference between the 3 samples

@@ -130,11 +130,11 @@ class Overlay:
                 c.create_text(x + dx, y - 70 + dy, text=text, fill=BANNER_BG, font=("Iowan Old Style", 44, "bold"))
             c.create_text(x, y - 70, text=text, fill=RING_FILL, font=("Iowan Old Style", 44, "bold"))
         if snap.prompt:
-            self._banner(snap.prompt, BANNER_BG, y=self.h * 0.35, size=34)
+            self._banner(snap.prompt, BANNER_BG, y=self.h * 0.2, size=22, width=0.6)
             if snap.message:
-                self._banner(snap.message, WARN_BG, y=self.h * 0.35 + 80, size=22)
+                self._banner(snap.message, WARN_BG, y=self.h * 0.2 + 64, size=15, width=0.6)
         elif notice:
-            self._banner(notice, BANNER_BG, y=self.h * 0.35, size=24)
+            self._banner(notice, BANNER_BG, y=self.h * 0.2, size=16, width=0.6)
         if snap.dwell_progress is not None and snap.cursor is not None:
             x, y = snap.cursor
             r = RING_RADIUS
@@ -168,10 +168,10 @@ class Overlay:
             self._banner("Accessibility permission missing: clicks are being dropped", WARN_BG, y=46, size=16)
         # Paused is shown by the pill alone (with the reason); no banner.
 
-    def _banner(self, text, bg, y, size=28):
+    def _banner(self, text, bg, y, size=28, width=0.8):
         c = self.canvas
         item = c.create_text(self.w / 2, y, text=text, fill=BANNER_FG, font=("Helvetica", size, "bold"),
-                             width=self.w * 0.8, justify="center")
+                             width=self.w * width, justify="center")
         x0, y0, x1, y1 = c.bbox(item)
         pad = 8 if size <= 18 else 14
         rect = c.create_rectangle(x0 - pad - 10, y0 - pad, x1 + pad + 10, y1 + pad, fill=bg, outline=P.BORDER,
