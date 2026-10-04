@@ -122,7 +122,7 @@ def test_match_scale_is_tunable_at_runtime():
     assert m.match_scale == 1.5
 
 
-@pytest.mark.parametrize("name", ["traversal", "idle", "exits"])
+@pytest.mark.parametrize("name", ["traversal_first", "traversal", "idle", "exits"])
 def test_ordinary_movement_fires_zero_false_matches(name):
     """Build-plan validation row: 60 s of ordinary movement -> 0 false gesture matches."""
     _, frames = read_recording(f"recordings/{name}.jsonl")

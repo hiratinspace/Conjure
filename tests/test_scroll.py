@@ -93,7 +93,7 @@ def test_scroll_starting_on_the_first_frame_does_not_crash():
     assert events == []
 
 
-@pytest.mark.parametrize("name", ["traversal", "idle", "exits"])
+@pytest.mark.parametrize("name", ["traversal_first", "traversal", "idle", "exits"])
 def test_recorded_sessions_never_scroll(name):
     _, frames = read_recording(f"recordings/{name}.jsonl")
     events, _, _ = run(frames)

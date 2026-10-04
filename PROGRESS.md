@@ -33,7 +33,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | --- | --- | --- |
 | Phase C (CONJ-7..12) | **code done, physical gate deferred** | Headless: 0 false clicks/matches/scrolls on all recordings, 8/10+ synthetic casts, calibrated box reaches all edges. Pending: hour-10 gate (real custom gesture fires reliably), 20-pinch test, overlay click-through check. |
 | Phase B (CONJ-5..6) | **code done, physical gate deferred** | Headless: traversal replay reaches all edges, idle jitter 1.3 px mean. Pending: live cursor feel (<100 ms lag, smooth), the hour-3 go/no-go. |
-| Phase A (CONJ-1..4) | **passed with deferrals** | Live: 30 fps with preview, track ~15 ms, either hand, sticky with two hands. Recorded: `traversal`, `idle`, `exits` (stopped at 51 s of 70, but holds 12 clean exit/re-entry cycles). **Deferred by the user** (build continues meanwhile): `pinches`, `small_range` recordings. |
+| Phase A (CONJ-1..4) | **passed with deferrals** | Live: 30 fps with preview, track ~15 ms, either hand, sticky with two hands. Recorded: `traversal_first`, `traversal` (second session), `idle`, `exits` (stopped at 51 s of 70, but holds 12 clean exit/re-entry cycles). **Deferred by the user** (build continues meanwhile): `pinches`, `small_range` recordings. |
 
 ## Shared contracts (frozen before Phase C)
 
@@ -58,6 +58,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 - **Recordings: hand labels flicker; rested wrist sits at the frame bottom.** In `traversal` the label flipped to "Left" in 12 of 1695 hand frames, so nothing downstream may depend on per-frame handedness. In `idle` (forearm rested) the wrist reaches y=1.02, slightly past the bottom edge; calibration and the control point must not depend on the wrist being in frame.
 
 - **Pinch only counts with the other fingers open.** In `traversal` the user's natural pointing posture was curled fingers (median extension 0.63 vs ~2.0 open), and a curled hand puts the thumb tip on the index finger: 5% of frames looked like a pinch. Requiring middle/ring/pinky open (extension > 1.2) gives 0 sustained false pinches in all three recordings. Teach it as "pinch with your other fingers open".
+- **Second traversal recording (21:29) found a Midas-touch case; open-finger bar raised to 1.4.** The new session (hand visible only 39%, more open-handed: median extension 1.6) had 0.16-0.37 s thumb-index contacts at ratio ~0.08 with the other fingers half-open (1.21-1.32), and one became a false drag. At 1.4 all four recordings have 0 sustained pinch-like runs; deliberate open-finger pinches measure ~1.8-2.1. Also: a drag now starts only while the pinch is firmly closed (below engage), since movement during release is not a drag. The first traversal is kept as `traversal_first.jsonl`; both are test fixtures. **Question:** did you pinch around 8.3 s into that recording?
 - **Edge trust is per fingertip, not per hand.** With the hand near the camera the wrist is usually below the frame (80% of traversal frames touch an edge). Only the thumb and pinching finger joints must be 3% inside the frame.
 - **Scroll will use the two-finger V pose, not a fist.** A fist is the user's resting travel pose, so it would scroll constantly. The V pose (index + middle out, ring + pinky folded) never occurs by accident in any recording (max 1 frame).
 

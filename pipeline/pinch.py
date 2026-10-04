@@ -5,7 +5,7 @@ drags), thumb + middle is the right button.
 
 States: OPEN -> PENDING (ratio below `engage`, other fingers open)
              -> CONFIRMED (stayed closed for `hold_s`)
-             -> DRAGGING (CONFIRMED and the cursor then moved `drag_start_px`)
+             -> DRAGGING (CONFIRMED, still firmly closed, and the cursor then moved `drag_start_px`)
 Release is ratio above `release` (hysteresis: release > engage, so a ratio
 hovering near one threshold cannot flicker the state). On release, CONFIRMED
 fires one click and DRAGGING ends the drag; PENDING (a blip under the hold
@@ -118,7 +118,10 @@ class PinchChannel:
                 self.state = CONFIRMED
                 self._latch = pointer_filter.position_at(self._closing_start())
                 self._confirm_pos = cursor
-        if self.state == CONFIRMED and self.allow_drag and math.dist(cursor, self._confirm_pos) > self.drag_start_px:
+        # Only a firmly closed pinch (below `engage`) can start a drag: the hand moving while the
+        # fingers are already opening (inside the hysteresis band) is a release, not a drag.
+        if (self.state == CONFIRMED and self.allow_drag and r < self.engage
+                and math.dist(cursor, self._confirm_pos) > self.drag_start_px):
             self.state = DRAGGING
             return [ClickEvent(Action.DRAG_START, self._latch)]
         return []

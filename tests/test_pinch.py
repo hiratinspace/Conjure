@@ -147,7 +147,7 @@ def test_two_quick_pinches_count_as_a_double_click():
     assert counter.register("right", 2.3, (200, 101)) == 1  # other button
 
 
-@pytest.mark.parametrize("name", ["traversal", "idle", "exits"])
+@pytest.mark.parametrize("name", ["traversal_first", "traversal", "idle", "exits"])
 def test_recorded_sessions_without_pinching_fire_zero_clicks(name):
     """Build-plan validation row: 60 s full-screen traversal with no pinch intended -> 0 false clicks."""
     _, frames = read_recording(f"recordings/{name}.jsonl")

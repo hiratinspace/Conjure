@@ -65,9 +65,12 @@ def test_engine_moves_cursor_only_when_a_hand_is_tracked():
 
 
 def test_traversal_recording_reaches_every_screen_edge():
-    _, frames = read_recording("recordings/traversal.jsonl")
+    # traversal_first covers the whole frame; the second session never moves the knuckle
+    # left of x=0.35, so it cannot reach the left screen edge under any mapping.
+    _, frames = read_recording("recordings/traversal_first.jsonl")
     injector, _ = run_engine(frames)
-    xs = [c[1] for c in injector.calls]
-    ys = [c[2] for c in injector.calls]
+    moves = [c for c in injector.calls if c[0] == "move"]
+    xs = [c[1] for c in moves]
+    ys = [c[2] for c in moves]
     assert min(xs) == 0 and max(xs) == SCREEN[0] - 1
     assert min(ys) == 0 and max(ys) == SCREEN[1] - 1
