@@ -41,7 +41,7 @@ class StepResult:
 
 class Engine:
     def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, matcher,
-                 calibrator, timer, aspect, edge_margin):
+                 calibrator, auto_pause, timer, aspect, edge_margin):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -53,6 +53,7 @@ class Engine:
         self.recorder = recorder
         self.matcher = matcher
         self.calibrator = calibrator
+        self.auto_pause = auto_pause
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
         self.store = None  # ProfileStore; when set, persist() saves after every change
         self.calibrated = False  # False while the naive default box is in use
@@ -180,6 +181,8 @@ class Engine:
             result.prompt, result.message = self.recorder.prompt, self.recorder.message
             result.lines.append(f"recording gesture: {self.recorder.state} ({len(self.recorder.samples)}/3)")
             return result
+        if not self.auto_pause.update(hand):
+            hand = None  # a hand at the very edge of the frame is a hand leaving
         mode = self.modes.mode
         if mode != self._last_mode:
             self._emit(self._detectors_reset(self._last_mode), result)

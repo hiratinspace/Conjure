@@ -124,3 +124,8 @@ CALIBRATION_TRACE_S = 8.0  # seconds of hand-visible tracing
 CALIBRATION_LOW_PCT = 5  # box edges are these percentiles of the traced knuckle positions,
 CALIBRATION_HIGH_PCT = 95  # so a twitch does not stretch the box and edges need no strain
 CALIBRATION_MIN_SIZE = 0.03  # normalized frame units; smaller traces are redone
+
+# Auto-pause (CONJ-15). AC: freeze within 500 ms of losing the hand, resume within 1 s of it returning.
+PAUSE_AFTER_FRAMES = 10  # ~0.33 s at 30 fps without a usable hand
+RESUME_AFTER_FRAMES = 5  # ~0.17 s with one
+CONTROL_POINT_EDGE_MARGIN = 0.01  # knuckle this close to the frame edge = hand leaving

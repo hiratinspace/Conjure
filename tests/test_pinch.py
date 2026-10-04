@@ -4,7 +4,7 @@ import config
 from main import make_engine
 from pipeline.events import Action
 from pipeline.injector import ClickCounter, RecordingInjector
-from pipeline.modes import HAND_LOST, Mode, ModeState
+from pipeline.modes import USER, Mode, ModeState
 from pipeline.recorder import read_recording
 from pipeline.timing import StageTimer
 from tests.synthetic import stream
@@ -117,7 +117,7 @@ def test_pinch_does_nothing_in_dwell_mode_or_while_paused():
     injector = RecordingInjector()
     modes = ModeState(Mode.PINCH)
     engine = make_engine(injector, StageTimer(33.0, 1e9), SCREEN, modes)
-    modes.pause(HAND_LOST)
+    modes.pause(USER)  # paused from the panel: a visible hand must not resume it
     for t, hand in frames:
         engine.step(t, hand)
     assert injector.calls == []
