@@ -76,4 +76,4 @@ Out of scope, so do not build: Windows or Linux support, an on-screen keyboard, 
 
 ## Git workflow
 
-The remote is `github.com:hiratinspace/Conjure` (private), on the `main` branch. Commit and push after each meaningful change, titled `CONJ-n: <summary>` when it belongs to a ticket, with a body that says what changed and why. Never commit anything in `docs/`. Recordings in `recordings/` and voice clips in `audio/voice/` are committed; `profile.json`, `logs/`, and `audio/cache/` are not.
+The remote is `github.com:hiratinspace/Conjure`, **public on purpose** (it is the hackathon submission), on the `main` branch. Never commit secrets, keys, or `profile.json`. Commit and push after each meaningful change, titled `CONJ-n: <summary>` when it belongs to a ticket, with a body that says what changed and why. Never commit anything in `docs/`. Recordings in `recordings/` and voice clips in `audio/voice/` are committed; `profile.json`, `logs/`, and `audio/cache/` are not.
