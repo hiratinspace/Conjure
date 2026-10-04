@@ -265,6 +265,7 @@ class App:
         if self.engine.notice:
             self._notice, self.engine.notice = self.engine.notice, ""
             self._notice_until = time.monotonic() + NOTICE_S
+            self.feedback.on_notice(self._notice)
         now = time.monotonic()
         notice = self._notice if now < self._notice_until else ""
         self._collect_effects(snap, now)

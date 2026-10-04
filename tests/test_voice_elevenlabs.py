@@ -134,8 +134,13 @@ def test_no_other_module_touches_the_network():
 
 
 def test_no_api_key_is_committed_anywhere():
-    for path in ROOT.rglob("*"):
-        if ".venv" in path.parts or ".git" in path.parts or not path.is_file() or path.suffix in (".task", ".jsonl", ".mp3"):
+    """Scan only files git tracks: secrets.env is gitignored and must never be read or printed here."""
+    import subprocess
+    tracked = subprocess.run(["git", "ls-files", "-z"], capture_output=True, text=True, cwd=ROOT).stdout.split("\0")
+    for name in tracked:
+        path = ROOT / name
+        if not name or not path.is_file() or path.suffix in (".task", ".jsonl", ".mp3", ".png"):
             continue
         text = path.read_text(errors="ignore")
-        assert not re.search(r"sk_[A-Za-z0-9]{32,}", text), f"possible ElevenLabs key in {path}"
+        assert not re.search(r"sk_[A-Za-z0-9]{32,}", text), f"possible ElevenLabs key in {name}"
+    assert "secrets.env" not in tracked

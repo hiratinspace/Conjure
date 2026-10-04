@@ -70,6 +70,18 @@ def test_next_action_choices_are_spoken_except_the_default():
     assert voice.spoken == ["Right click next"]
 
 
+def test_notices_are_spoken_as_a_short_gist():
+    fb, _, voice = make()
+    fb.on_notice("Tuned to your hand: resting tremor 52, threshold 68; your pinches close in up to 100 ms.")
+    fb.on_notice("'Lumos' recognized 3 of 3: ready to use.")
+    fb.on_notice("Calibrated: your comfortable area now covers the whole screen.")
+    fb.on_notice("")
+    assert voice.spoken == ["Tuned to your hand", "'Lumos' recognized 3 of 3", "Calibrated"]
+    fb.toggle("voice")
+    fb.on_notice("Calibrated: again.")
+    assert len(voice.spoken) == 3
+
+
 def test_every_effect_can_be_switched_off():
     fb, player, voice = make()
     for name in ("sound", "voice"):

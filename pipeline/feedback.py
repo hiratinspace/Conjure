@@ -58,6 +58,16 @@ class Feedback:
         if self.settings.voice and choice != "left":
             self.voice.speak({"right": "Right click next", "double": "Double click next", "drag": "Drag next"}[choice])
 
+    def on_notice(self, text):
+        """Speak the gist of an on-screen notice (Tune result, spell check verdict, calibration), so the
+        user does not have to read the overlay: the first clause, trimmed of numbers-heavy detail."""
+        if not self.settings.voice or not text:
+            return
+        gist = text.split(";")[0].split(". ")[0].split(":")[0].strip().rstrip(".")
+        if len(gist) > 90:
+            gist = gist[:87].rsplit(" ", 1)[0]
+        self.voice.speak(gist)
+
     def on_mode(self, old, new):
         if new == Mode.PAUSED or old == Mode.PAUSED:
             word = "Paused" if new == Mode.PAUSED else "Resumed"
