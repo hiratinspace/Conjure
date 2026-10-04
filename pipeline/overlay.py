@@ -152,24 +152,26 @@ class Overlay:
         if badge:
             color = STATUS.get(snap.tracking, (BADGE_FG,))[0]
             text = c.create_text(self.w - 16, 16, text=badge, anchor="ne", fill=BADGE_FG,
-                                 font=("Helvetica", 16, "bold"))
+                                 font=("Helvetica", 12, "bold"))
             x0, y0, x1, y1 = c.bbox(text)
-            c.create_rectangle(x0 - 34, y0 - 8, x1 + 12, y1 + 8, fill=P.NAVY_2, outline=color, width=2)
-            c.create_oval(x0 - 24, (y0 + y1) / 2 - 6, x0 - 12, (y0 + y1) / 2 + 6, fill=color, outline="")
+            c.create_rectangle(x0 - 26, y0 - 6, x1 + 10, y1 + 6, fill=P.NAVY_2, outline=color, width=1)
+            c.create_oval(x0 - 19, (y0 + y1) / 2 - 4, x0 - 11, (y0 + y1) / 2 + 4, fill=color, outline="")
             c.tag_raise(text)
         if snap.metrics:
             m = snap.metrics
             lines = "   ".join(f"{k} {v}" for k, v in m.items())
             c.create_text(16, self.h - 16, text=lines, anchor="sw", fill=BADGE_FG, font=("Menlo", 14))
         if not snap.permission_ok:
-            self._banner("Accessibility permission missing: clicks are being dropped", WARN_BG, y=60)
+            self._banner("Accessibility permission missing: clicks are being dropped", WARN_BG, y=46, size=16)
         elif paused_message:
-            self._banner(paused_message, BANNER_BG, y=60)
+            self._banner(paused_message, BANNER_BG, y=46, size=16)  # the pill says "Paused"; this says why
 
     def _banner(self, text, bg, y, size=28):
         c = self.canvas
         item = c.create_text(self.w / 2, y, text=text, fill=BANNER_FG, font=("Helvetica", size, "bold"),
                              width=self.w * 0.8, justify="center")
         x0, y0, x1, y1 = c.bbox(item)
-        rect = c.create_rectangle(x0 - 24, y0 - 14, x1 + 24, y1 + 14, fill=bg, outline=P.BORDER, width=2)
+        pad = 8 if size <= 18 else 14
+        rect = c.create_rectangle(x0 - pad - 10, y0 - pad, x1 + pad + 10, y1 + pad, fill=bg, outline=P.BORDER,
+                                  width=1 if size <= 18 else 2)
         c.tag_raise(item, rect)
