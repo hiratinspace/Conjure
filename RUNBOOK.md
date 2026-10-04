@@ -48,6 +48,10 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 
 The comparison slide and the measured numbers are in `PITCH.md`.
 
+## Panic key
+
+**F8** pauses Conjure from any app, instantly; F8 again resumes. Use it the moment the cursor does something you did not intend, then say "paused" and carry on. Every run also writes `logs/conjure-<time>.log`; if something went wrong in rehearsal, that file says what.
+
 ## Fallback ladder
 
 You run the ladder yourself with the trackpad hand. Say a short line as you step down ("let me switch to dwell, which needs no pinch"), so it reads as part of the demo, not a failure.

@@ -43,6 +43,20 @@ from pipeline.timing import StageTimer
 log = logging.getLogger("conjure")
 
 
+def add_file_log():
+    """Also write this run's log to logs/conjure-<timestamp>.log, so a bad demo can be read afterwards."""
+    try:
+        config.LOG_DIR.mkdir(exist_ok=True)
+        path = config.LOG_DIR / time.strftime("conjure-%Y%m%d-%H%M%S.log")
+        handler = logging.FileHandler(path)
+        handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+        logging.getLogger().addHandler(handler)
+        return path
+    except OSError as e:
+        log.warning("no file log: %s", e)
+        return None
+
+
 def parse_args(argv):
     parser = argparse.ArgumentParser(description="Conjure: hand-tracking pointer for macOS")
     parser.add_argument("--preview", action="store_true", help="show the debug preview window (p hides it, q quits)")
@@ -339,6 +353,11 @@ def run(args):
                    tutorial=engine.tutorial is not None)
         return False
 
+    if config.PANIC_KEY:
+        from pipeline import settings_model
+        from pipeline.panic_key import start_panic_key
+
+        start_panic_key(config.PANIC_KEY, engine, settings_model.toggle_user_pause)
     app = App(ui, modes, engine, feedback, screen_size, show_preview=args.preview)
     if args.quit_after:
         app.root.after(int(args.quit_after * 1000), app.quit)
@@ -352,7 +371,8 @@ def main(argv=None):
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
         datefmt="%H:%M:%S",
     )
-    log.info("Conjure starting (frame budget %.0f ms). Ctrl+C to quit.", config.FRAME_BUDGET_MS)
+    log_path = add_file_log()
+    log.info("Conjure starting (frame budget %.0f ms). Ctrl+C to quit. Log: %s", config.FRAME_BUDGET_MS, log_path)
     if args.spellbook:
         import webbrowser
         webbrowser.open(config.SPELLBOOK_PATH.as_uri())

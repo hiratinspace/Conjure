@@ -80,6 +80,10 @@ DEFAULT_CALIBRATION = {"x_min": 0.25, "x_max": 0.75, "y_min": 0.3, "y_max": 0.8}
 CALIBRATE_ON_FIRST_RUN = True  # no saved calibration: start the calibration flow at launch
 SENSITIVITY = 1.0  # >1 shrinks the box: less hand travel per screen width
 
+# Demo insurance
+PANIC_KEY = "f8"  # pauses or resumes Conjure from any app (empty string disables)
+LOG_DIR = ROOT / "logs"  # each run also logs to logs/conjure-<timestamp>.log (gitignored)
+
 # Injection
 PERMISSION_CHECK_INTERVAL_S = 2.0
 # Camera loss (unplugged, grabbed by another app): retry instead of ending the session

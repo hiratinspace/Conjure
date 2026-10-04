@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-294%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-296%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -137,6 +137,8 @@ This opens the Conjure panel, the on-screen overlay, and the spellbook demo page
 | `--venue FILE` | Threshold overrides for a demo venue (default `venue.json`) |
 | `--profile FILE` | Where calibration, the spell, and settings are saved |
 
+**F8** anywhere pauses or resumes Conjure (a panic key for live demos). Each run writes a log to `logs/`.
+
 Keys in the preview window: `p` hide preview, `m` cycle click mode, `g` record a spell, `c` calibrate, `s` settings panel, `t` tutorial mode, `k` metrics, `q` quit.
 
 </details>
@@ -180,7 +182,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/              offline demo page and the target-practice test
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  294 headless tests
+tests/                  296 headless tests
 ```
 
 </details>
@@ -188,7 +190,7 @@ tests/                  294 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 294 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 296 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation
