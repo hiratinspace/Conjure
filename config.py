@@ -67,3 +67,17 @@ DEFAULT_CLICK_MODE = "pinch"  # "pinch" | "dwell" | "custom"
 # Dwell (CONJ-8)
 DWELL_MS = 1000  # hold still this long to click
 DWELL_RADIUS_PX = 30  # "still" means the cursor stays inside this radius
+
+# Pinch (CONJ-7). Ratios are thumb-to-fingertip distance / hand size (wrist to middle MCP).
+# Tuned on recordings: with the other-fingers-open rule there are 0 sustained false pinches
+# in traversal/idle/exits at engage ratios up to 0.25. Real-pinch values still need the
+# deferred pinches recording.
+PINCH_ENGAGE_RATIO = 0.20  # closing below this starts a pinch
+PINCH_RELEASE_RATIO = 0.32  # opening above this ends it (hysteresis gap)
+PINCH_HOLD_MS = 150  # a pinch must stay closed this long to count (kills Midas-touch blips)
+PINCH_OPEN_EXTENSION = 1.2  # other fingers must be at least this extended (curled hand != pinch)
+FINGERTIP_EDGE_MARGIN = 0.03  # fingertips this close to the frame edge are untrusted
+PINCH_LATCH_LOOKBACK_S = 0.5  # how far back the pre-pinch click position may be taken from
+DRAG_START_PX = 25  # a confirmed pinch that moves this far becomes a drag (CONJ-9)
+DOUBLE_CLICK_INTERVAL_S = 0.5  # macOS default double-click speed
+DOUBLE_CLICK_RADIUS_PX = 8

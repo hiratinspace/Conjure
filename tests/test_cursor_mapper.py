@@ -1,7 +1,6 @@
 import pytest
 
 from pipeline.cursor_mapper import Box, BoxCalibration, CursorMapper
-from pipeline.engine import Engine
 from pipeline.injector import RecordingInjector
 from pipeline.landmarks import INDEX_MCP, INDEX_TIP, THUMB_TIP
 from pipeline.recorder import read_recording
@@ -51,12 +50,10 @@ def test_mapper_follows_index_mcp_not_fingertips():
 
 
 def run_engine(frames):
-    from main import make_pointer_filter
+    from main import make_engine
 
     injector = RecordingInjector()
-    timer = StageTimer(33.0, 1e9)
-    engine = Engine(CursorMapper(BoxCalibration(Box(0.15, 0.85, 0.15, 0.85), SCREEN)), make_pointer_filter(SCREEN),
-                    injector, timer)
+    engine = make_engine(injector, StageTimer(33.0, 1e9), SCREEN)
     results = [engine.step(t, hand) for t, hand in frames]
     return injector, results
 

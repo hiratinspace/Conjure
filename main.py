@@ -15,13 +15,16 @@ import sys
 import numpy as np
 
 import config
+from pipeline.action_mapper import ActionMapper
 from pipeline.cursor_mapper import Box, BoxCalibration, CursorMapper
 from pipeline.engine import Engine
 from pipeline.filter import PointerFilter
 from pipeline.frame_source import CameraError, FrameSource
 from pipeline.hand_tracker import HandTracker
 from pipeline.injector import PynputInjector, RecordingInjector
+from pipeline.modes import Mode, ModeState
 from pipeline.permissions import PermissionWatch, main_screen_size
+from pipeline.pinch import PinchDetector
 from pipeline.preview import QUIT, Preview, draw_hand
 from pipeline.recorder import LandmarkRecorder, replay
 from pipeline.timing import StageTimer
@@ -58,9 +61,22 @@ def make_pointer_filter(screen_size):
                          config.POSITION_HISTORY_FRAMES)
 
 
-def make_engine(injector, timer, screen_size):
+def make_pinch():
+    return PinchDetector(config.PINCH_ENGAGE_RATIO, config.PINCH_RELEASE_RATIO, config.PINCH_HOLD_MS / 1000,
+                         config.PINCH_OPEN_EXTENSION, config.DRAG_START_PX, config.PINCH_LATCH_LOOKBACK_S)
+
+
+def make_injector(dry_run):
+    if dry_run:
+        return RecordingInjector()
+    return PynputInjector(config.DOUBLE_CLICK_INTERVAL_S, config.DOUBLE_CLICK_RADIUS_PX)
+
+
+def make_engine(injector, timer, screen_size, modes=None):
+    modes = modes or ModeState(Mode(config.DEFAULT_CLICK_MODE))
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
-    return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, timer)
+    return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, ActionMapper(injector, modes),
+                  modes, make_pinch(), timer, config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
 
 
 def live_stream(source, tracker, timer):
@@ -104,7 +120,7 @@ def run(args):
     preview = Preview(enabled=args.preview)
     screen_size = main_screen_size()
     dry_run = args.no_inject or (args.replay and not args.inject)
-    injector = RecordingInjector() if dry_run else PynputInjector()
+    injector = make_injector(dry_run)
     permissions = None if dry_run else PermissionWatch(config.PERMISSION_CHECK_INTERVAL_S)
     engine = make_engine(injector, timer, screen_size)
     log.info("screen %dx%d, %s", *screen_size, "dry run (no real input)" if dry_run else "driving the real cursor")

@@ -12,7 +12,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | CONJ-4 | MediaPipe hand landmark extraction | A | done | Tasks API HandLandmarker, num_hands=1 (MediaPipe's ROI tracking keeps the locked hand sticky and skips palm detection), plus a sticky `select_hand` gate; confidence gate in config. JSONL record/replay harness + `scripts/record_session.py` presets. Phase A gate: overlay renders on either hand (pass); labels were swapped, fixed with SWAP_HANDEDNESS. Two-hand stickiness passes live. |
 | CONJ-5 | Hand-to-cursor mapping | B | code done | Index MCP control point through a `Calibration` interface (`BoxCalibration`, default box inset 15%, clamped, sensitivity scales the box). Pipeline after tracking lives in `pipeline/engine.py` so replays and tests run the live code. Traversal replay reaches all four screen edges. Accessibility re-checked every 2 s with a loud banner. Physical AC (<100 ms perceived lag) pending. |
 | CONJ-6 | One Euro filter + precision mode | B | code done | Tuned on real recordings: settled idle jitter 4.8 px raw to 1.3 px mean (p95 4.4 px, which includes real micro-movements), fast-sweep lag ~14 px. Precision gain 0.3 below 60 px/s, re-anchor above 400 px/s, edge snap. `position_at(t)` history for CONJ-7. All params in config. Physical gate (idle jitter, no visible trail) pending. |
-| CONJ-7 | Pinch click with hysteresis | C (Dev A) | todo | |
+| CONJ-7 | Pinch click with hysteresis | C (Dev A) | code done | Engage 0.20 / release 0.32 (ratio to hand size), 150 ms hold, click on release at the pre-pinch position (start of the closing motion). Only counts with the other fingers open; untrusted when the pinching fingertips touch the frame edge. Thumb+middle = right click. Two quick pinches = real macOS double-click (ClickCounter + Quartz click state). Headless: 0 false clicks on traversal/idle/exits. Physical AC (19/20 pinches) pending the deferred `pinches` recording. |
 | CONJ-8 | Dwell click mode | C (Dev A) | todo | |
 | CONJ-9 | Drag and scroll gestures | C (Dev A) | todo | |
 | CONJ-10 | Custom gesture recorder | C (Dev B) | todo | |
@@ -55,6 +55,10 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 - **MediaPipe handedness labels are swapped on our mirrored input.** The Phase A gate showed the left hand labeled "Right" and vice versa, contrary to MediaPipe's docs. `SWAP_HANDEDNESS = True` corrects it at the tracker, so LandmarkFrame and recordings carry the user's real hand.
 
 - **Recordings: hand labels flicker; rested wrist sits at the frame bottom.** In `traversal` the label flipped to "Left" in 12 of 1695 hand frames, so nothing downstream may depend on per-frame handedness. In `idle` (forearm rested) the wrist reaches y=1.02, slightly past the bottom edge; calibration and the control point must not depend on the wrist being in frame.
+
+- **Pinch only counts with the other fingers open.** In `traversal` the user's natural pointing posture was curled fingers (median extension 0.63 vs ~2.0 open), and a curled hand puts the thumb tip on the index finger: 5% of frames looked like a pinch. Requiring middle/ring/pinky open (extension > 1.2) gives 0 sustained false pinches in all three recordings. Teach it as "pinch with your other fingers open".
+- **Edge trust is per fingertip, not per hand.** With the hand near the camera the wrist is usually below the frame (80% of traversal frames touch an edge). Only the thumb and pinching finger joints must be 3% inside the frame.
+- **Scroll will use the two-finger V pose, not a fist.** A fist is the user's resting travel pose, so it would scroll constantly. The V pose (index + middle out, ring + pinky folded) never occurs by accident in any recording (max 1 frame).
 
 ## Granted runners (CONJ-2 AC)
 
