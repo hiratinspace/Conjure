@@ -89,6 +89,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 - **Double-click, steadiness, and reach (user feedback 2026-10-04).** Double-click: the user's double pinches land 0.37-0.77 s and up to ~20 px apart; the 0.5 s / 8 px mouse tolerance caught 1 of 10. Now 0.8 s / 30 px, and the second click is placed on the first (phone-style). Steadiness: a 6 px sticky deadband on the filter output (not fed back into the filter: an early version accumulated lag) holds the cursor perfectly still in 72% of settled idle frames; edges still reachable. Reach: default box halved (0.5 x 0.5 of the frame) and calibration starts automatically when none is saved. Pinch results essentially unchanged (98 of 111), still 0 false clicks.
 
+- **Mouse-style pointer is the default (user: "too shaky and moves too fast; I want it to feel like a mouse on a small pad").** Root cause: absolute mapping needs a high gain to cover the screen from a small area, which magnifies tremor. Relative motion with acceleration resolves it: resting-hand jitter measures 50-150 base px/s and real movement 300-2400, so motion below 100 is ignored, 250 gets 0.6x, 1500+ gets 3x. On idle the cursor is still in 94% of settled frames (3 px wander in 16 s); traversal still covers the screen; real pinches and zero false clicks unchanged. Dropping the hand out of view lifts the mouse. Direct (calibrated box) stays as a panel toggle. Also fixed a dwell bug found on the way: re-arming was measured from the dwell's start, not the click, so a slowly drifting cursor could click the same target twice.
+
 ## Granted runners (CONJ-2 AC)
 
 | Laptop | Runner app | Accessibility | Camera | Cursor | Click |

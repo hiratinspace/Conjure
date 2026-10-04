@@ -36,7 +36,7 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 | --- | --- | --- |
 | 0:00 | (desktop) | "Mice hurt or don't work for people with tremor, arthritis, or paralysis. Every webcam pointer asks your hand to learn its gestures. Conjure learns yours." |
 | 0:15 | Tutorial mode (trackpad hand: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 17 false clicks in two minutes of our tests." Trackpad hand turns tutorial mode off. "This is Conjure: zero." |
-| 0:35 | Calibration (trackpad hand: **Calibrate**) | Forearm flat on the table, visibly move about 3 inches, then touch all four screen corners. "Two inches of rested movement covers the whole screen." |
+| 0:35 | Small pad | Forearm flat on the table, flick the cursor to all four screen corners with a few inches of movement, then hold it dead still on a tiny target. "It moves like a mouse: slow for precision, a flick to go far. And tremor is ignored." |
 | 0:55 | Spellbook I. Point | Light the three runes with small movements. Point at the metrics: "jitter under 2 pixels." |
 | 1:10 | II. Pinch | Point, then a quick pinch: the candle lights. "The same pinch Vision Pro uses, made safe for a shaking hand." |
 | 1:25 | III. Hold still | Trackpad hand presses **Dwell**. Hold over the crystal until the ring fills. "For hands that can't pinch." |

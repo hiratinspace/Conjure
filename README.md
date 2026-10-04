@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-263%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-276%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -26,8 +26,8 @@ Every other webcam pointer ships a fixed set of gestures and expects your hand t
 | --- | --- |
 | **Natural pinch** | A quick thumb-to-index pinch clicks, like on Vision Pro or Quest. If a pinch is not counted, the dot by the cursor turns red and says why. |
 | **Your own click gesture** | Record any motion three times, name it, and it becomes a click. It works anywhere in the frame and at any distance from the camera. |
-| **Small, rested movements** | Range-of-motion calibration maps the area you can reach comfortably (about 3 inches, forearm on the table) to the whole screen. |
-| **Steady under tremor** | One Euro smoothing, a precision mode that slows the cursor as your hand slows, and a sticky cursor that holds perfectly still on a small target until you really move. |
+| **Feels like a mouse** | Your hand works like a mouse on a small pad: slow, careful moves are scaled down for precision and quick flicks go far, so a few inches cover the whole screen. Drop your hand out of view and back to "lift the mouse". |
+| **Steady under tremor** | Tremor-speed motion is ignored entirely: on a recorded resting hand the cursor stays still in 94% of frames and wanders 3 px in 16 seconds. |
 | **Clicks that don't misfire** | Size-normalized pinch, hysteresis, a hold time, and an open-fingers rule. Zero false clicks across every recorded session. |
 | **Never stuck** | Can't pinch? Hold still to click (dwell). Hand drops out of view? Everything pauses within half a second. |
 | **Private by design** | Video is processed on the laptop and never stored or sent. No account, no cloud. |
@@ -52,7 +52,8 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 
 | Your hand | Result |
 | --- | --- |
-| Point with your index finger | The cursor follows the knuckle at the base of that finger, so tapping never moves it |
+| Move your hand, like a mouse on a small pad | The cursor moves with it: slowly for precision, farther with a quick flick |
+| Drop your hand out of view, bring it back elsewhere | "Lifting the mouse": the cursor stays put, so you can re-center your hand |
 | **Pinch mode** *(default)*: a quick thumb-to-index pinch, any hand shape | **Left click**, placed where the cursor was before you pinched |
 | Two pinches within 0.8 s | **Double-click**, on exactly the same spot even if your hand drifted |
 | Thumb to middle finger | **Right click** |
@@ -62,6 +63,8 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | Your recorded gesture *(spell mode)* | **Left click**, with the spell's name shown and spoken |
 | Two fingers up (V), then lift or lower your hand | **Scroll** |
 | Hand out of view | **Pause**: nothing can click while you rest |
+
+**Two pointer styles.** *Mouse* (default) is relative with acceleration, as above. *Direct* maps a small area you trace once (range-of-motion calibration, about 3 inches with the forearm rested) onto the whole screen, so each hand position is a fixed screen position. Switch with **Pointer** in the panel.
 
 On screen you always see a status indicator (tracking, near edge, paused, no hand), a pinch progress dot, the dwell countdown ring, and a click sound for every click.
 
@@ -110,7 +113,7 @@ This opens the Conjure panel, the on-screen overlay, and the spellbook demo page
 
 **4. First session**
 
-1. Press **Calibrate**, rest your forearm, and trace the edges of a small, comfortable area.
+1. Rest your forearm and move your hand like a mouse on a small pad. If you run out of room, drop your hand out of view and bring it back ("lift the mouse"). Adjust **Sensitivity** in the panel to taste.
 2. Pinch to click: Conjure starts in **Pinch** mode. Other modes in the panel: **Touch**, **Dwell**, or **Spell** (press **Record spell** first).
 3. Work through the spellbook pages.
 
@@ -171,7 +174,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/index.html    offline demo page
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  263 headless tests
+tests/                  276 headless tests
 ```
 
 </details>
@@ -179,7 +182,7 @@ tests/                  263 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 263 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 276 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation
