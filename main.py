@@ -139,7 +139,10 @@ def make_gesture_matcher():
 
 def make_tuner():
     return Tuner(config.TUNE_COUNTDOWN_S, config.TUNE_MEASURE_S, config.TUNE_MARGIN, config.TUNE_MIN_DEAD,
-                 config.TUNE_MAX_DEAD, config.TUNE_SLOW_RATIO, config.TUNE_MIN_SLOW, config.TUNE_MOVING_SPEED)
+                 config.TUNE_MAX_DEAD, config.TUNE_SLOW_RATIO, config.TUNE_MIN_SLOW, config.TUNE_MOVING_SPEED,
+                 config.PINCH_ENGAGE_RATIO, config.PINCH_RELEASE_RATIO, config.TUNE_PINCHES,
+                 config.TUNE_PINCH_TIMEOUT_S, config.TUNE_PINCH_MARGIN, config.TUNE_MIN_CLOSE_MS / 1000,
+                 config.TUNE_MAX_CLOSE_MS / 1000)
 
 
 def make_calibrator():

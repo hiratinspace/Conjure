@@ -29,16 +29,52 @@ def test_tuning_on_the_real_resting_hand_sets_a_threshold_just_above_its_tremor(
     t0 = frames[0][0]
     settled = [(t, h) for t, h in frames if t - t0 >= 14]  # the hand is resting from 14 s on
     e.submit(lambda eng: eng.tuner.start())
-    for t, h in settled:
+    for t, h in settled[:270]:  # 9 s: countdown + measurement
         e.step(t, h)
+    assert e.tuner.state == "pinches"  # rest measured, now waiting for three pinches
+    dead = e.pointers["mouse"][1].dead_speed  # not applied yet
+    _, pinch_frames = read_recording("recordings/pinches.jsonl")
+    t_last = settled[269][0]
+    for i, (t, h) in enumerate(pinch_frames[:400]):  # the user's real pinches, time-shifted to follow
+        e.step(t_last + 0.033 * (i + 1), h)
+        if e.tuner.state == IDLE:
+            break
     assert e.tuner.state == IDLE and e.tuned
     dead = e.pointers["mouse"][1].dead_speed
     assert config.TUNE_MIN_DEAD <= dead <= config.TUNE_MAX_DEAD
-    assert "Tuned to your hand" in e.notice
+    assert "Tuned to your hand" in e.notice and "window set to" in e.notice
+    close_s = e.pinch_close_s
+    assert config.TUNE_MIN_CLOSE_MS / 1000 <= close_s <= config.TUNE_MAX_CLOSE_MS / 1000
+    assert e.store.load()[0].pointer.pinch_close_ms == round(close_s * 1000)
     # The tuned threshold keeps the resting cursor still, and is saved.
     pts = np.array([r.cursor for t, h in settled[-120:] for r in [e.step(t + 100, h)] if r.cursor])
     assert np.mean(np.hypot(*np.diff(pts, axis=0).T) < 0.01) > 0.9
     assert e.store.load()[0].pointer.dead_speed == pytest.approx(dead)
+
+
+def test_no_pinch_during_the_pinch_phase_keeps_the_default_window():
+    e = engine()
+    e.tuner.start()
+    for t, h in stream([(2.2, dict(wrist=(0.5, 0.7))), (5.3, dict(wrist=(0.5, 0.7))),
+                        (config.TUNE_PINCH_TIMEOUT_S + 0.5, dict(wrist=(0.5, 0.7)))]):
+        e.step(t, h)
+    assert e.tuner.state == IDLE and e.tuned and e.pinch_close_s is None
+    assert "no pinch was seen" in e.notice
+
+
+def test_a_slow_pincher_gets_a_wider_window_within_the_clamp():
+    from tests.test_pinch import ramp
+    e = engine()
+    e.tuner.start()
+    # Slow over the stretch that counts: from fingertips apart (ratio 0.40) to touching (0.25), ~180 ms.
+    slow_pinch = [(0.5, dict(pinch=ramp(0.6, 0.95))), (0.2, dict(pinch=0.95)), (0.2, dict(pinch=ramp(0.95, 0.0)))]
+    frames = stream([(2.2, dict()), (5.3, dict()), (0.5, dict()), *slow_pinch, (0.4, dict()), *slow_pinch,
+                     (0.4, dict()), *slow_pinch, (0.5, dict())])
+    for t, h in frames:
+        e.step(t, h)
+    assert e.pinch_close_s is not None
+    assert e.pinch_close_s > config.PINCH_QUICK_CLOSE_MS / 1000  # wider than the default 200 ms
+    assert e.pinch_close_s <= config.TUNE_MAX_CLOSE_MS / 1000
 
 
 def test_a_moving_hand_is_rejected_and_measured_again():

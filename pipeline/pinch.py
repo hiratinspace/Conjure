@@ -181,6 +181,11 @@ class PinchChannel:
 class PinchDetector:
     """Left (thumb + index, with drag) and right (thumb + middle) channels; only one can be active at a time."""
 
+    def configure(self, quick_close_s=None):
+        """Live-apply the snap window to both channels (auto-tune)."""
+        if quick_close_s is not None:
+            self.left.quick_close_s = self.right.quick_close_s = quick_close_s
+
     def __init__(self, engage, release, hold_s, open_extension, drag_start_px, latch_lookback_s,
                  require_open=True, quick_close_s=None, max_speed=None):
         common = dict(engage=engage, release=release, hold_s=hold_s, open_extension=open_extension,

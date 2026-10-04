@@ -79,6 +79,7 @@ class Engine:
         self.store = None  # ProfileStore; when set, persist() saves after every change
         self.calibrated = False  # False while the naive default box is in use
         self.tuned = False  # True once the resting threshold came from the user's own hand
+        self.pinch_close_s = None  # auto-tuned pinch window, None = config default
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.spell_listeners = []  # fn(name) called when the custom gesture is cast
         self.tutorial = None  # a NaivePointer while tutorial mode is on (the "before" half of the pitch)
@@ -165,8 +166,15 @@ class Engine:
         self.set_gestures(profile.gestures)
         if profile.pointer.dead_speed is not None:
             self.set_dead_speed(profile.pointer.dead_speed)
+        if profile.pointer.pinch_close_ms is not None:
+            self.set_pinch_close(profile.pointer.pinch_close_ms / 1000)
         if profile.pointer.style in self.pointers:
             self.set_pointer_style(profile.pointer.style)
+
+    def set_pinch_close(self, seconds):
+        """Pinch snap window from the user's own pinches (auto-tune)."""
+        self.pinch.configure(quick_close_s=seconds)
+        self.pinch_close_s = seconds
 
     def set_dead_speed(self, dead, slow=None):
         """Resting threshold of the mouse-style pointer (auto-tune), with the careful band scaled to match."""
@@ -190,7 +198,8 @@ class Engine:
         calibration = asdict(self.calibration_box) if self.calibrated else None
         mouse = self.pointers["mouse"][1] if "mouse" in self.pointers else None
         pointer = PointerSettings(style=self.pointer_style or config.POINTER_STYLE,
-                                  dead_speed=mouse.dead_speed if (mouse and self.tuned) else None)
+                                  dead_speed=mouse.dead_speed if (mouse and self.tuned) else None,
+                                  pinch_close_ms=round(self.pinch_close_s * 1000) if self.pinch_close_s else None)
         return Profile(calibration=calibration, gestures=list(self.gestures), settings=settings, pointer=pointer)
 
     def persist(self):
@@ -322,17 +331,26 @@ class Engine:
         if self.tuner is not None and self.tuner.active:
             if self.cursor is not None:
                 self._emit(self._detectors_reset(self.modes.mode), result)
-            speed = None
+            speed, ratio = None, None
             if hand is not None and self.base_mapper is not None:
                 speed = self.hand_speed.update(self.base_mapper.target(hand), t)
+                pose = analyze(hand, self.aspect, self.edge_margin)
+                ratio = pose.pinch_index if pose.index_pinch_inside else None
             else:
                 self.hand_speed.reset()
-            self.tuner.update(speed, t)
+            self.tuner.update(speed, t, ratio)
             if self.tuner.state == "done":
                 dead, slow, p95 = self.tuner.result
                 self.set_dead_speed(dead, slow)
+                parts = [f"Tuned to your hand: resting tremor {p95:.0f}, threshold {dead:.0f}"]
+                if self.tuner.pinch_close_s is not None:
+                    self.set_pinch_close(self.tuner.pinch_close_s)
+                    parts.append(f"your pinches close in up to {max(self.tuner.close_times) * 1000:.0f} ms, "
+                                 f"window set to {self.tuner.pinch_close_s * 1000:.0f} ms")
+                else:
+                    parts.append("no pinch was seen, so the pinch window is unchanged")
                 self.tuner.cancel()
-                self.notice = f"Tuned to your hand: resting tremor {p95:.0f}, threshold set to {dead:.0f}."
+                self.notice = "; ".join(parts) + "."
                 self.persist()
             result.cursor = self.cursor
             result.prompt, result.message = self.tuner.prompt, self.tuner.message

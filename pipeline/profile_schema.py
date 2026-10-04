@@ -18,7 +18,7 @@ it.
     }
 
 Additive extension (not in the build plan): an optional top-level "pointer"
-section, `{"style": "mouse" | "direct", "dead_speed": float | null}`, for the
+section, `{"style": "mouse" | "direct", "dead_speed": float | null, "pinch_close_ms": int | null, "feel": str}`, for the
 mouse-style pointer and its auto-tuned dead zone. Old files without it load
 with defaults, so the version stays 1.
 
@@ -72,6 +72,8 @@ class GestureTemplate:
 class PointerSettings:
     style: str = config.POINTER_STYLE  # "mouse" | "direct"
     dead_speed: float = None  # auto-tuned resting threshold (base px/s), None = config default
+    pinch_close_ms: int = None  # auto-tuned pinch snap window, None = config default
+    feel: str = "balanced"  # mouse-pointer preset: "precise" | "balanced" | "fast"
 
 
 @dataclass
@@ -164,7 +166,12 @@ def _parse_pointer(obj):
     dead = obj.get("dead_speed")
     if dead is not None:
         dead = _number(obj, "dead_speed", lo=1.0, hi=5000.0)
-    return PointerSettings(style=style, dead_speed=dead)
+    close = obj.get("pinch_close_ms")
+    if close is not None:
+        close = _number(obj, "pinch_close_ms", lo=50, hi=2000, integer=True)
+    feel = obj.get("feel", "balanced")
+    _require(feel in ("precise", "balanced", "fast"), f"bad feel {feel!r}")
+    return PointerSettings(style=style, dead_speed=dead, pinch_close_ms=close, feel=feel)
 
 
 def profile_from_dict(obj):

@@ -72,6 +72,11 @@ TUNE_MAX_DEAD = 400.0
 TUNE_SLOW_RATIO = 2.5  # careful-movement band starts at this x the dead zone ...
 TUNE_MIN_SLOW = 250.0  # ... but never below this
 TUNE_MOVING_SPEED = 600.0  # a resting p95 above this means the hand was moving: measure again
+TUNE_PINCHES = 3  # then pinch this many times; the snap window becomes TUNE_PINCH_MARGIN x the slowest close
+TUNE_PINCH_TIMEOUT_S = 12.0
+TUNE_PINCH_MARGIN = 1.5
+TUNE_MIN_CLOSE_MS = 150  # the window never gets tighter than this ...
+TUNE_MAX_CLOSE_MS = 450  # ... or looser than this (slow drifts would start counting as pinches)
 
 # Cursor mapping (CONJ-5). Naive box until the user calibrates (CONJ-12): inset 15% so the
 # cursor reaches every screen edge while the hand stays fully in frame (tracking drops at
