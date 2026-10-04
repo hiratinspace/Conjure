@@ -29,6 +29,7 @@ from pipeline.injector import PynputInjector, RecordingInjector
 from pipeline.modes import Mode, ModeState
 from pipeline.permissions import PermissionWatch, main_screen_size
 from pipeline.pinch import PinchDetector
+from pipeline.profile_store import ProfileStore
 from pipeline.scroll import ScrollDetector
 from pipeline.preview import QUIT, Preview, draw_hand
 from pipeline.recorder import LandmarkRecorder, replay
@@ -45,6 +46,8 @@ def parse_args(argv):
     parser.add_argument("--camera", type=int, default=config.CAMERA_INDEX, help="camera index")
     parser.add_argument("--record", metavar="PATH", help="record the landmark stream to a JSONL file")
     parser.add_argument("--replay", metavar="PATH", help="run from a JSONL recording instead of the camera")
+    parser.add_argument("--profile", metavar="PATH", default=str(config.PROFILE_PATH),
+                        help="profile file (calibration, spell, settings)")
     parser.add_argument("--no-inject", action="store_true", help="dry run: never move the real cursor or click")
     parser.add_argument("--inject", action="store_true", help="with --replay: drive the real cursor from the recording")
     parser.add_argument("-v", "--verbose", action="store_true", help="debug logging")
@@ -188,6 +191,12 @@ def run(args):
     permissions = None if dry_run else PermissionWatch(config.PERMISSION_CHECK_INTERVAL_S)
     modes = ModeState(Mode(config.DEFAULT_CLICK_MODE))
     engine = make_engine(injector, timer, screen_size, modes)
+    store = ProfileStore(args.profile)
+    profile, warning = store.load()
+    engine.apply_profile(profile)
+    engine.store = store
+    if warning:
+        engine.notice = warning
     log.info("screen %dx%d, %s", *screen_size, "dry run (no real input)" if dry_run else "driving the real cursor")
 
     if args.no_ui:

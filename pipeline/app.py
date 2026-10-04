@@ -101,8 +101,14 @@ class App:
     def cycle_mode(self):
         current = self.modes.click_mode
         nxt = CLICK_MODES[(CLICK_MODES.index(current) + 1) % len(CLICK_MODES)]
-        self.modes.set_click_mode(nxt)
-        log.info("click mode: %s", nxt.value)
+        self.set_click_mode(nxt)
+
+    def set_click_mode(self, mode):
+        def apply(engine):
+            engine.modes.set_click_mode(mode)
+            engine.persist()
+        self.engine.submit(apply)
+        log.info("click mode: %s", mode.value)
 
     def calibrate(self):
         self.engine.submit(lambda e: e.calibrator.start())

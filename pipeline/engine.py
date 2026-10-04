@@ -9,16 +9,19 @@ click mode's detector -> ClickEvents -> ActionMapper. While PAUSED nothing is
 injected. Switching modes cancels the old mode's half-finished gesture.
 """
 
+import logging
 import queue
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from pipeline import calibration
-from pipeline.cursor_mapper import BoxCalibration
+from pipeline.cursor_mapper import Box, BoxCalibration
 from pipeline.gestures import normalize
 from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
-from pipeline.profile_schema import GestureTemplate
+from pipeline.profile_schema import FilterSettings, GestureTemplate, Profile, Settings
+
+log = logging.getLogger("conjure.engine")
 
 ORDINARY_FRAMES = 450  # ~15 s of the user's normal movement, for the gesture recorder's distinctness check
 
@@ -51,6 +54,8 @@ class Engine:
         self.matcher = matcher
         self.calibrator = calibrator
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
+        self.store = None  # ProfileStore; when set, persist() saves after every change
+        self.calibrated = False  # False while the naive default box is in use
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.ordinary = deque(maxlen=ORDINARY_FRAMES)
         self._commands = queue.Queue()
@@ -75,6 +80,7 @@ class Engine:
         samples, threshold, warnings = self.recorder.result(ordinary=list(self.ordinary))
         self.set_gestures([GestureTemplate(name=name, samples=samples, threshold=threshold)])
         self.recorder.cancel()
+        self.persist()
         self.notice = " ".join(warnings) or f"Spell '{name}' is ready. Switch to custom mode to cast it."
         return self.gestures[0], warnings
 
@@ -86,11 +92,46 @@ class Engine:
         """Map `box` (normalized frame coords) to the whole screen, keeping the current sensitivity."""
         old = self.mapper.calibration
         self.mapper.calibration = BoxCalibration(box, (old.screen_w, old.screen_h), old.sensitivity)
+        self.calibrated = True
         self.filter.reset()
 
     def set_sensitivity(self, sensitivity):
         old = self.mapper.calibration
         self.mapper.calibration = BoxCalibration(old.box, (old.screen_w, old.screen_h), sensitivity)
+
+    def apply_profile(self, profile):
+        """Load a validated Profile into the live pipeline (startup, or after an external change)."""
+        s = profile.settings
+        self.modes.set_click_mode(Mode(s.click_mode))
+        self.dwell.configure(dwell_s=s.dwell_ms / 1000, radius_px=s.dwell_radius_px)
+        self.filter.configure(min_cutoff=s.filter.min_cutoff, beta=s.filter.beta,
+                              precision_gain=s.filter.precision_gain)
+        if profile.calibration is not None:
+            self.set_calibration(Box(**profile.calibration))
+        self.set_sensitivity(s.sensitivity)
+        self.set_gestures(profile.gestures)
+
+    def to_profile(self):
+        """Snapshot the live settings, calibration, and spell as a Profile."""
+        settings = Settings(
+            click_mode=self.modes.click_mode.value,
+            dwell_ms=round(self.dwell.dwell_s * 1000),
+            dwell_radius_px=round(self.dwell.radius_px),
+            filter=FilterSettings(min_cutoff=self.filter.euro.min_cutoff, beta=self.filter.euro.beta,
+                                  precision_gain=self.filter.precision_gain),
+            sensitivity=self.mapper.calibration.sensitivity,
+        )
+        calibration = asdict(self.calibration_box) if self.calibrated else None
+        return Profile(calibration=calibration, gestures=list(self.gestures), settings=settings)
+
+    def persist(self):
+        if self.store is None:
+            return
+        try:
+            self.store.save(self.to_profile())
+        except OSError as e:
+            log.error("could not save profile: %s", e)
+            self.notice = f"Could not save your settings ({e}). They will be lost when Conjure quits."
 
     def set_gestures(self, gestures):
         self.gestures = list(gestures)
@@ -123,6 +164,7 @@ class Engine:
             if self.calibrator.state == calibration.DONE:
                 self.set_calibration(self.calibrator.box)
                 self.calibrator.cancel()
+                self.persist()
                 self.notice = "Calibrated: your comfortable area now covers the whole screen."
             result.cursor = self.cursor
             result.prompt, result.message = self.calibrator.prompt, self.calibrator.message
