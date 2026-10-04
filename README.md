@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-259%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-260%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -39,7 +39,7 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | | Typical webcam-mouse tutorial | **Conjure** |
 | --- | :---: | :---: |
 | False clicks in 2.4 min of ordinary pointing (no click intended) | 17 | **0** |
-| Real pinches recognized (68 recorded on the demo laptop) | n/a | **58 (85%)** |
+| Real pinches recognized (111 recorded on the demo laptop) | n/a | **100 (90%); 42 of 43 in the latest session** |
 | Cursor shake with the hand at rest | 4.8 px | **1.3 px** |
 | Custom gesture recognized, 10 varied casts | not possible | **8 or more, within 500 ms** |
 | Input frozen when the hand leaves view | never | **within 0.5 s, 13 of 13** |
@@ -171,7 +171,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/index.html    offline demo page
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  259 headless tests
+tests/                  260 headless tests
 ```
 
 </details>
@@ -179,7 +179,7 @@ tests/                  259 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 259 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 260 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation

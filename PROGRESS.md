@@ -85,6 +85,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 - **Pinch rule rebuilt on the user's real pinches (2026-10-04).** `pinches.jsonl` (stopped early, ~31 pinches) gave **0 clicks**: every pinch had the other fingers curled (extension 0.5-0.8) and the 1.4 open-fingers rule blocked all of them; the pinch lab agreed (22 blocked by it). Real pinches snap shut from open in 33-167 ms; accidental contacts in clean recordings take 235+ ms or never start open. New rule: quick close <= 200 ms, hold 80 ms, speed < 1500 px/s, no open-fingers rule. Result: 58 of 68 real pinches click (was 24), 0 false clicks on traversal_first/exits/idle. **Correction:** the second traversal recording contains deliberate pinches (same snap signature), so the earlier tuning that raised the open-fingers bar to 1.4 was based on real pinches, and it is excluded from negative tests. README/PITCH numbers recomputed from clean recordings: 17 naive false clicks vs 0 (was reported as 41 vs 0).
 
+- **Third pinch session confirms the snap rule (lab-20261004-010742).** 42 of 43 real pinches clicked (98%); every one closed in 33-102 ms, well inside the 200 ms window (the miss started already closed). The 6 "blocked" were flickers inside pinches. Widening the window to 250-350 ms gains nothing, so it stays at 200 ms. Overall: 100 of 111 real pinches across three sessions, 0 false clicks on clean recordings.
+
 ## Granted runners (CONJ-2 AC)
 
 | Laptop | Runner app | Accessibility | Camera | Cursor | Click |

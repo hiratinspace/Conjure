@@ -188,9 +188,9 @@ def test_a_blocked_pinch_says_why_and_turns_the_dot_red():
     assert any("pinch more quickly" in line for line in results[-1].lines)
 
 
-@pytest.mark.parametrize("name,minimum", [("pinches", 20), ("lab-20261003-235641", 30)])
+@pytest.mark.parametrize("name,minimum", [("pinches", 20), ("lab-20261003-235641", 30), ("lab-20261004-010742", 40)])
 def test_the_users_real_pinches_click(name, minimum):
-    """Real deliberate pinches, recorded on the demo laptop: ~25 in pinches, 37 in the pinch lab.
+    """Real deliberate pinches, recorded on the demo laptop: ~31 in pinches, 37 and 43 in pinch-lab sessions.
     Under the old open-fingers rule these gave 0 and 24 clicks."""
     _, frames = read_recording(f"recordings/{name}.jsonl")
     events, _, _, _ = run(frames)
