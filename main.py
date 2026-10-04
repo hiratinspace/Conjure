@@ -16,6 +16,7 @@ import numpy as np
 
 import config
 from pipeline.action_mapper import ActionMapper
+from pipeline.calibration import Calibrator
 from pipeline.cursor_mapper import Box, BoxCalibration, CursorMapper
 from pipeline.dwell import DwellDetector
 from pipeline.engine import Engine
@@ -91,6 +92,11 @@ def make_gesture_matcher():
                           config.GESTURE_BUFFER_FRAMES)
 
 
+def make_calibrator():
+    return Calibrator(config.CALIBRATION_COUNTDOWN_S, config.CALIBRATION_TRACE_S, config.CALIBRATION_LOW_PCT,
+                      config.CALIBRATION_HIGH_PCT, config.CALIBRATION_MIN_SIZE)
+
+
 def make_injector(dry_run):
     if dry_run:
         return RecordingInjector()
@@ -102,7 +108,7 @@ def make_engine(injector, timer, screen_size, modes=None):
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
     return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, ActionMapper(injector, modes),
                   modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), make_scroll(),
-                  make_gesture_recorder(), make_gesture_matcher(), timer,
+                  make_gesture_recorder(), make_gesture_matcher(), make_calibrator(), timer,
                   config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
 
 

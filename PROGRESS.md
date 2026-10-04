@@ -17,7 +17,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 | CONJ-9 | Drag and scroll gestures | C (Dev A) | code done | Drag: confirmed pinch + 25 px of movement presses at the pre-pinch position, release ends it (in CONJ-7). Scroll: hold the V pose 200 ms, then hand height relative to that point is a joystick (dead zone 0.15 hand sizes, up to 60 steps/s, same feel at any camera distance); cursor frozen while scrolling; works in every click mode. Recordings never scroll. Physical AC pending. |
 | CONJ-10 | Custom gesture recorder | C (Dev B) | code done | `g` in the preview starts it; on-screen prompts walk through 3 samples (2 s countdown captures the rest hand, 2 s window, trimmed to the frames that differ from rest; indistinct samples are redone). Normalization (wrist origin, hand size 1) is translation- and scale-invariant (tested). Threshold auto-derived from sample consistency. Warns if the gesture resembles the last 15 s of ordinary movement. Naming window with big stock-name buttons. Kept in memory until CONJ-13 persists it. Physical AC pending. |
 | CONJ-11 | Custom gesture recognition engine | C (Dev B) | code done | Multi-scale window match (0.75/1/1.33x each sample), generous auto threshold (floor 0.15, ceiling 0.35), runtime `match_scale`, rearm hysteresis so a held pose fires once, 1 s refractory, click at the gesture's start position. Headless: 0 false matches on traversal/idle/exits; >= 8/10 noisy, varied-speed synthetic casts fire within 500 ms; 0.6 ms/frame. Physical AC (10 real casts) pending. |
-| CONJ-12 | Range-of-motion calibration | C (Dev B) | todo | |
+| CONJ-12 | Range-of-motion calibration | C (Dev B) | code done | `c` in the preview: 3 s countdown, 8 s of hand-visible tracing, box = 5th-95th percentile of knuckle positions (twitch-proof, no strain at the edges), too-small traces redone. Replaces the default box live, keeps sensitivity. Headless: a 0.1-wide traced square reaches all four screen edges; recalibration works without restart. Physical AC pending the deferred `small_range` recording. |
 | CONJ-13 | Profile store (local JSON) | D | todo | |
 | CONJ-14 | Settings panel | D | todo | |
 | CONJ-15 | Auto-pause on hand exit | D | todo | |
@@ -31,6 +31,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 | Gate | Status | Evidence / pending |
 | --- | --- | --- |
+| Phase C (CONJ-7..12) | **code done, physical gate deferred** | Headless: 0 false clicks/matches/scrolls on all recordings, 8/10+ synthetic casts, calibrated box reaches all edges. Pending: hour-10 gate (real custom gesture fires reliably), 20-pinch test, overlay click-through check. |
 | Phase B (CONJ-5..6) | **code done, physical gate deferred** | Headless: traversal replay reaches all edges, idle jitter 1.3 px mean. Pending: live cursor feel (<100 ms lag, smooth), the hour-3 go/no-go. |
 | Phase A (CONJ-1..4) | **passed with deferrals** | Live: 30 fps with preview, track ~15 ms, either hand, sticky with two hands. Recorded: `traversal`, `idle`, `exits` (stopped at 51 s of 70, but holds 12 clean exit/re-entry cycles). **Deferred by the user** (build continues meanwhile): `pinches`, `small_range` recordings. |
 

@@ -13,9 +13,12 @@ import queue
 from collections import deque
 from dataclasses import dataclass, field
 
+from pipeline import calibration
+from pipeline.cursor_mapper import BoxCalibration
 from pipeline.gestures import normalize
 from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
+from pipeline.profile_schema import GestureTemplate
 
 ORDINARY_FRAMES = 450  # ~15 s of the user's normal movement, for the gesture recorder's distinctness check
 
@@ -35,7 +38,7 @@ class StepResult:
 
 class Engine:
     def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, matcher,
-                 timer, aspect, edge_margin):
+                 calibrator, timer, aspect, edge_margin):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -46,6 +49,7 @@ class Engine:
         self.scroll = scroll
         self.recorder = recorder
         self.matcher = matcher
+        self.calibrator = calibrator
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
         self.notice = ""  # one-off message for the user (e.g. gesture warnings)
         self.ordinary = deque(maxlen=ORDINARY_FRAMES)
@@ -68,13 +72,25 @@ class Engine:
 
     def finish_recording(self, name):
         """Turn the recorder's 3 samples into the (single) named gesture template."""
-        from pipeline.profile_schema import GestureTemplate
-
         samples, threshold, warnings = self.recorder.result(ordinary=list(self.ordinary))
         self.set_gestures([GestureTemplate(name=name, samples=samples, threshold=threshold)])
         self.recorder.cancel()
         self.notice = " ".join(warnings) or f"Spell '{name}' is ready. Switch to custom mode to cast it."
         return self.gestures[0], warnings
+
+    @property
+    def calibration_box(self):
+        return self.mapper.calibration.box
+
+    def set_calibration(self, box):
+        """Map `box` (normalized frame coords) to the whole screen, keeping the current sensitivity."""
+        old = self.mapper.calibration
+        self.mapper.calibration = BoxCalibration(box, (old.screen_w, old.screen_h), old.sensitivity)
+        self.filter.reset()
+
+    def set_sensitivity(self, sensitivity):
+        old = self.mapper.calibration
+        self.mapper.calibration = BoxCalibration(old.box, (old.screen_w, old.screen_h), sensitivity)
 
     def set_gestures(self, gestures):
         self.gestures = list(gestures)
@@ -100,6 +116,18 @@ class Engine:
     def step(self, t, hand):
         self._run_commands()
         result = StepResult()
+        if self.calibrator.active:
+            if self.cursor is not None:
+                self._emit(self._detectors_reset(self.modes.mode), result)
+            self.calibrator.update(hand, t)
+            if self.calibrator.state == calibration.DONE:
+                self.set_calibration(self.calibrator.box)
+                self.calibrator.cancel()
+                self.notice = "Calibrated: your comfortable area now covers the whole screen."
+            result.cursor = self.cursor
+            result.prompt, result.message = self.calibrator.prompt, self.calibrator.message
+            result.lines.append(f"calibrating: {self.calibrator.state}")
+            return result
         if self.recorder.active:
             # Recording a gesture: no cursor movement and no clicks until it is done.
             if self.cursor is not None:

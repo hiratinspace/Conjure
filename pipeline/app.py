@@ -4,7 +4,8 @@ macOS requires every window (Tk and OpenCV alike) on the main thread, so the
 camera, tracker, and engine run in `PipelineThread`, and this app polls
 UiState to draw the overlay and the preview window.
 
-Preview window keys: p hides it, m cycles the click mode, g records a spell, q quits.
+Preview window keys: p hides it, m cycles the click mode, g records a spell, c calibrates,
+q quits.
 """
 
 import logging
@@ -83,11 +84,12 @@ class App:
     def toggle_preview(self):
         if self.preview_win is None:
             self.preview_win = tk.Toplevel(self.root)
-            self.preview_win.title("Conjure preview (p hide, m mode, q quit)")
+            self.preview_win.title("Conjure preview (p hide, m mode, g spell, c calibrate, q quit)")
             self.preview_win.protocol("WM_DELETE_WINDOW", self.toggle_preview)
             self.preview_label = tk.Label(self.preview_win, bg="black")
             self.preview_label.pack()
             for key, fn in (("p", self.toggle_preview), ("m", self.cycle_mode), ("g", self.record_spell),
+                            ("c", self.calibrate),
                             ("q", self.quit)):
                 self.preview_win.bind(f"<KeyPress-{key}>", lambda _e, fn=fn: fn())
             self.ui.preview_visible = True
@@ -101,6 +103,10 @@ class App:
         nxt = CLICK_MODES[(CLICK_MODES.index(current) + 1) % len(CLICK_MODES)]
         self.modes.set_click_mode(nxt)
         log.info("click mode: %s", nxt.value)
+
+    def calibrate(self):
+        self.engine.submit(lambda e: e.calibrator.start())
+        log.info("calibrating: follow the prompts on screen")
 
     def record_spell(self):
         self.engine.submit(lambda e: e.recorder.start())

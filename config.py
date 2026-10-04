@@ -113,3 +113,10 @@ GESTURE_MATCH_SCALE = 1.0  # runtime multiplier on the recorded threshold (>1 = 
 GESTURE_REARM_FACTOR = 1.5  # after a match, distance must exceed threshold x this before the next
 GESTURE_REFRACTORY_S = 1.0  # minimum time between matches
 GESTURE_BUFFER_FRAMES = 90  # ~3 s of live shapes kept for matching
+
+# Range-of-motion calibration (CONJ-12)
+CALIBRATION_COUNTDOWN_S = 3.0
+CALIBRATION_TRACE_S = 8.0  # seconds of hand-visible tracing
+CALIBRATION_LOW_PCT = 5  # box edges are these percentiles of the traced knuckle positions,
+CALIBRATION_HIGH_PCT = 95  # so a twitch does not stretch the box and edges need no strain
+CALIBRATION_MIN_SIZE = 0.03  # normalized frame units; smaller traces are redone
