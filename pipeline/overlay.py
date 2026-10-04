@@ -141,10 +141,11 @@ class Overlay:
             x, y = snap.cursor[0] + 26, snap.cursor[1] + 26
             r = 9
             done = snap.pinch_state in ("confirmed", "dragging", "touch", "drag", "held")
-            c.create_oval(x - r, y - r, x + r, y + r, outline=RING_FILL, width=2)
+            blocked = snap.pinch_state == "blocked"  # fingers closed but the pinch is not counting
+            c.create_oval(x - r, y - r, x + r, y + r, outline=NAIVE_RED if blocked else RING_FILL, width=2)
             start, extent = pinch_dot_arc(snap.pinch_progress)
             c.create_arc(x - r, y - r, x + r, y + r, start=start, extent=extent, style="pieslice",
-                         fill=RING_FILL if done else BADGE_FG, outline="")
+                         fill=NAIVE_RED if blocked else RING_FILL if done else BADGE_FG, outline="")
         badge = badge_text(snap)
         if badge:
             color = STATUS.get(snap.tracking, (BADGE_FG,))[0]

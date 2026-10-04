@@ -73,7 +73,7 @@ PRECISION_RAMP_S = 0.2  # gain glides to its new value over ~this long; snapping
 POSITION_HISTORY_FRAMES = 30  # ~1 s of cursor history for position_at (pre-pinch latch)
 
 # Click modes (contract: pipeline/modes.py)
-DEFAULT_CLICK_MODE = "touch"  # "touch" | "pinch" | "dwell" | "custom"
+DEFAULT_CLICK_MODE = "pinch"  # "pinch" | "touch" | "dwell" | "custom"
 
 # Touch mode: tap with the index finger like a touchscreen (pipeline/touch.py).
 # Straightness = |MCP->tip| / finger length: pointing frames measure 0.95-1.0 in the recordings,
@@ -99,7 +99,11 @@ DWELL_RADIUS_PX = 25  # "still" means the cursor stays inside this radius
 # traversal_first/traversal/idle/exits. Real-pinch values still need the deferred pinches recording.
 PINCH_ENGAGE_RATIO = 0.25  # closing below this starts a pinch
 PINCH_RELEASE_RATIO = 0.40  # opening above this ends it (wide hysteresis gap = no flutter)
-PINCH_HOLD_MS = 150  # a pinch must stay closed this long to count (kills Midas-touch blips)
+PINCH_HOLD_MS = 80  # a pinch must stay closed this long to count. Was 150, which threw away natural quick
+# pinches (~100 ms); with the speed gate below, 60-100 ms all give zero false clicks on every recording
+PINCH_REQUIRE_OPEN_FINGERS = True  # the main anti-misfire rule: without it the recordings give 5-30 false clicks
+PINCH_QUICK_CLOSE_MS = None  # optional: fingers must close from open within this long (measured: adds nothing)
+PINCH_MAX_SPEED_PX_S = 400  # no pinch starts while the hand sweeps faster than this
 PINCH_OPEN_EXTENSION = 1.4  # other fingers' mean extension must exceed this (curled hand != pinch).
 # 1.2 let through 0.16-0.37 s fingertip contacts with half-open fingers (1.21-1.32) in the second
 # traversal recording; open-finger pinches measure ~1.8-2.1.

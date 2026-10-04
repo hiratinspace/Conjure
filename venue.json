@@ -2,7 +2,7 @@
   "_about": "Demo-day overrides for config.py (CONJ-19). Edit numbers here after the freeze, never code. Keys starting with _ are notes. Values below are the current defaults until rehearsal tunes them.",
 
   "_stage": "Click mode Conjure starts in on stage, over the saved profile. Decide at rehearsal: touch, pinch, dwell, or custom.",
-  "STAGE_CLICK_MODE": "touch",
+  "STAGE_CLICK_MODE": "pinch",
 
   "_tracking": "Raise these if a busy background or a second person causes phantom hands; lower if tracking drops in dim light.",
   "MIN_DETECTION_CONFIDENCE": 0.5,
@@ -11,8 +11,9 @@
   "_pinch": "False clicks while moving: lower PINCH_ENGAGE_RATIO or raise PINCH_OPEN_EXTENSION / PINCH_HOLD_MS. Missed pinches: the reverse.",
   "PINCH_ENGAGE_RATIO": 0.25,
   "PINCH_RELEASE_RATIO": 0.40,
-  "PINCH_HOLD_MS": 150,
+  "PINCH_HOLD_MS": 80,
   "PINCH_OPEN_EXTENSION": 1.4,
+  "PINCH_MAX_SPEED_PX_S": 400,
 
   "_spell": "Spell misses at the venue: raise GESTURE_MATCH_SCALE (1.2 = 20% more forgiving). Spell fires on its own: lower it.",
   "GESTURE_MATCH_SCALE": 1.0,

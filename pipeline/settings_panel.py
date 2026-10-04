@@ -68,7 +68,7 @@ class SettingsPanel:
         modes = tk.Frame(self.win, bg=BG)
         modes.grid(row=2, column=0, columnspan=4, pady=6)
         self.mode_buttons = {}
-        for i, (mode, label) in enumerate(((Mode.TOUCH, "Touch"), (Mode.PINCH, "Pinch"), (Mode.DWELL, "Dwell"),
+        for i, (mode, label) in enumerate(((Mode.PINCH, "Pinch"), (Mode.TOUCH, "Touch"), (Mode.DWELL, "Dwell"),
                                            (Mode.CUSTOM, "Spell"))):
             b = BigButton(modes, label, lambda m=mode: self._submit(sm.set_click_mode, m.value), width=6)
             b.grid(row=0, column=i, padx=5)

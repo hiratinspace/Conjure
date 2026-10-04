@@ -52,7 +52,8 @@ def _right_others_open(pose, open_ext):
 
 class PinchChannel:
     def __init__(self, name, ratio_fn, others_open_fn, click_action, allow_drag, engage, release, hold_s,
-                 open_extension, drag_start_px, latch_lookback_s):
+                 open_extension, drag_start_px, latch_lookback_s, require_open=True, quick_close_s=None,
+                 max_speed=None):
         if release <= engage:
             raise ValueError("release ratio must exceed engage ratio (hysteresis)")
         self.name = name
@@ -66,6 +67,10 @@ class PinchChannel:
         self.open_extension = open_extension
         self.drag_start_px = drag_start_px
         self.latch_lookback_s = latch_lookback_s
+        self.require_open = require_open
+        self.quick_close_s = quick_close_s
+        self.max_speed = max_speed
+        self.block_reason = ""  # why a closed pinch is not counting right now (overlay hint)
         self._ratios = deque(maxlen=60)  # (t, ratio), ~2 s
         self.state = OPEN
         self.ratio = None
@@ -103,7 +108,10 @@ class PinchChannel:
 
         if self.state == OPEN:
             closed = r < self.engage
-            if closed and self._others_open(pose, self.open_extension):
+            self.block_reason = ""
+            if closed and not self._deliberate(pose, t, pointer_filter):
+                self.block_reason = self._why_not(pose, pointer_filter)
+            if closed and not self.block_reason:
                 self.state = PENDING
                 self._t_engage = t
             elif closed and not self._curled_contact:
@@ -124,7 +132,7 @@ class PinchChannel:
             return events
 
         if self.state == PENDING:
-            if not self._others_open(pose, self.open_extension):
+            if self.require_open and not self._others_open(pose, self.open_extension):
                 self.state = OPEN  # the hand is curling into a fist, not pinching
                 self.blocked_curled += 1
                 self._curled_contact = True
@@ -141,6 +149,25 @@ class PinchChannel:
             return [ClickEvent(Action.DRAG_START, self._latch)]
         return []
 
+    def _deliberate(self, pose, t, pointer_filter):
+        """A pinch counts when it is clearly intended: fingers that were open closed quickly (an
+        accidental curl closes slowly), with the hand not sweeping fast, and, if required, the
+        other fingers open."""
+        if self.require_open and not self._others_open(pose, self.open_extension):
+            return False
+        if self.max_speed is not None and pointer_filter.speed > self.max_speed:
+            return False
+        if self.quick_close_s is not None:
+            return any(r >= self.release and t - ts <= self.quick_close_s for ts, r in self._ratios)
+        return True
+
+    def _why_not(self, pose, pointer_filter):
+        if self.require_open and not self._others_open(pose, self.open_extension):
+            return "open your other fingers"
+        if self.max_speed is not None and pointer_filter.speed > self.max_speed:
+            return "hold still to pinch"
+        return "close faster from open"
+
     def _closing_start(self):
         """Time the fingers started closing for the current pinch."""
         hist = [(t, r) for t, r in self._ratios if t <= self._t_engage]
@@ -154,9 +181,11 @@ class PinchChannel:
 class PinchDetector:
     """Left (thumb + index, with drag) and right (thumb + middle) channels; only one can be active at a time."""
 
-    def __init__(self, engage, release, hold_s, open_extension, drag_start_px, latch_lookback_s):
+    def __init__(self, engage, release, hold_s, open_extension, drag_start_px, latch_lookback_s,
+                 require_open=True, quick_close_s=None, max_speed=None):
         common = dict(engage=engage, release=release, hold_s=hold_s, open_extension=open_extension,
-                      drag_start_px=drag_start_px, latch_lookback_s=latch_lookback_s)
+                      drag_start_px=drag_start_px, latch_lookback_s=latch_lookback_s, require_open=require_open,
+                      quick_close_s=quick_close_s, max_speed=max_speed)
         self.left = PinchChannel("left", _left_ratio, _left_others_open, Action.LEFT, True, **common)
         self.right = PinchChannel("right", _right_ratio, _right_others_open, Action.RIGHT, False, **common)
 
@@ -183,6 +212,8 @@ class PinchDetector:
         r = self.left.ratio
         if r is None:
             return None, ""
+        if self.left.block_reason:
+            return 1.0, "blocked"
         span = self.left.release - self.left.engage
         return min(1.0, max(0.0, (self.left.release - r) / span)), OPEN
 
@@ -191,4 +222,6 @@ class PinchDetector:
             if ch.active:
                 return f"pinch {ch.name}: {ch.state}"
         r = self.left.ratio
+        if self.left.block_reason:
+            return f"pinch not counted: {self.left.block_reason}"
         return f"pinch ratio {r:.2f}" if r is not None else "pinch: fingertips not in frame"

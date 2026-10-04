@@ -154,3 +154,25 @@ def test_recorded_sessions_without_pinching_fire_zero_clicks(name):
     events, injector, _, _ = run(frames)
     assert events == []
     assert injector.actions() == []
+
+
+def test_a_natural_quick_pinch_now_clicks():
+    # ~100 ms closed: thrown away as a blip under the old 150 ms hold.
+    events, _, _, _ = run(pinch_stream(hold_s=0.1, close_s=0.07))
+    assert [e.action for e in events] == [Action.LEFT]
+
+
+def test_no_pinch_starts_while_the_hand_sweeps_fast():
+    frames = stream([(0.5, dict(pinch=0.0, wrist=(0.2, 0.7))),
+                     (0.5, dict(pinch=lambda f: 0.95 if f > 0.2 else 0.0, wrist=lambda f: (0.2 + 0.5 * f, 0.7)))])
+    events, _, results, _ = run(frames)
+    assert events == []
+    assert any("hold still" in " ".join(r.lines) for r in results)
+
+
+def test_a_blocked_pinch_says_why_and_turns_the_dot_red():
+    frames = stream([(0.5, dict(curled=True)), (0.5, dict(curled=True, pinch=0.95))])
+    events, _, results, _ = run(frames)
+    assert events == []
+    assert results[-1].pinch_state == "blocked"
+    assert any("open your other fingers" in line for line in results[-1].lines)

@@ -80,7 +80,10 @@ def make_pointer_filter(screen_size):
 
 def make_pinch():
     return PinchDetector(config.PINCH_ENGAGE_RATIO, config.PINCH_RELEASE_RATIO, config.PINCH_HOLD_MS / 1000,
-                         config.PINCH_OPEN_EXTENSION, config.DRAG_START_PX, config.PINCH_LATCH_LOOKBACK_S)
+                         config.PINCH_OPEN_EXTENSION, config.DRAG_START_PX, config.PINCH_LATCH_LOOKBACK_S,
+                         config.PINCH_REQUIRE_OPEN_FINGERS,
+                         None if config.PINCH_QUICK_CLOSE_MS is None else config.PINCH_QUICK_CLOSE_MS / 1000,
+                         config.PINCH_MAX_SPEED_PX_S)
 
 
 def make_touch():
