@@ -38,11 +38,11 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 | 0:15 | Tutorial mode (trackpad hand: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 41 false clicks in our tests." Trackpad hand turns tutorial mode off. "This is Conjure: zero." |
 | 0:35 | Calibration (trackpad hand: **Calibrate**) | Forearm flat on the table, visibly move about 3 inches, then touch all four screen corners. "Two inches of rested movement covers the whole screen." |
 | 0:55 | Spellbook I. Point | Light the three runes with small movements. Point at the metrics: "jitter under 2 pixels." |
-| 1:10 | II. Pinch | Pinch with fingers open: the dot fills, then the candle lights. |
+| 1:10 | II. Tap | Point, then tap the air like a phone screen: the candle lights. "No pinch to learn: it's a touchscreen." |
 | 1:25 | III. Hold still | Trackpad hand presses **Dwell**. Hold over the crystal until the ring fills. "For hands that can't pinch." |
 | 1:45 | IV. Your own spell | Trackpad hand presses **Spell**. Cast the recorded gesture at the door: the name flashes and is spoken. "It works anywhere in the frame, any distance from the camera." |
 | 2:10 | V. Scroll | Two fingers up, lift the hand to read to the end. |
-| 2:25 | VI. Drag | Pinch the moonstone into the cauldron (in dwell mode: click the stone, then the cauldron). |
+| 2:25 | VI. Drag | Press on the moonstone, pause, carry it into the cauldron, lift (in dwell mode: click the stone, then the cauldron). |
 | 2:45 | VII. Finale | Drop the hand out of view, the pill turns red: "It pauses when you rest, so nothing clicks by accident. Everything runs on this laptop." |
 
 The comparison slide and the measured numbers are in `PITCH.md`.
@@ -53,8 +53,9 @@ You run the ladder yourself with the trackpad hand. Say a short line as you step
 
 | Level | Trigger (watch for it) | Action (trackpad hand) |
 | --- | --- | --- |
-| 1. Pinch (stage default) | Start here. | |
-| 2. Dwell only | 2 false or missed pinch clicks in a row, or the cursor jumps while pinching. | Press **Dwell** in the panel. Dwell needs no pinch and ignores jitter. The spellbook is fully completable by dwell. |
+| 1. Touch (stage default) | Start here. | |
+| 1b. Pinch | Taps are missed twice in a row (the finger doesn't register as pointing or bent in this light). | Press **Pinch** in the panel. |
+| 2. Dwell only | 2 false or missed clicks in a row, or the cursor jumps while clicking. | Press **Dwell** in the panel. Dwell needs no pinch and ignores jitter. The spellbook is fully completable by dwell. |
 | 3. Spellbook only, skip pages | Tracking drops repeatedly (the "Paused" banner appears while the hand is in view, twice within 30 s), or a step fails twice. | Click **Next page** with the trackpad hand to skip the failing step, and narrate what it would have shown. |
 | 4. Backup video | Conjure crashes, the camera stops, or tracking is gone for more than 10 s. | Quit Conjure (`Ctrl+C` in Terminal), open `~/Desktop/conjure-demo.mov` in QuickTime, press `Cmd+F` for full screen, and play. If the laptop itself fails, play the phone copy. |
 

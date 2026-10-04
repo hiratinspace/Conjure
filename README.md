@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-239%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-254%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -16,7 +16,7 @@
 
 ---
 
-Conjure turns a standard laptop webcam into a full mouse replacement for people with limited hand mobility: tremor, arthritis, partial paralysis, repetitive strain injury. Your hand moves the cursor, and you click with a pinch, by holding still, or with a gesture you record yourself.
+Conjure turns a standard laptop webcam into a full mouse replacement for people with limited hand mobility: tremor, arthritis, partial paralysis, repetitive strain injury. Your hand moves the cursor, and you click the way you would on a touchscreen: tap with your index finger. Or pinch, hold still, or use a gesture you record yourself.
 
 Every other webcam pointer ships a fixed set of gestures and expects your hand to adapt. **Conjure inverts that: any motion your hand can repeat reliably becomes a click.**
 
@@ -24,6 +24,7 @@ Every other webcam pointer ships a fixed set of gestures and expects your hand t
 
 | | |
 | --- | --- |
+| **Touchscreen feel** | Point with your index finger, tap to click, double-tap, press and hold for a right click, press and move to drag. Nothing new to learn. |
 | **Your own click gesture** | Record any motion three times, name it, and it becomes a click. It works anywhere in the frame and at any distance from the camera. |
 | **Small, rested movements** | Range-of-motion calibration maps the area you can reach comfortably (about 3 inches, forearm on the table) to the whole screen. |
 | **Steady under tremor** | One Euro smoothing plus a precision mode that slows the cursor as your hand slows, so small targets stay reachable. |
@@ -42,17 +43,20 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | Custom gesture recognized, 10 varied casts | not possible | **8 or more, within 500 ms** |
 | Input frozen when the hand leaves view | never | **within 0.5 s, 13 of 13** |
 
+> **Why taps don't misfire.** A tap only counts when your finger was pointing first and your hand is nearly still, the way you aim and then touch a phone screen. In the recorded sessions of ordinary movement, these rules turn 15 accidental "touches" into zero clicks.
+
 > **Why tutorials misfire.** They follow the fingertip, which moves when you pinch. They measure the pinch in camera pixels, so leaning toward the camera "pinches". And they click the instant the fingers cross a line. Conjure's **tutorial mode** reproduces that behavior live, side by side with its own detector, so you can see the difference on screen.
 
 ## Gestures
 
 | Your hand | Result |
 | --- | --- |
-| Move it (small movements, forearm rested) | The cursor follows the knuckle at the base of your index finger |
-| Thumb to index, other fingers open, then release | **Left click**, placed where the cursor was before you pinched |
-| Two quick pinches | **Double-click** |
-| Thumb to middle finger | **Right click** |
-| Pinch, hold, and move | **Drag** |
+| Point with your index finger | The cursor follows the knuckle at the base of that finger, so tapping never moves it |
+| **Touch mode** *(default)*: tap (bend the finger and straighten it) | **Left click**, placed where your finger was before the tap |
+| Tap twice | **Double-click** |
+| Press and hold still for 0.7 s | **Right click** (a ring fills while you hold) |
+| Press, pause, then move | **Drag**; straighten to drop |
+| **Pinch mode**: thumb to index, other fingers open, then release | **Left click** (thumb to middle finger: right click; pinch and move: drag) |
 | Hold still for 0.8 s *(dwell mode)* | **Left click**, after a countdown ring fills |
 | Your recorded gesture *(spell mode)* | **Left click**, with the spell's name shown and spoken |
 | Two fingers up (V), then lift or lower your hand | **Scroll** |
@@ -106,7 +110,7 @@ This opens the Conjure panel, the on-screen overlay, and the spellbook demo page
 **4. First session**
 
 1. Press **Calibrate**, rest your forearm, and trace the edges of a small, comfortable area.
-2. Choose a click mode: **Pinch**, **Dwell**, or **Spell** (press **Record spell** first).
+2. Point and tap: Conjure starts in **Touch** mode. Other modes in the panel: **Pinch**, **Dwell**, or **Spell** (press **Record spell** first).
 3. Work through the spellbook pages.
 
 **Optional: spoken feedback.** Set `ELEVENLABS_API_KEY` in your shell for ElevenLabs voices. Without it, Conjure uses the built-in macOS voice.
@@ -143,11 +147,12 @@ flowchart LR
     B --> C[Calibration<br/>mapping]
     C --> D[One Euro smoothing<br/>+ precision mode]
     D --> E{Click mode}
+    E --> T[Touch]
     E --> F[Pinch]
     E --> G[Dwell]
     E --> H[Your spell]
     B --> I[Scroll and<br/>auto-pause]
-    F & G & H & I --> J[One shared<br/>click event]
+    T & F & G & H & I --> J[One shared<br/>click event]
     J --> K[macOS input]
 ```
 
@@ -165,7 +170,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/index.html    offline demo page
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  239 headless tests
+tests/                  254 headless tests
 ```
 
 </details>
@@ -173,7 +178,7 @@ tests/                  239 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 239 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 254 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation

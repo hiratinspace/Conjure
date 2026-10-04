@@ -4,7 +4,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 ## Waiting on you (in order)
 
-1. **First live run of the full app** (~5 min): `python main.py --preview --spellbook` from Terminal.app. Check the overlay lets clicks through, the panel works, and pinch, dwell (ring visible), and scroll behave. Report anything odd.
+1. **First live run of the full app** (~5 min): `python main.py --preview --spellbook` from Terminal.app. Check the overlay lets clicks through and the panel works; try Touch mode taps, long-press, and drag, then pinch, dwell, and scroll. Report anything odd.
 2. **Phase A-C physical gates** (~10 min): record `pinches` and `small_range` (`scripts/record_session.py`), tell me the real pinch count, then calibrate, record a spell, and cast it 10 times.
 3. **CONJ-18** (~2 min): `export ELEVENLABS_API_KEY=...` in your shell, run `python scripts/pregenerate_voices.py`, and tell me the summary line (I commit the clips).
 4. **CONJ-19/20**: rehearsal at the venue per RUNBOOK.md, tune `venue.json`, pick `STAGE_CLICK_MODE`, record the backup video.
@@ -78,6 +78,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 - **Second round of improvements (user's "outstanding product" list).** Adopted: pinch 0.25/0.40 (zero false events on all recordings, same as 0.20/0.32), dwell 800 ms / 25 px, 300 ms click refractory, precision gain glide (~200 ms), cursor hold near the frame edge, recording quality gate, status pill, pinch progress dot, NSSound clicks, tutorial mode (naive clicks shown, never injected), live metrics, Responsiveness (beta) control. Kept: One Euro defaults 0.5 / 0.01 (tuned on recordings) over the textbook 1.0 / 0.007; precision ramp 60-400 px/s. Already in place: knuckle control point, mirroring, normalized pinch, pre-pinch latch, dwell ring and leave-to-rearm, sample normalization, neutral/ordinary-motion warnings, pause within 0.5 s, static poses work as spells (T = 1).
 - **GitHub repo was briefly disabled (2026-10-03 ~23:00).** One push failed with "Repository 'hiratinspace/Conjure' is disabled"; a retry minutes later succeeded and nothing was lost. The repo is **public on purpose**: it is the hackathon submission.
+
+- **Touch mode added and made the default (user feedback: pinch was hard to control and click).** Analysis: touchscreen vocabulary is familiar and one-finger; but a webcam cannot see contact, depth is too noisy for an air push, tapping moves the fingertip, and a relaxed hand curls on its own. Design: touch = quick index bend measured as straightness (pointing 0.95-1.0, bent 0.3-0.6 in recordings), cursor stays on the knuckle, tap lands at the pre-tap position, armed only after pointing. First version gave false clicks/drags on ordinary movement (traversal 2 + 3, exits 5); fixed with a stillness gate (< 250 px/s; false touch-downs were at 300-1500 px/s), press-then-move drags (200 ms), and an 80 ms minimum: zero events on all recordings. **Needs a live check** and a recorded session of real taps to tune thresholds.
 
 ## Granted runners (CONJ-2 AC)
 
