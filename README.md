@@ -97,4 +97,4 @@ Built in 18 hours, so deliberately narrow: macOS only, one screen, one hand, one
 
 ## Credits
 
-Built at a hackathon by a two-person team. Hand tracking by [MediaPipe](https://ai.google.dev/edge/mediapipe), smoothing by the [One Euro filter](https://gery.casiez.net/1euro/) (Casiez et al., 2012), voice by [ElevenLabs](https://elevenlabs.io).
+Built solo in an 18-hour hackathon. Hand tracking by [MediaPipe](https://ai.google.dev/edge/mediapipe), smoothing by the [One Euro filter](https://gery.casiez.net/1euro/) (Casiez et al., 2012), voice by [ElevenLabs](https://elevenlabs.io).

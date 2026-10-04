@@ -1,9 +1,10 @@
 # Conjure demo runbook
 
-One laptop (the M1), two people:
+One laptop (the M1), one presenter (a solo team):
 
-- **Presenter**: talks, and controls the computer with their hand in front of the camera. Never touches the trackpad.
-- **Operator**: stands at the laptop side with the trackpad, watches the terminal and overlay, and calls every fallback. The Presenter never has to improvise a failure response.
+- **Pointing hand**: in front of the camera, forearm rested. It controls Conjure.
+- **Other hand**: on the trackpad, kept **below the camera's view**. It presses panel buttons (mode switches, tutorial mode, calibrate) and steps down the fallback ladder. Conjure tracks one hand and stays locked on the pointing hand, but keep the trackpad hand out of frame anyway.
+- Keep the Conjure panel on screen beside the spellbook so every button is one trackpad move away. Decide the fallback triggers now (below), so on stage you act on them without improvising.
 
 Everything runs from **Terminal.app**, the runner that holds Camera and Accessibility permission.
 
@@ -20,10 +21,10 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 
 ## 30 minutes before (at the venue)
 
-1. Set up the lamp in front of the Presenter's hand and the backdrop behind it. No window behind the Presenter.
+1. Set up the lamp in front of your pointing hand and the backdrop behind you. No window behind you. Place the trackpad hand where the camera cannot see it.
 2. Launch: `python main.py --spellbook`. The Conjure panel, the overlay, and the spellbook (in the browser) open.
-3. Presenter: rest the forearm, then **Calibrate** in the panel and trace the comfortable area.
-4. Presenter: **Record spell** in the panel, cast the chosen gesture 3 times, then name it. Use a big, distinct motion. If it says the three didn't look alike, do it again; heed any warning that appears.
+3. Rest the forearm, then **Calibrate** in the panel and trace the comfortable area.
+4. **Record spell** in the panel, cast the chosen gesture 3 times, then name it. Use a big, distinct motion. If it says the three didn't look alike, do it again; heed any warning that appears.
 5. Run the 3-minute script below twice, back to back. Count false clicks.
 6. If anything misbehaves, tune `venue.json` (each key says which way to turn it), quit with **Quit** in the panel, and relaunch. Calibration and the spell survive a relaunch.
 7. Set `STAGE_CLICK_MODE` in `venue.json` to the mode that was most reliable in the two runs. Commit `venue.json`.
@@ -31,15 +32,15 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 
 ## The 3-minute script
 
-| Time | On screen | Presenter says and does |
+| Time | On screen | You say and do |
 | --- | --- | --- |
 | 0:00 | (desktop) | "Mice hurt or don't work for people with tremor, arthritis, or paralysis. Every webcam pointer asks your hand to learn its gestures. Conjure learns yours." |
-| 0:15 | Tutorial mode (Operator: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 41 false clicks in our tests." Operator turns tutorial mode off. "This is Conjure: zero." |
-| 0:35 | Calibration (Operator: **Calibrate**) | Forearm flat on the table, visibly move about 3 inches, then touch all four screen corners. "Two inches of rested movement covers the whole screen." |
+| 0:15 | Tutorial mode (trackpad hand: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 41 false clicks in our tests." Trackpad hand turns tutorial mode off. "This is Conjure: zero." |
+| 0:35 | Calibration (trackpad hand: **Calibrate**) | Forearm flat on the table, visibly move about 3 inches, then touch all four screen corners. "Two inches of rested movement covers the whole screen." |
 | 0:55 | Spellbook I. Point | Light the three runes with small movements. Point at the metrics: "jitter under 2 pixels." |
 | 1:10 | II. Pinch | Pinch with fingers open: the dot fills, then the candle lights. |
-| 1:25 | III. Hold still | Operator presses **Dwell**. Hold over the crystal until the ring fills. "For hands that can't pinch." |
-| 1:45 | IV. Your own spell | Operator presses **Spell**. Cast the recorded gesture at the door: the name flashes and is spoken. "It works anywhere in the frame, any distance from the camera." |
+| 1:25 | III. Hold still | Trackpad hand presses **Dwell**. Hold over the crystal until the ring fills. "For hands that can't pinch." |
+| 1:45 | IV. Your own spell | Trackpad hand presses **Spell**. Cast the recorded gesture at the door: the name flashes and is spoken. "It works anywhere in the frame, any distance from the camera." |
 | 2:10 | V. Scroll | Two fingers up, lift the hand to read to the end. |
 | 2:25 | VI. Drag | Pinch the moonstone into the cauldron (in dwell mode: click the stone, then the cauldron). |
 | 2:45 | VII. Finale | Drop the hand out of view, the pill turns red: "It pauses when you rest, so nothing clicks by accident. Everything runs on this laptop." |
@@ -48,13 +49,13 @@ The comparison slide and the measured numbers are in `PITCH.md`.
 
 ## Fallback ladder
 
-Each step down is called by the **Operator**, out loud ("switching to dwell"), so the Presenter can keep talking.
+You run the ladder yourself with the trackpad hand. Say a short line as you step down ("let me switch to dwell, which needs no pinch"), so it reads as part of the demo, not a failure.
 
-| Level | Trigger (Operator watches for) | Action (Operator) |
+| Level | Trigger (watch for it) | Action (trackpad hand) |
 | --- | --- | --- |
 | 1. Pinch (stage default) | Start here. | |
-| 2. Dwell only | 2 false or missed pinch clicks in a row, or the cursor jumps while pinching. | Press **Dwell** in the panel (or `m` in the preview). Dwell needs no pinch and ignores jitter. The spellbook is fully completable by dwell. |
-| 3. Spellbook only, skip pages | Tracking drops repeatedly (the "Paused" banner appears while the hand is in view, twice within 30 s), or a step fails twice. | Click **Next page** on the trackpad to skip the failing step; the Presenter narrates it. |
+| 2. Dwell only | 2 false or missed pinch clicks in a row, or the cursor jumps while pinching. | Press **Dwell** in the panel. Dwell needs no pinch and ignores jitter. The spellbook is fully completable by dwell. |
+| 3. Spellbook only, skip pages | Tracking drops repeatedly (the "Paused" banner appears while the hand is in view, twice within 30 s), or a step fails twice. | Click **Next page** with the trackpad hand to skip the failing step, and narrate what it would have shown. |
 | 4. Backup video | Conjure crashes, the camera stops, or tracking is gone for more than 10 s. | Quit Conjure (`Ctrl+C` in Terminal), open `~/Desktop/conjure-demo.mov` in QuickTime, press `Cmd+F` for full screen, and play. If the laptop itself fails, play the phone copy. |
 
 Restarting is level 3.5: `Ctrl+C`, then `python main.py --spellbook`. It takes about 5 seconds, and nothing needs redoing (calibration and the spell are saved).
