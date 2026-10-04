@@ -78,6 +78,7 @@ class SettingsPanel:
         rows = [
             ("sensitivity", "Sensitivity", sm.step_sensitivity),
             ("smoothing", "Smoothing", sm.step_smoothing),
+            ("responsiveness", "Responsiveness", sm.step_responsiveness),
             ("dwell_ms", "Dwell time", sm.step_dwell_ms),
             ("dwell_radius", "Dwell area", sm.step_dwell_radius),
             ("spell_threshold", "Spell forgiveness", sm.step_spell_threshold),
@@ -93,7 +94,7 @@ class SettingsPanel:
                 row=r, column=3, padx=(0, 16), pady=5)
 
         effects = tk.Frame(self.win, bg=BG)
-        effects.grid(row=8, column=0, columnspan=4, pady=8)
+        effects.grid(row=9, column=0, columnspan=4, pady=8)
         self.precision_button = BigButton(effects, "Precision", lambda: self._submit(sm.toggle_precision), width=12)
         self.precision_button.grid(row=0, column=0, padx=5)
         self.feedback_buttons = {}
@@ -103,14 +104,14 @@ class SettingsPanel:
             self.feedback_buttons[key] = (b, label)
 
         stage = tk.Frame(self.win, bg=BG)
-        stage.grid(row=9, column=0, columnspan=4, pady=4)
+        stage.grid(row=10, column=0, columnspan=4, pady=4)
         self.tutorial_button = BigButton(stage, "Tutorial mode", actions["tutorial"], width=13)
         self.tutorial_button.grid(row=0, column=0, padx=5)
         self.metrics_button = BigButton(stage, "Metrics", actions["metrics"], width=10)
         self.metrics_button.grid(row=0, column=1, padx=5)
 
         actions_row = tk.Frame(self.win, bg=BG)
-        actions_row.grid(row=10, column=0, columnspan=4, pady=(8, 16))
+        actions_row.grid(row=11, column=0, columnspan=4, pady=(8, 16))
         for i, (label, fn) in enumerate((("Calibrate", actions["calibrate"]), ("Record spell", actions["record_spell"]),
                                          ("Preview", actions["toggle_preview"]), ("Hide", actions["hide"]),
                                          ("Quit", actions["quit"]))):
@@ -133,6 +134,7 @@ class SettingsPanel:
             button.set_selected(on)
         self.values["sensitivity"].configure(text=f"{v['sensitivity']:.1f}x")
         self.values["smoothing"].configure(text=f"{v['smoothing']} of 5")
+        self.values["responsiveness"].configure(text=f"{v['responsiveness']} of 5")
         self.values["dwell_ms"].configure(text=f"{v['dwell_ms'] / 1000:.1f} s")
         self.values["dwell_radius"].configure(text=f"{v['dwell_radius']} px")
         self.values["spell_threshold"].configure(

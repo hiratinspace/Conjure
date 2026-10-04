@@ -13,6 +13,8 @@ from pipeline.modes import USER, Mode
 
 # Smoothing level -> One Euro min_cutoff (Hz). Higher level = smoother and a little laggier.
 SMOOTHING_LEVELS = {1: 1.5, 2: 1.0, 3: 0.5, 4: 0.3, 5: 0.15}
+# Responsiveness level -> One Euro beta. Higher level = less lag on fast moves (a little more shake).
+RESPONSIVENESS_LEVELS = {1: 0.002, 2: 0.005, 3: 0.01, 4: 0.02, 5: 0.04}
 PRECISION_ON_GAIN = 0.3
 
 SENSITIVITY_RANGE = (0.5, 3.0, 0.1)  # (min, max, step)
@@ -30,6 +32,10 @@ def smoothing_level(min_cutoff):
     return min(SMOOTHING_LEVELS, key=lambda level: abs(SMOOTHING_LEVELS[level] - min_cutoff))
 
 
+def responsiveness_level(beta):
+    return min(RESPONSIVENESS_LEVELS, key=lambda level: abs(RESPONSIVENESS_LEVELS[level] - beta))
+
+
 def current(engine):
     """Display values for the panel."""
     spell = engine.gestures[0] if engine.gestures else None
@@ -39,6 +45,7 @@ def current(engine):
         "user_paused": USER in engine.modes.pause_reasons,
         "sensitivity": engine.mapper.calibration.sensitivity,
         "smoothing": smoothing_level(engine.filter.euro.min_cutoff),
+        "responsiveness": responsiveness_level(engine.filter.euro.beta),
         "precision": engine.filter.precision_gain < 1.0,
         "dwell_ms": round(engine.dwell.dwell_s * 1000),
         "dwell_radius": round(engine.dwell.radius_px),
@@ -77,6 +84,12 @@ def step_sensitivity(engine, direction):
 def step_smoothing(engine, direction):
     level = min(5, max(1, smoothing_level(engine.filter.euro.min_cutoff) + direction))
     engine.filter.configure(min_cutoff=SMOOTHING_LEVELS[level])
+
+
+@_then_save
+def step_responsiveness(engine, direction):
+    level = min(5, max(1, responsiveness_level(engine.filter.euro.beta) + direction))
+    engine.filter.configure(beta=RESPONSIVENESS_LEVELS[level])
 
 
 @_then_save

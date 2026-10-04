@@ -53,6 +53,13 @@ def test_each_setting_applies_live_and_is_saved(engine):
     assert s.filter.min_cutoff == sm.SMOOTHING_LEVELS[4] and s.filter.precision_gain == 1.0
 
 
+def test_responsiveness_steps_beta_and_saves(engine):
+    assert sm.current(engine)["responsiveness"] == 3
+    sm.step_responsiveness(engine, +1)
+    assert engine.filter.euro.beta == sm.RESPONSIVENESS_LEVELS[4]
+    assert saved(engine).filter.beta == sm.RESPONSIVENESS_LEVELS[4]
+
+
 def test_live_change_affects_the_very_next_frame(engine):
     sm.set_click_mode(engine, "dwell")
     sm.step_dwell_ms(engine, -1)  # 100 ms shorter than the default
