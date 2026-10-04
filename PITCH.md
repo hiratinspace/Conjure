@@ -12,7 +12,8 @@ Numbers from this laptop's camera and the recordings in `recordings/` (reproduci
 | --- | --- | --- |
 | False clicks during 2.4 min of ordinary pointing, no click intended (3 sessions) | 17 (14 + 3 + 0) | 0 |
 | Accidental contacts Conjure detected and blocked in those sessions | (none: it clicks) | 17 |
-| Real pinches recognized (111 deliberate pinches, three sessions) | n/a | 100 (90%); 42 of 43 in the latest |
+| Real pinches recognized (111 deliberate pinches, three sessions) | n/a | 98 (88%); 41 of 43 in the latest |
+| Resting hand: frames where the cursor stays perfectly still | (shakes every frame) | 72% |
 | Cursor shake with the hand at rest | 4.8 px (raw) | 1.3 px |
 | Lag on a fast sweep | n/a | ~14 px (about one frame) |
 | Spell recognized on 10 varied casts (speed, position, noise) | n/a | at least 8 of 10 within 500 ms |

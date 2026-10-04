@@ -22,8 +22,8 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 ## 30 minutes before (at the venue)
 
 1. Set up the lamp in front of your pointing hand and the backdrop behind you. No window behind you. Place the trackpad hand where the camera cannot see it.
-2. Launch: `python main.py --spellbook`. The Conjure panel, the overlay, and the spellbook (in the browser) open.
-3. Rest the forearm, then **Calibrate** in the panel and trace the comfortable area.
+2. Launch: `python main.py --spellbook`. The Conjure panel, the overlay, and the spellbook (in the browser) open. With no saved calibration, calibration starts by itself.
+3. Rest the forearm, then **Calibrate** (if it did not start by itself) in the panel and trace the comfortable area.
 4. **Record spell** in the panel, cast the chosen gesture 3 times, then name it. Use a big, distinct motion. If it says the three didn't look alike, do it again; heed any warning that appears.
 5. Run the 3-minute script below twice, back to back. Count false clicks.
 6. If anything misbehaves, tune `venue.json` (each key says which way to turn it), quit with **Quit** in the panel, and relaunch. Calibration and the spell survive a relaunch.

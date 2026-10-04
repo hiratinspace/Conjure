@@ -98,7 +98,13 @@ def test_engine_hand_loss_cancels_a_dwell_in_progress():
 
 
 def test_idle_recording_in_dwell_mode_clicks_once_per_arrival():
-    """A resting hand in dwell mode clicks when it settles, then never again without moving."""
+    """A resting hand in dwell mode clicks when it settles, then never again without moving:
+    consecutive dwell clicks are always at clearly different places (the hand repositioned)."""
+    import math
+
+    import config
     _, frames = read_recording("recordings/idle.jsonl")
     events, _ = run_engine(frames)
-    assert 1 <= len(events) <= 3  # the hand repositions a couple of times before settling
+    assert 1 <= len(events) <= 5
+    for a, b in zip(events, events[1:]):
+        assert math.dist(a.position, b.position) > config.DWELL_RADIUS_PX

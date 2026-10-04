@@ -157,3 +157,25 @@ def test_precision_gain_glides_instead_of_snapping():
     assert all(b <= a + 1e-9 for a, b in zip(falling, falling[1:]))  # then a monotonic glide down
     assert max(a - b for a, b in zip(falling, falling[1:])) < 0.1  # no step bigger than 0.1 per frame
     assert gains[-1] < 0.4  # settled toward precision gain within ~0.8 s (speed itself decays smoothly)
+
+
+def test_sticky_cursor_ignores_tremor_smaller_than_the_deadband():
+    rng = random.Random(3)
+    f = make_filter(deadband_px=6, min_cutoff=1e6, beta=0, precision_gain=1.0)  # no smoothing: raw tremor
+    outs = [f.update((700 + rng.gauss(0, 1.5), 450 + rng.gauss(0, 1.5)), i * DT) for i in range(90)]
+    assert len({(round(x, 6), round(y, 6)) for x, y in outs[5:]}) <= 3  # effectively frozen on target
+
+
+def test_sticky_cursor_follows_deliberate_movement_with_a_small_lag():
+    f = make_filter(deadband_px=6, min_cutoff=1e6, beta=0, precision_gain=1.0)
+    for i in range(30):
+        x = 300 + 20 * i
+        out = f.update((x, 450), i * DT)
+    assert x - out[0] == pytest.approx(6, abs=0.5)
+
+
+def test_sticky_cursor_still_reaches_the_screen_edge():
+    f = make_filter(deadband_px=6, min_cutoff=1e6, beta=0, precision_gain=1.0)
+    for i in range(30):
+        out = f.update((min(1300 + 20 * i, 1439), 450), i * DT)
+    assert out[0] == 1439

@@ -75,7 +75,7 @@ def make_frame_source(camera):
 def make_pointer_filter(screen_size):
     return PointerFilter(config.FILTER_MIN_CUTOFF, config.FILTER_BETA, config.FILTER_D_CUTOFF, config.PRECISION_GAIN,
                          config.PRECISION_SPEED_PX_S, config.FAST_SPEED_PX_S, config.REANCHOR_RATE, screen_size,
-                         config.POSITION_HISTORY_FRAMES, config.PRECISION_RAMP_S)
+                         config.POSITION_HISTORY_FRAMES, config.PRECISION_RAMP_S, config.STILL_DEADBAND_PX)
 
 
 def make_pinch():
@@ -263,6 +263,10 @@ def run(args):
         engine.notice = warning
     if stage_mode:
         modes.set_click_mode(Mode(stage_mode))
+    if config.CALIBRATE_ON_FIRST_RUN and not engine.calibrated and not dry_run:
+        # First run: fit Conjure to the user's comfortable range before anything else.
+        engine.submit(lambda e: e.calibrator.start())
+        log.info("no saved calibration: starting calibration (rest your forearm and trace a small area)")
     if venue_errors:
         engine.notice = f"venue.json has {len(venue_errors)} problem(s); see the terminal."
     feedback = make_feedback(engine, modes, enabled=not dry_run)

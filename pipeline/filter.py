@@ -14,6 +14,11 @@ PointerFilter adds two things on top, working in screen points:
   `reanchor_rate` per frame, where the correction goes unnoticed.
 - The gain never snaps: it glides toward the speed-based target with a time
   constant of `ramp_s / 3` (about 95% of the way in `ramp_s`).
+- Sticky cursor (`deadband_px`): the output holds still until the smoothed
+  cursor has moved more than the deadband from it, then trails it by that
+  distance. Tremor smaller than the deadband cannot nudge the cursor off a
+  tiny target; deliberate movement is followed with a few pixels of lag.
+  Edges are exempt, so the screen edge is still reachable.
 - Position history: a ring buffer of (t, cursor). `position_at(t)` is how a
   pinch click lands where the cursor was *before* the pinch started (CONJ-7).
 """
@@ -56,13 +61,15 @@ class OneEuroFilter2D:
 
 class PointerFilter:
     def __init__(self, min_cutoff, beta, d_cutoff, precision_gain, precision_speed, fast_speed, reanchor_rate,
-                 screen_size, history_size, ramp_s=0.0):
+                 screen_size, history_size, ramp_s=0.0, deadband_px=0.0):
         self.euro = OneEuroFilter2D(min_cutoff, beta, d_cutoff)
         self.precision_gain = precision_gain
         self.precision_speed = precision_speed
         self.fast_speed = fast_speed
         self.reanchor_rate = reanchor_rate
         self.ramp_s = ramp_s
+        self.deadband_px = deadband_px
+        self._held = None  # the sticky output position
         self.current_gain = 1.0  # the smoothed gain actually applied
         self.max_x, self.max_y = screen_size[0] - 1, screen_size[1] - 1
         self.history = deque(maxlen=history_size)
@@ -85,6 +92,7 @@ class PointerFilter:
         self.euro.reset()
         self._t = None
         self._smooth = None
+        self._held = None
 
     @property
     def speed(self):
@@ -127,8 +135,28 @@ class PointerFilter:
             self._smooth = smooth
             self.cursor = (min(max(cx, 0.0), self.max_x), min(max(cy, 0.0), self.max_y))
         self._t = t
-        self.history.append((t, self.cursor))
-        return self.cursor
+        # The sticky output sits on top of the filter; feeding it back into self.cursor would make
+        # the lag accumulate every frame.
+        out = self._stick(self.cursor, target)
+        self.history.append((t, out))
+        return out
+
+    def _stick(self, cursor, target):
+        if self.deadband_px <= 0 or self._held is None:
+            self._held = cursor
+            return cursor
+        hx, hy = self._held
+        d = math.dist(cursor, self._held)
+        if d > self.deadband_px:  # moved beyond the deadband: follow, trailing by the deadband
+            f = (d - self.deadband_px) / d
+            hx, hy = hx + (cursor[0] - hx) * f, hy + (cursor[1] - hy) * f
+        # A target pinned at a screen edge is reached exactly, deadband or not.
+        if target[0] <= 0.0 or target[0] >= self.max_x:
+            hx = cursor[0]
+        if target[1] <= 0.0 or target[1] >= self.max_y:
+            hy = cursor[1]
+        self._held = (hx, hy)
+        return self._held
 
     def _ramp(self, target_gain, dt):
         if self.ramp_s <= 0:

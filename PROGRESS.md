@@ -87,6 +87,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 - **Third pinch session confirms the snap rule (lab-20261004-010742).** 42 of 43 real pinches clicked (98%); every one closed in 33-102 ms, well inside the 200 ms window (the miss started already closed). The 6 "blocked" were flickers inside pinches. Widening the window to 250-350 ms gains nothing, so it stays at 200 ms. Overall: 100 of 111 real pinches across three sessions, 0 false clicks on clean recordings.
 
+- **Double-click, steadiness, and reach (user feedback 2026-10-04).** Double-click: the user's double pinches land 0.37-0.77 s and up to ~20 px apart; the 0.5 s / 8 px mouse tolerance caught 1 of 10. Now 0.8 s / 30 px, and the second click is placed on the first (phone-style). Steadiness: a 6 px sticky deadband on the filter output (not fed back into the filter: an early version accumulated lag) holds the cursor perfectly still in 72% of settled idle frames; edges still reachable. Reach: default box halved (0.5 x 0.5 of the frame) and calibration starts automatically when none is saved. Pinch results essentially unchanged (98 of 111), still 0 false clicks.
+
 ## Granted runners (CONJ-2 AC)
 
 | Laptop | Runner app | Accessibility | Camera | Cursor | Click |

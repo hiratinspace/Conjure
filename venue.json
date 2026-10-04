@@ -18,6 +18,9 @@
   "_spell": "Spell misses at the venue: raise GESTURE_MATCH_SCALE (1.2 = 20% more forgiving). Spell fires on its own: lower it.",
   "GESTURE_MATCH_SCALE": 1.0,
 
+  "_steady": "Cursor drifts off small targets: raise STILL_DEADBAND_PX. Feels sticky or laggy: lower it.",
+  "STILL_DEADBAND_PX": 6,
+
   "_pause": "Pauses during normal use (flaky tracking): raise PAUSE_AFTER_FRAMES.",
   "PAUSE_AFTER_FRAMES": 10,
   "RESUME_AFTER_FRAMES": 5,

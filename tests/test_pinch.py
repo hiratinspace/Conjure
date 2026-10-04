@@ -147,12 +147,11 @@ def test_switching_mode_mid_drag_releases_the_button():
 
 def test_two_quick_pinches_count_as_a_double_click():
     counter = ClickCounter(config.DOUBLE_CLICK_INTERVAL_S, config.DOUBLE_CLICK_RADIUS_PX)
-    assert counter.register("left", 0.0, (100, 100)) == 1
-    assert counter.register("left", 0.3, (103, 101)) == 2
-    assert counter.register("left", 0.5, (103, 101)) == 3
-    assert counter.register("left", 2.0, (103, 101)) == 1  # too slow
-    assert counter.register("left", 2.2, (200, 101)) == 1  # moved too far
-    assert counter.register("right", 2.3, (200, 101)) == 1  # other button
+    assert counter.register("left", 0.0, (100, 100)) == (1, (100, 100))
+    assert counter.register("left", 0.7, (115, 110)) == (2, (100, 100))  # a hand's double pinch: snapped
+    assert counter.register("left", 2.0, (103, 101)) == (1, (103, 101))  # too slow
+    assert counter.register("left", 2.2, (200, 101)) == (1, (200, 101))  # moved too far
+    assert counter.register("right", 2.3, (200, 101)) == (1, (200, 101))  # other button
 
 
 # traversal.jsonl (the second session) is excluded: it contains deliberate pinches (the same 33-67 ms

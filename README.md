@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-260%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-263%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -27,7 +27,7 @@ Every other webcam pointer ships a fixed set of gestures and expects your hand t
 | **Natural pinch** | A quick thumb-to-index pinch clicks, like on Vision Pro or Quest. If a pinch is not counted, the dot by the cursor turns red and says why. |
 | **Your own click gesture** | Record any motion three times, name it, and it becomes a click. It works anywhere in the frame and at any distance from the camera. |
 | **Small, rested movements** | Range-of-motion calibration maps the area you can reach comfortably (about 3 inches, forearm on the table) to the whole screen. |
-| **Steady under tremor** | One Euro smoothing plus a precision mode that slows the cursor as your hand slows, so small targets stay reachable. |
+| **Steady under tremor** | One Euro smoothing, a precision mode that slows the cursor as your hand slows, and a sticky cursor that holds perfectly still on a small target until you really move. |
 | **Clicks that don't misfire** | Size-normalized pinch, hysteresis, a hold time, and an open-fingers rule. Zero false clicks across every recorded session. |
 | **Never stuck** | Can't pinch? Hold still to click (dwell). Hand drops out of view? Everything pauses within half a second. |
 | **Private by design** | Video is processed on the laptop and never stored or sent. No account, no cloud. |
@@ -39,7 +39,7 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | | Typical webcam-mouse tutorial | **Conjure** |
 | --- | :---: | :---: |
 | False clicks in 2.4 min of ordinary pointing (no click intended) | 17 | **0** |
-| Real pinches recognized (111 recorded on the demo laptop) | n/a | **100 (90%); 42 of 43 in the latest session** |
+| Real pinches recognized (111 recorded on the demo laptop) | n/a | **98 (88%); 41 of 43 in the latest session** |
 | Cursor shake with the hand at rest | 4.8 px | **1.3 px** |
 | Custom gesture recognized, 10 varied casts | not possible | **8 or more, within 500 ms** |
 | Input frozen when the hand leaves view | never | **within 0.5 s, 13 of 13** |
@@ -54,7 +54,7 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | --- | --- |
 | Point with your index finger | The cursor follows the knuckle at the base of that finger, so tapping never moves it |
 | **Pinch mode** *(default)*: a quick thumb-to-index pinch, any hand shape | **Left click**, placed where the cursor was before you pinched |
-| Two quick pinches | **Double-click** |
+| Two pinches within 0.8 s | **Double-click**, on exactly the same spot even if your hand drifted |
 | Thumb to middle finger | **Right click** |
 | Pinch, hold, and move | **Drag** |
 | **Touch mode**: point, then tap (bend and straighten the index finger) | **Left click**; tap twice to double-click, press and hold 0.7 s to right-click, press, pause, and move to drag |
@@ -171,7 +171,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/index.html    offline demo page
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  260 headless tests
+tests/                  263 headless tests
 ```
 
 </details>
@@ -179,7 +179,7 @@ tests/                  260 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 260 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 263 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation

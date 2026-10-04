@@ -22,7 +22,9 @@ RIGHT = "right"
 
 class ClickCounter:
     """Assigns macOS click counts: a click within `interval_s` and `radius_px` of the previous
-    one on the same button continues the sequence (2 = double-click, 3 = triple)."""
+    one on the same button continues the sequence (2 = double-click, 3 = triple), and is placed
+    exactly on the first click of the sequence, as phones do with double-taps, so a hand that
+    drifted a little between pinches still double-clicks the same thing."""
 
     def __init__(self, interval_s, radius_px):
         self.interval_s = interval_s
@@ -30,13 +32,14 @@ class ClickCounter:
         self._last = None  # (button, t, position, count)
 
     def register(self, button, t, position):
+        """Returns (click count, position to click at)."""
         count = 1
         if self._last is not None:
             b, lt, lpos, lcount = self._last
             if b == button and t - lt <= self.interval_s and math.dist(lpos, position) <= self.radius_px:
-                count = lcount + 1
+                count, position = lcount + 1, lpos
         self._last = (button, t, position, count)
-        return count
+        return count, position
 
 
 class PynputInjector:
@@ -71,7 +74,10 @@ class PynputInjector:
             return
         position = tuple(self._mouse.position)
         for _ in range(count):
-            self._post_click(button, position, self.counter.register(button, time.monotonic(), position))
+            state, at = self.counter.register(button, time.monotonic(), position)
+            if at != position:
+                self._mouse.position = at
+            self._post_click(button, at, state)
 
     def press(self, button=LEFT):
         if self.enabled:
