@@ -21,6 +21,7 @@ from pipeline.dwell import DwellDetector
 from pipeline.engine import Engine
 from pipeline.filter import PointerFilter
 from pipeline.frame_source import CameraError, FrameSource
+from pipeline.gesture_recorder import GestureRecorder
 from pipeline.hand_tracker import HandTracker
 from pipeline.injector import PynputInjector, RecordingInjector
 from pipeline.modes import Mode, ModeState
@@ -76,6 +77,13 @@ def make_scroll():
                           config.SCROLL_DEAD_ZONE, config.SCROLL_GAIN, config.SCROLL_MAX_RATE)
 
 
+def make_gesture_recorder():
+    return GestureRecorder(config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.GESTURE_COUNTDOWN_S,
+                           config.GESTURE_SAMPLE_S, config.GESTURE_ACTIVE_THRESHOLD, config.GESTURE_MARGIN_FRAMES,
+                           config.GESTURE_THRESHOLD_SCALE, config.GESTURE_THRESHOLD_FLOOR,
+                           config.GESTURE_THRESHOLD_CEILING, config.GESTURE_DISTINCT_FACTOR)
+
+
 def make_injector(dry_run):
     if dry_run:
         return RecordingInjector()
@@ -86,7 +94,8 @@ def make_engine(injector, timer, screen_size, modes=None):
     modes = modes or ModeState(Mode(config.DEFAULT_CLICK_MODE))
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
     return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, ActionMapper(injector, modes),
-                  modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), make_scroll(), timer,
+                  modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), make_scroll(),
+                  make_gesture_recorder(), timer,
                   config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN)
 
 
@@ -182,10 +191,11 @@ def run(args):
     ui = UiState()
 
     def on_frame(image, hand, result, fps):
-        ui.publish(image, hand, result, fps, modes.mode.value, permissions.trusted if permissions else True)
+        ui.publish(image, hand, result, fps, modes.mode.value, permissions.trusted if permissions else True,
+                   engine.recorder.state, engine.gestures[0].name if engine.gestures else "")
         return False
 
-    app = App(ui, modes, screen_size, show_preview=args.preview)
+    app = App(ui, modes, engine, screen_size, show_preview=args.preview)
     app.run(lambda should_stop: run_pipeline(args, engine, timer, permissions, on_frame, should_stop))
 
 

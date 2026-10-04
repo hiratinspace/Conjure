@@ -9,10 +9,15 @@ click mode's detector -> ClickEvents -> ActionMapper. While PAUSED nothing is
 injected. Switching modes cancels the old mode's half-finished gesture.
 """
 
+import queue
+from collections import deque
 from dataclasses import dataclass, field
 
+from pipeline.gestures import normalize
 from pipeline.hand_pose import analyze
 from pipeline.modes import Mode
+
+ORDINARY_FRAMES = 450  # ~15 s of the user's normal movement, for the gesture recorder's distinctness check
 
 
 @dataclass
@@ -22,12 +27,14 @@ class StepResult:
     cursor: tuple = None  # screen position after this frame, or None if the hand was not tracked
     events: list = field(default_factory=list)  # ClickEvents emitted this frame
     dwell_progress: float = None  # 0..1 while a dwell is counting down (drives the ring)
+    prompt: str = ""  # big instruction text for the overlay (gesture recording, calibration)
+    message: str = ""  # secondary text under the prompt
     lines: list = field(default_factory=list)  # overlay text
 
 
 class Engine:
-    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, timer, aspect,
-                 edge_margin):
+    def __init__(self, mapper, pointer_filter, injector, actions, modes, pinch, dwell, scroll, recorder, timer,
+                 aspect, edge_margin):
         self.mapper = mapper
         self.filter = pointer_filter
         self.injector = injector
@@ -36,6 +43,11 @@ class Engine:
         self.pinch = pinch
         self.dwell = dwell
         self.scroll = scroll
+        self.recorder = recorder
+        self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
+        self.notice = ""  # one-off message for the user (e.g. gesture warnings)
+        self.ordinary = deque(maxlen=ORDINARY_FRAMES)
+        self._commands = queue.Queue()
         self.timer = timer
         self.aspect = aspect
         self.edge_margin = edge_margin
@@ -50,13 +62,46 @@ class Engine:
             self.dwell.reset()
         return []
 
+    def finish_recording(self, name):
+        """Turn the recorder's 3 samples into the (single) named gesture template."""
+        from pipeline.profile_schema import GestureTemplate
+
+        samples, threshold, warnings = self.recorder.result(ordinary=list(self.ordinary))
+        self.gestures = [GestureTemplate(name=name, samples=samples, threshold=threshold)]
+        self.recorder.cancel()
+        self.notice = " ".join(warnings) or f"Spell '{name}' is ready. Switch to custom mode to cast it."
+        return self.gestures[0], warnings
+
+    def submit(self, fn):
+        """Run fn(engine) on the pipeline thread at the start of the next frame (thread-safe)."""
+        self._commands.put(fn)
+
+    def _run_commands(self):
+        while True:
+            try:
+                fn = self._commands.get_nowait()
+            except queue.Empty:
+                return
+            fn(self)
+
     def _emit(self, events, result):
         for event in events:
             if self.actions.handle(event):
                 result.events.append(event)
 
     def step(self, t, hand):
+        self._run_commands()
         result = StepResult()
+        if self.recorder.active:
+            # Recording a gesture: no cursor movement and no clicks until it is done.
+            if self.cursor is not None:
+                self._emit(self._detectors_reset(self.modes.mode), result)
+            self.recorder.update(hand, t)
+            self.filter.reset()
+            result.cursor = self.cursor
+            result.prompt, result.message = self.recorder.prompt, self.recorder.message
+            result.lines.append(f"recording gesture: {self.recorder.state} ({len(self.recorder.samples)}/3)")
+            return result
         mode = self.modes.mode
         if mode != self._last_mode:
             self._emit(self._detectors_reset(self._last_mode), result)
@@ -73,6 +118,7 @@ class Engine:
         with self.timer.stage("map"):
             pose = analyze(hand, self.aspect, self.edge_margin)
             target = self.mapper.target(hand)
+            self.ordinary.append(normalize(hand, self.aspect))
         if self.cursor is None:
             self.cursor = target
         if mode == Mode.PAUSED:

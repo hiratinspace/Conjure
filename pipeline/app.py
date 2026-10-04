@@ -4,14 +4,17 @@ macOS requires every window (Tk and OpenCV alike) on the main thread, so the
 camera, tracker, and engine run in `PipelineThread`, and this app polls
 UiState to draw the overlay and the preview window.
 
-Preview window keys: p hides it, m cycles the click mode, q quits.
+Preview window keys: p hides it, m cycles the click mode, g records a spell, q quits.
 """
 
 import logging
 import signal
 import threading
+import time
 import tkinter as tk
 
+import config
+from pipeline.gesture_recorder import DONE
 from pipeline.modes import CLICK_MODES, Mode
 from pipeline.overlay import Overlay
 
@@ -19,6 +22,9 @@ log = logging.getLogger("conjure.app")
 
 POLL_MS = 33
 PREVIEW_EVERY = 2  # refresh the preview image every Nth poll (~15 Hz)
+NOTICE_S = 6.0
+BIG_FONT = ("Helvetica", 22, "bold")
+BUTTON = dict(font=BIG_FONT, width=12, height=2, padx=10, pady=10)  # >= 60 px targets (CONJ-14 dogfooding)
 
 
 def to_photo(frame_bgr):
@@ -46,9 +52,13 @@ class PipelineThread(threading.Thread):
 
 
 class App:
-    def __init__(self, ui_state, modes, screen_size, show_preview):
+    def __init__(self, ui_state, modes, engine, screen_size, show_preview):
         self.ui = ui_state
         self.modes = modes
+        self.engine = engine
+        self.naming_win = None
+        self._notice = ""
+        self._notice_until = 0.0
         self.root = tk.Tk()
         self.root.withdraw()
         self._accessory_app()
@@ -77,7 +87,8 @@ class App:
             self.preview_win.protocol("WM_DELETE_WINDOW", self.toggle_preview)
             self.preview_label = tk.Label(self.preview_win, bg="black")
             self.preview_label.pack()
-            for key, fn in (("p", self.toggle_preview), ("m", self.cycle_mode), ("q", self.quit)):
+            for key, fn in (("p", self.toggle_preview), ("m", self.cycle_mode), ("g", self.record_spell),
+                            ("q", self.quit)):
                 self.preview_win.bind(f"<KeyPress-{key}>", lambda _e, fn=fn: fn())
             self.ui.preview_visible = True
         else:
@@ -91,6 +102,50 @@ class App:
         self.modes.set_click_mode(nxt)
         log.info("click mode: %s", nxt.value)
 
+    def record_spell(self):
+        self.engine.submit(lambda e: e.recorder.start())
+        log.info("recording a spell: follow the prompts on screen")
+
+    def _open_naming(self):
+        """'Name your spell': big stock-name buttons (no typing needed) plus an optional typed name."""
+        win = self.naming_win = tk.Toplevel(self.root)
+        win.title("Name your spell")
+        win.attributes("-topmost", True)
+        tk.Label(win, text="Name your spell", font=("Helvetica", 30, "bold"), pady=16).pack()
+        grid = tk.Frame(win)
+        grid.pack(padx=20, pady=10)
+        for i, name in enumerate(config.STOCK_SPELL_NAMES):
+            tk.Button(grid, text=name, command=lambda n=name: self._name_chosen(n), **BUTTON).grid(
+                row=i // 3, column=i % 3, padx=8, pady=8)
+        row = tk.Frame(win)
+        row.pack(pady=10)
+        entry = tk.Entry(row, font=BIG_FONT, width=16)
+        entry.pack(side="left", padx=8)
+        tk.Button(row, text="Use typed name", command=lambda: self._name_chosen(entry.get().strip()),
+                  **BUTTON).pack(side="left")
+        tk.Button(win, text="Discard", command=self._discard_recording, **BUTTON).pack(pady=(0, 16))
+        win.protocol("WM_DELETE_WINDOW", self._discard_recording)
+
+    def _close_naming(self):
+        if self.naming_win is not None:
+            self.naming_win.destroy()
+            self.naming_win = None
+
+    def _name_chosen(self, name):
+        if not name:
+            return
+        self._close_naming()
+
+        def finish(engine):
+            template, warnings = engine.finish_recording(name)
+            log.info("spell %r recorded (threshold %.2f)%s", template.name, template.threshold,
+                     "; " + " ".join(warnings) if warnings else "")
+        self.engine.submit(finish)
+
+    def _discard_recording(self):
+        self._close_naming()
+        self.engine.submit(lambda e: e.recorder.cancel())
+
     def paused_message(self, snap):
         if self.modes.mode != Mode.PAUSED:
             return None
@@ -101,7 +156,13 @@ class App:
             self.quit()
             return
         snap = self.ui.snapshot()
-        self.overlay.draw(snap, self.paused_message(snap))
+        if snap.recorder_state == DONE and self.naming_win is None:
+            self._open_naming()
+        if self.engine.notice:
+            self._notice, self.engine.notice = self.engine.notice, ""
+            self._notice_until = time.monotonic() + NOTICE_S
+        notice = self._notice if time.monotonic() < self._notice_until else ""
+        self.overlay.draw(snap, self.paused_message(snap), notice)
         self._polls += 1
         if self.preview_label is not None and snap.preview is not None and self._polls % PREVIEW_EVERY == 0:
             self._photo = to_photo(snap.preview)

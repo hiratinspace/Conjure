@@ -92,3 +92,17 @@ SCROLL_EXIT_MS = 150  # leave the pose this long to stop
 SCROLL_DEAD_ZONE = 0.15  # hand sizes of up/down travel that do nothing
 SCROLL_GAIN = 40.0  # scroll steps per second per hand size beyond the dead zone (1 step = 10 px)
 SCROLL_MAX_RATE = 60.0  # steps per second
+
+# Custom gesture recorder (CONJ-10). Shape distances are mean per-landmark distance in hand sizes.
+# Recorded hands vary 0.02 (at rest) to 0.21 (median, ordinary movement) within a second.
+GESTURE_COUNTDOWN_S = 2.0  # "hold your hand naturally" before each sample; its second half is the rest shape
+GESTURE_SAMPLE_S = 2.0  # recording window per sample
+GESTURE_ACTIVE_THRESHOLD = 0.25  # frames differing from rest by more than this are the gesture
+GESTURE_MARGIN_FRAMES = 3  # kept on each side of the trimmed gesture
+GESTURE_THRESHOLD_SCALE = 1.5  # match threshold = this x the largest difference between the 3 samples
+GESTURE_THRESHOLD_FLOOR = 0.15
+GESTURE_THRESHOLD_CEILING = 0.6
+GESTURE_DISTINCT_FACTOR = 1.5  # warn if the gesture peaks less than this x threshold away from rest
+# Stock spell names offered when naming a recorded gesture (CONJ-17); pre-generated audio
+# exists for these (CONJ-18). Original names, no franchise terms.
+STOCK_SPELL_NAMES = ["Illuminate", "Summon", "Unlock", "Levitate", "Banish", "Ignite"]

@@ -22,6 +22,10 @@ class UiSnapshot:
     permission_ok: bool = True
     fps: float = 0.0
     lines: list = field(default_factory=list)
+    prompt: str = ""
+    message: str = ""
+    recorder_state: str = ""
+    gesture_name: str = ""
     preview: object = None  # annotated BGR frame, only while the preview is visible
 
 
@@ -32,7 +36,7 @@ class UiState:
         self._events = deque(maxlen=50)
         self.preview_visible = False  # written by the UI thread, read by the pipeline thread
 
-    def publish(self, image, hand, result, fps, mode, permission_ok=True):
+    def publish(self, image, hand, result, fps, mode, permission_ok=True, recorder_state="", gesture_name=""):
         preview = None
         if self.preview_visible and image is not None:
             preview = image.copy()
@@ -41,7 +45,8 @@ class UiState:
             draw_text_lines(preview, [f"{fps:.1f} fps"] + result.lines)
         snap = UiSnapshot(cursor=result.cursor, dwell_progress=result.dwell_progress, mode=mode,
                           hand_visible=hand is not None, permission_ok=permission_ok, fps=fps,
-                          lines=list(result.lines), preview=preview)
+                          lines=list(result.lines), prompt=result.prompt, message=result.message,
+                          recorder_state=recorder_state, gesture_name=gesture_name, preview=preview)
         with self._lock:
             self._snapshot = snap
             self._events.extend(result.events)

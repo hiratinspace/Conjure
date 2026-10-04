@@ -77,9 +77,15 @@ class Overlay:
         self.win.update()
         self.click_through = make_click_through(TITLE)
 
-    def draw(self, snap, paused_message=None):
+    def draw(self, snap, paused_message=None, notice=""):
         c = self.canvas
         c.delete("all")
+        if snap.prompt:
+            self._banner(snap.prompt, BANNER_BG, y=self.h * 0.35, size=34)
+            if snap.message:
+                self._banner(snap.message, WARN_BG, y=self.h * 0.35 + 80, size=22)
+        elif notice:
+            self._banner(notice, BANNER_BG, y=self.h * 0.35, size=24)
         if snap.dwell_progress is not None and snap.cursor is not None:
             x, y = snap.cursor
             r = RING_RADIUS
@@ -95,9 +101,10 @@ class Overlay:
         elif paused_message:
             self._banner(paused_message, BANNER_BG, y=60)
 
-    def _banner(self, text, bg, y):
+    def _banner(self, text, bg, y, size=28):
         c = self.canvas
-        item = c.create_text(self.w / 2, y, text=text, fill=BANNER_FG, font=("Helvetica", 28, "bold"))
+        item = c.create_text(self.w / 2, y, text=text, fill=BANNER_FG, font=("Helvetica", size, "bold"),
+                             width=self.w * 0.8, justify="center")
         x0, y0, x1, y1 = c.bbox(item)
         rect = c.create_rectangle(x0 - 24, y0 - 14, x1 + 24, y1 + 14, fill=bg, outline=BANNER_FG, width=2)
         c.tag_raise(item, rect)
