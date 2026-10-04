@@ -165,8 +165,8 @@ class PinchChannel:
         if self.require_open and not self._others_open(pose, self.open_extension):
             return "open your other fingers"
         if self.max_speed is not None and pointer_filter.speed > self.max_speed:
-            return "hold still to pinch"
-        return "close faster from open"
+            return "slow your hand to pinch"
+        return "pinch more quickly"
 
     def _closing_start(self):
         """Time the fingers started closing for the current pinch."""

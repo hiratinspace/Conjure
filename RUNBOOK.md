@@ -35,7 +35,7 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 | Time | On screen | You say and do |
 | --- | --- | --- |
 | 0:00 | (desktop) | "Mice hurt or don't work for people with tremor, arthritis, or paralysis. Every webcam pointer asks your hand to learn its gestures. Conjure learns yours." |
-| 0:15 | Tutorial mode (trackpad hand: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 41 false clicks in our tests." Trackpad hand turns tutorial mode off. "This is Conjure: zero." |
+| 0:15 | Tutorial mode (trackpad hand: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 17 false clicks in two minutes of our tests." Trackpad hand turns tutorial mode off. "This is Conjure: zero." |
 | 0:35 | Calibration (trackpad hand: **Calibrate**) | Forearm flat on the table, visibly move about 3 inches, then touch all four screen corners. "Two inches of rested movement covers the whole screen." |
 | 0:55 | Spellbook I. Point | Light the three runes with small movements. Point at the metrics: "jitter under 2 pixels." |
 | 1:10 | II. Pinch | Point, then a quick pinch: the candle lights. "The same pinch Vision Pro uses, made safe for a shaking hand." |
@@ -53,7 +53,7 @@ You run the ladder yourself with the trackpad hand. Say a short line as you step
 
 | Level | Trigger (watch for it) | Action (trackpad hand) |
 | --- | --- | --- |
-| 1. Pinch (stage default) | Start here. If the dot turns red, open your fingers or hold still and pinch again. | |
+| 1. Pinch (stage default) | Start here. If the dot turns red, pinch more quickly (snap it shut) or slow your hand, and pinch again. | |
 | 2. Dwell only | 2 false or missed clicks in a row, or the cursor jumps while clicking. | Press **Dwell** in the panel. Dwell needs no pinch and ignores jitter. The spellbook is fully completable by dwell. |
 | 3. Spellbook only, skip pages | Tracking drops repeatedly (the "Paused" banner appears while the hand is in view, twice within 30 s), or a step fails twice. | Click **Next page** with the trackpad hand to skip the failing step, and narrate what it would have shown. |
 | 4. Backup video | Conjure crashes, the camera stops, or tracking is gone for more than 10 s. | Quit Conjure (`Ctrl+C` in Terminal), open `~/Desktop/conjure-demo.mov` in QuickTime, press `Cmd+F` for full screen, and play. If the laptop itself fails, play the phone copy. |

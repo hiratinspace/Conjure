@@ -3,7 +3,8 @@
 Shows the camera with three live gauges, each with its threshold line, red
 when it is the thing blocking the click:
   1. Fingertips: how close thumb and index tips are (must pass the line)
-  2. Other fingers open: middle, ring, pinky (must stay above the line)
+  2. Pinch speed: how fast the fingers closed, from open to touching
+     (must be under the line: a deliberate pinch snaps shut, a relaxing hand drifts)
   3. Hand speed: how fast the hand moves (must stay below the line)
 and a big status: READY, PINCHED, CLICK!, or BLOCKED with the reason.
 
@@ -25,7 +26,6 @@ import numpy as np  # noqa: E402
 import config  # noqa: E402
 from main import make_engine, make_frame_source, make_tracker  # noqa: E402
 from pipeline.events import Action  # noqa: E402
-from pipeline.hand_pose import analyze  # noqa: E402
 from pipeline.injector import RecordingInjector  # noqa: E402
 from pipeline.modes import Mode, ModeState  # noqa: E402
 from pipeline.permissions import main_screen_size  # noqa: E402
@@ -58,10 +58,10 @@ def main():
     screen = main_screen_size()
     injector = RecordingInjector()
     engine = make_engine(injector, StageTimer(1e9, 1e9), screen, ModeState(Mode.PINCH))
-    aspect = config.CAMERA_WIDTH / config.CAMERA_HEIGHT
     left = engine.pinch.left
     clicks, blocked, flash_until = 0, {}, 0.0
     last_reason = ""
+    t_open, close_ms, was_closed = None, None, False
 
     print(__doc__.split("Usage")[0])
     source = make_frame_source(config.CAMERA_INDEX)
@@ -83,15 +83,20 @@ def main():
             last_reason = left.block_reason
 
             panel = np.full((config.CAMERA_HEIGHT, PANEL_W, 3), 30, np.uint8)
-            pose = analyze(hand, aspect, config.FINGERTIP_EDGE_MARGIN) if hand is not None else None
-            # 1. fingertips: show closeness, so "more full" = closer; the line is the engage ratio
             ratio = left.ratio
+            if ratio is not None and ratio >= left.release:
+                t_open = t
+            closed = ratio is not None and ratio < left.engage
+            if closed and not was_closed:  # just closed: how long since the fingers were open?
+                close_ms = (t - t_open) * 1000 if t_open is not None and t - t_open < 1.0 else 999
+            was_closed = closed
+            # 1. fingertips: show closeness, so "more full" = closer; the line is the engage ratio
             closeness = None if ratio is None else max(0.0, 1.0 - ratio)
             gauge(panel, 40, "1. Fingertips together", closeness, 0.0, 1.0, 1.0 - left.engage,
                   ratio is not None and ratio < left.engage, "-" if ratio is None else f"{ratio:.2f}")
-            others = None if pose is None else (pose.middle_ext + pose.ring_ext + pose.pinky_ext) / 3
-            gauge(panel, 130, "2. Other fingers open", others, 0.5, 2.3, left.open_extension,
-                  others is not None and others > left.open_extension, "-" if others is None else f"{others:.2f}")
+            limit_ms = (left.quick_close_s or 1.0) * 1000
+            gauge(panel, 130, "2. Pinch speed (ms to close)", close_ms, 0.0, 600.0, limit_ms,
+                  close_ms is not None and close_ms <= limit_ms, "-" if close_ms is None else f"{close_ms:.0f} ms")
             speed = engine.filter.speed if hand is not None else None
             gauge(panel, 220, "3. Hand still enough", speed, 0.0, 1200.0, left.max_speed or 1e9,
                   speed is not None and speed <= (left.max_speed or 1e9), "-" if speed is None else f"{speed:.0f}")

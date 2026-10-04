@@ -10,14 +10,15 @@ Numbers from this laptop's camera and the recordings in `recordings/` (reproduci
 
 | Measurement | Typical tutorial approach | Conjure |
 | --- | --- | --- |
-| False clicks during ~2.5 min of ordinary pointing, no click intended (3 sessions) | 41 (14 + 24 + 3) | 0 |
-| Misfires Conjure detected and blocked in those sessions | (none: it clicks) | 50 |
+| False clicks during 2.4 min of ordinary pointing, no click intended (3 sessions) | 17 (14 + 3 + 0) | 0 |
+| Accidental contacts Conjure detected and blocked in those sessions | (none: it clicks) | 17 |
+| Real pinches recognized (68 deliberate pinches, two sessions) | n/a | 58 (85%) |
 | Cursor shake with the hand at rest | 4.8 px (raw) | 1.3 px |
 | Lag on a fast sweep | n/a | ~14 px (about one frame) |
 | Spell recognized on 10 varied casts (speed, position, noise) | n/a | at least 8 of 10 within 500 ms |
 | Hand leaves view: input frozen within | never (cursor freezes, clicks still possible) | under 0.5 s, every time (13 of 13) |
 
-Why the tutorial approach misfires: it follows the fingertip (which moves when you pinch), measures the pinch in camera pixels (so leaning toward the camera "pinches"), and clicks the instant the fingers cross a line (no hold time, no hysteresis). A relaxed, curled hand puts the thumb on the index finger; Conjure only counts a pinch with the other fingers open.
+Why the tutorial approach misfires: it follows the fingertip (which moves when you pinch), measures the pinch in camera pixels (so leaning toward the camera "pinches"), and clicks the instant the fingers cross a line (no hold time, no hysteresis). A relaxed, curled hand drifts the thumb onto the index finger; Conjure counts only a pinch that snaps shut from open (under 200 ms; real pinches measured 33 to 167 ms), whatever shape the rest of the hand is in.
 
 ## Comparison slide
 

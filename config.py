@@ -99,11 +99,15 @@ DWELL_RADIUS_PX = 25  # "still" means the cursor stays inside this radius
 # traversal_first/traversal/idle/exits. Real-pinch values still need the deferred pinches recording.
 PINCH_ENGAGE_RATIO = 0.25  # closing below this starts a pinch
 PINCH_RELEASE_RATIO = 0.40  # opening above this ends it (wide hysteresis gap = no flutter)
-PINCH_HOLD_MS = 80  # a pinch must stay closed this long to count. Was 150, which threw away natural quick
-# pinches (~100 ms); with the speed gate below, 60-100 ms all give zero false clicks on every recording
-PINCH_REQUIRE_OPEN_FINGERS = True  # the main anti-misfire rule: without it the recordings give 5-30 false clicks
-PINCH_QUICK_CLOSE_MS = None  # optional: fingers must close from open within this long (measured: adds nothing)
-PINCH_MAX_SPEED_PX_S = 400  # no pinch starts while the hand sweeps faster than this
+# Tuned on the user's real pinches (recordings/pinches.jsonl). They pinch with the other fingers CURLED
+# (extension 0.5-0.8), so an open-fingers rule rejected 100% of them. What separates a real pinch from an
+# accidental thumb-index contact is how it closes: real pinches snap shut from open in 33-167 ms; accidental
+# contacts take 235+ ms or never start open. Result: 25 real pinches click, 0 false clicks on
+# traversal_first/exits/idle. (traversal.jsonl is excluded: it contains deliberate pinches.)
+PINCH_HOLD_MS = 80  # minimum time closed; shorter is a flicker
+PINCH_REQUIRE_OPEN_FINGERS = False  # optional stricter rule; off because it blocks curled-hand pinches
+PINCH_QUICK_CLOSE_MS = 200  # fingers must go from open (>= release ratio) to closed within this long
+PINCH_MAX_SPEED_PX_S = 1500  # no pinch starts during a fast sweep (hand leaving the frame, flinging)
 PINCH_OPEN_EXTENSION = 1.4  # other fingers' mean extension must exceed this (curled hand != pinch).
 # 1.2 let through 0.16-0.37 s fingertip contacts with half-open fingers (1.21-1.32) in the second
 # traversal recording; open-finger pinches measure ~1.8-2.1.

@@ -8,12 +8,12 @@
   "MIN_DETECTION_CONFIDENCE": 0.5,
   "MIN_HAND_CONFIDENCE": 0.5,
 
-  "_pinch": "False clicks while moving: lower PINCH_ENGAGE_RATIO or raise PINCH_OPEN_EXTENSION / PINCH_HOLD_MS. Missed pinches: the reverse.",
+  "_pinch": "Missed pinches: raise PINCH_QUICK_CLOSE_MS (allows slower pinches) or PINCH_ENGAGE_RATIO. False clicks: lower PINCH_QUICK_CLOSE_MS or PINCH_MAX_SPEED_PX_S, or raise PINCH_HOLD_MS.",
   "PINCH_ENGAGE_RATIO": 0.25,
   "PINCH_RELEASE_RATIO": 0.40,
   "PINCH_HOLD_MS": 80,
-  "PINCH_OPEN_EXTENSION": 1.4,
-  "PINCH_MAX_SPEED_PX_S": 400,
+  "PINCH_QUICK_CLOSE_MS": 200,
+  "PINCH_MAX_SPEED_PX_S": 1500,
 
   "_spell": "Spell misses at the venue: raise GESTURE_MATCH_SCALE (1.2 = 20% more forgiving). Spell fires on its own: lower it.",
   "GESTURE_MATCH_SCALE": 1.0,

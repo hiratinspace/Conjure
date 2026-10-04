@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-257%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-259%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -38,12 +38,13 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 
 | | Typical webcam-mouse tutorial | **Conjure** |
 | --- | :---: | :---: |
-| False clicks in ~2.5 min of ordinary pointing (no click intended) | 41 | **0** |
+| False clicks in 2.4 min of ordinary pointing (no click intended) | 17 | **0** |
+| Real pinches recognized (68 recorded on the demo laptop) | n/a | **58 (85%)** |
 | Cursor shake with the hand at rest | 4.8 px | **1.3 px** |
 | Custom gesture recognized, 10 varied casts | not possible | **8 or more, within 500 ms** |
 | Input frozen when the hand leaves view | never | **within 0.5 s, 13 of 13** |
 
-> **Why pinches don't misfire.** A relaxed hand snaps the thumb against the index finger all the time. Conjure counts a pinch only with the other fingers open and the hand not sweeping fast; without those two rules, the recorded sessions of ordinary movement produce up to 30 false clicks, and with them, zero.
+> **How Conjure tells a pinch from an accident.** A relaxed hand drifts the thumb against the index finger all the time, and many people pinch with their other fingers curled, so finger shape alone can't decide. What differs is the motion: a deliberate pinch snaps shut from open in under 200 ms (measured: 33 to 167 ms), while an accidental contact drifts shut slowly or never started open. Conjure counts only the snap, held at least 80 ms, outside a fast sweep.
 
 > **Why tutorials misfire.** They follow the fingertip, which moves when you pinch. They measure the pinch in camera pixels, so leaning toward the camera "pinches". And they click the instant the fingers cross a line. Conjure's **tutorial mode** reproduces that behavior live, side by side with its own detector, so you can see the difference on screen.
 
@@ -52,7 +53,7 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | Your hand | Result |
 | --- | --- |
 | Point with your index finger | The cursor follows the knuckle at the base of that finger, so tapping never moves it |
-| **Pinch mode** *(default)*: quick thumb-to-index pinch, other fingers relaxed open | **Left click**, placed where the cursor was before you pinched |
+| **Pinch mode** *(default)*: a quick thumb-to-index pinch, any hand shape | **Left click**, placed where the cursor was before you pinched |
 | Two quick pinches | **Double-click** |
 | Thumb to middle finger | **Right click** |
 | Pinch, hold, and move | **Drag** |
@@ -170,7 +171,7 @@ pipeline/               one module per stage: tracking, filter, pinch, dwell,
 spellbook/index.html    offline demo page
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  257 headless tests
+tests/                  259 headless tests
 ```
 
 </details>
@@ -178,7 +179,7 @@ tests/                  257 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 257 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 259 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation
