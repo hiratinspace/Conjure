@@ -50,6 +50,19 @@ VENUE_PATH = ROOT / "venue.json"
 # Recordings (record/replay harness)
 RECORDINGS_DIR = ROOT / "recordings"
 
+# Pointer style: "mouse" = relative motion with acceleration, like a mouse on a small pad (default);
+# "direct" = a calibrated box of the camera view maps onto the screen (the original design).
+POINTER_STYLE = "mouse"
+# Mouse-style acceleration (pipeline/relative.py). Speeds in base px/s, where 1000 = one camera-frame
+# height per second. Measured: a resting hand jitters at 50-150 (p50-p99), real movement 300-2400.
+# On the recordings: still in 94% of resting frames (3 px wander in 16 s); traversal covers the screen.
+MOUSE_BASE_PX = 1000
+MOUSE_DEAD_SPEED = 100  # below this the hand counts as resting: the cursor does not move
+MOUSE_SLOW_SPEED = 250  # careful movement from here ...
+MOUSE_FAST_SPEED = 1500  # ... to a quick flick here
+MOUSE_LOW_GAIN = 0.6  # careful movement is scaled down for precision
+MOUSE_HIGH_GAIN = 3.0  # a quick flick is scaled up to cross the screen
+
 # Cursor mapping (CONJ-5). Naive box until the user calibrates (CONJ-12): inset 15% so the
 # cursor reaches every screen edge while the hand stays fully in frame (tracking drops at
 # the frame edge). Normalized frame coordinates, same fields as profile.json calibration.

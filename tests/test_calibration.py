@@ -67,7 +67,7 @@ def test_too_small_an_area_is_redone():
 def test_calibrated_small_area_reaches_every_screen_edge():
     """Build-plan validation row: a ~3-inch rested-forearm box reaches all four screen edges."""
     injector = RecordingInjector()
-    engine = make_engine(injector, StageTimer(33.0, 1e9), SCREEN, ModeState(Mode.DWELL))
+    engine = make_engine(injector, StageTimer(33.0, 1e9), SCREEN, ModeState(Mode.DWELL), pointer_style="direct")
     engine.submit(lambda e: e.calibrator.start())
     frames = stream(square_trace((0.4, 0.6), 0.05, config.CALIBRATION_TRACE_S + 0.5))
     for t, h in frames:

@@ -96,6 +96,8 @@ class SettingsPanel:
 
         effects = tk.Frame(self.win, bg=BG)
         effects.grid(row=9, column=0, columnspan=4, pady=8)
+        self.pointer_button = BigButton(effects, "Pointer", lambda: self._submit(sm.toggle_pointer_style), width=13)
+        self.pointer_button.grid(row=1, column=0, columnspan=2, padx=5, pady=(8, 0))
         self.precision_button = BigButton(effects, "Precision", lambda: self._submit(sm.toggle_precision), width=12)
         self.precision_button.grid(row=0, column=0, padx=5)
         self.feedback_buttons = {}
@@ -127,7 +129,9 @@ class SettingsPanel:
             button.set_selected(v["click_mode"] == mode)
         self.pause_button.configure(text="Resume" if v["user_paused"] else "Pause")
         self.pause_button.set_selected(v["user_paused"])
-        self.precision_button.configure(text=f"Precision: {'on' if v['precision'] else 'off'}")
+        self.pointer_button.configure(text=f"Pointer: {'Mouse' if v['pointer_style'] == 'mouse' else 'Direct'}")
+        label = "Acceleration" if v["pointer_style"] == "mouse" else "Precision"
+        self.precision_button.configure(text=f"{label}: {'on' if v['precision'] else 'off'}")
         self.precision_button.set_selected(v["precision"])
         for key, (button, label) in self.feedback_buttons.items():
             on = getattr(self.feedback_settings, key)

@@ -65,6 +65,8 @@ class Engine:
         self.calibrator = calibrator
         self.auto_pause = auto_pause
         self.edge_freeze_margin = edge_freeze_margin
+        self.pointers = {}  # style -> (mapper, filter); see set_pointer_style
+        self.pointer_style = None
         self.gestures = []  # [GestureTemplate]; one spell only by scope (scope.md section 4)
         self.store = None  # ProfileStore; when set, persist() saves after every change
         self.calibrated = False  # False while the naive default box is in use
@@ -104,6 +106,16 @@ class Engine:
         self.notice = " ".join(warnings) or f"Spell '{name}' is ready. Switch to custom mode to cast it."
         return self.gestures[0], warnings
 
+    def set_pointer_style(self, style):
+        """Switch between "mouse" (relative, accelerated) and "direct" (calibrated box) pointing."""
+        if style not in self.pointers:
+            raise ValueError(f"unknown pointer style {style!r}")
+        sensitivity = self.mapper.calibration.sensitivity
+        self.mapper, self.filter = self.pointers[style]
+        self.pointer_style = style
+        self.filter.reset()
+        self.set_sensitivity(sensitivity)
+
     @property
     def calibration_box(self):
         return self.mapper.calibration.box
@@ -111,13 +123,20 @@ class Engine:
     def set_calibration(self, box):
         """Map `box` (normalized frame coords) to the whole screen, keeping the current sensitivity."""
         old = self.mapper.calibration
-        self.mapper.calibration = BoxCalibration(box, (old.screen_w, old.screen_h), old.sensitivity)
+        new = BoxCalibration(box, (old.screen_w, old.screen_h), old.sensitivity)
+        for mapper in [self.mapper] + [m for m, _ in self.pointers.values()]:
+            mapper.calibration = new
         self.calibrated = True
         self.filter.reset()
 
     def set_sensitivity(self, sensitivity):
         old = self.mapper.calibration
-        self.mapper.calibration = BoxCalibration(old.box, (old.screen_w, old.screen_h), sensitivity)
+        new = BoxCalibration(old.box, (old.screen_w, old.screen_h), sensitivity)
+        for mapper in [self.mapper] + [m for m, _ in self.pointers.values()]:
+            mapper.calibration = new
+        for _, pointer in self.pointers.values():
+            if hasattr(pointer, "sensitivity"):
+                pointer.sensitivity = sensitivity
 
     def apply_profile(self, profile):
         """Load a validated Profile into the live pipeline (startup, or after an external change)."""
@@ -277,7 +296,7 @@ class Engine:
             target = self.mapper.target(hand)
             self.ordinary.append(normalize(hand, self.aspect))
         if self.cursor is None:
-            self.cursor = target
+            self.cursor = getattr(self.filter, "cursor", None) or target
         if mode == Mode.PAUSED:
             self.scroll.reset()
             self.filter.reset()

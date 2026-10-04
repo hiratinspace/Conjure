@@ -99,12 +99,27 @@ def test_engine_hand_loss_cancels_a_dwell_in_progress():
 
 def test_idle_recording_in_dwell_mode_clicks_once_per_arrival():
     """A resting hand in dwell mode clicks when it settles, then never again without moving:
-    consecutive dwell clicks are always at clearly different places (the hand repositioned)."""
+    between two dwell clicks the cursor always left the dwell circle of the first."""
     import math
 
     import config
     _, frames = read_recording("recordings/idle.jsonl")
-    events, _ = run_engine(frames)
+    events, results = run_engine(frames)
     assert 1 <= len(events) <= 5
-    for a, b in zip(events, events[1:]):
-        assert math.dist(a.position, b.position) > config.DWELL_RADIUS_PX
+    click_frames = [i for i, r in enumerate(results) if r.events]
+    for a, b in zip(click_frames, click_frames[1:]):
+        origin = results[a].events[0].position
+        assert any(r.cursor and math.dist(r.cursor, origin) > config.DWELL_RADIUS_PX for r in results[a:b])
+
+
+def test_slow_drift_after_a_click_does_not_click_the_same_target_again():
+    # Dwell starts at x=200, the cursor creeps right inside the circle until it clicks near x=220,
+    # then keeps creeping a few pixels: it must not re-arm until it is a full radius from the click.
+    d = DwellDetector(dwell_s=0.5, radius_px=25)
+    feed(d, [(100, 100), (200, 100)])
+    creep = [(200 + i * 0.5, 100) for i in range(120)]  # 0.5 px per frame: 60 px over 4 s
+    events = []
+    for i, p in enumerate(creep):
+        events += d.update(p, (2 + i) * DT)
+    clicks = [e.position[0] for e in events]
+    assert all(b - a > 25 for a, b in zip(clicks, clicks[1:]))

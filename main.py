@@ -18,7 +18,7 @@ import config
 from pipeline.action_mapper import ActionMapper
 from pipeline.auto_pause import AutoPause
 from pipeline.calibration import Calibrator
-from pipeline.cursor_mapper import Box, BoxCalibration, CursorMapper
+from pipeline.cursor_mapper import CONTROL_POINT, Box, BoxCalibration, CursorMapper
 from pipeline.dwell import DwellDetector
 from pipeline.engine import Engine
 from pipeline.filter import PointerFilter
@@ -31,6 +31,7 @@ from pipeline.modes import Mode, ModeState
 from pipeline.permissions import PermissionWatch, main_screen_size
 from pipeline.pinch import PinchDetector
 from pipeline.profile_store import ProfileStore
+from pipeline.relative import BasePixelMapper, RelativePointer
 from pipeline.scroll import ScrollDetector
 from pipeline.touch import TouchDetector
 from pipeline.preview import QUIT, Preview, draw_hand
@@ -76,6 +77,13 @@ def make_pointer_filter(screen_size):
     return PointerFilter(config.FILTER_MIN_CUTOFF, config.FILTER_BETA, config.FILTER_D_CUTOFF, config.PRECISION_GAIN,
                          config.PRECISION_SPEED_PX_S, config.FAST_SPEED_PX_S, config.REANCHOR_RATE, screen_size,
                          config.POSITION_HISTORY_FRAMES, config.PRECISION_RAMP_S, config.STILL_DEADBAND_PX)
+
+
+def make_mouse_pointer(screen_size):
+    return RelativePointer(config.FILTER_MIN_CUTOFF, config.FILTER_BETA, config.FILTER_D_CUTOFF, screen_size,
+                           config.POSITION_HISTORY_FRAMES, config.MOUSE_DEAD_SPEED, config.MOUSE_SLOW_SPEED,
+                           config.MOUSE_FAST_SPEED, config.MOUSE_LOW_GAIN, config.MOUSE_HIGH_GAIN,
+                           sensitivity=config.SENSITIVITY)
 
 
 def make_pinch():
@@ -159,19 +167,25 @@ def make_injector(dry_run):
     return PynputInjector(config.DOUBLE_CLICK_INTERVAL_S, config.DOUBLE_CLICK_RADIUS_PX)
 
 
-def make_engine(injector, timer, screen_size, modes=None):
+def make_engine(injector, timer, screen_size, modes=None, pointer_style=None):
     modes = modes or ModeState(Mode(config.DEFAULT_CLICK_MODE))
     # Second guard for CONJ-15: while paused the injector itself is off, whatever the engine does.
     modes.subscribe(lambda _old, new: setattr(injector, "enabled", new != Mode.PAUSED))
     calibration = BoxCalibration(Box(**config.DEFAULT_CALIBRATION), screen_size, config.SENSITIVITY)
     actions = ActionMapper(injector, modes, config.CLICK_REFRACTORY_MS / 1000)
-    return Engine(CursorMapper(calibration), make_pointer_filter(screen_size), injector, actions,
+    direct = (CursorMapper(calibration), make_pointer_filter(screen_size))
+    mouse = (BasePixelMapper(CONTROL_POINT, config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.MOUSE_BASE_PX,
+                             calibration), make_mouse_pointer(screen_size))
+    engine = Engine(direct[0], direct[1], injector, actions,
                   modes, make_pinch(), DwellDetector(config.DWELL_MS / 1000, config.DWELL_RADIUS_PX), make_scroll(),
                   make_gesture_recorder(), make_gesture_matcher(), make_calibrator(),
                   AutoPause(modes, config.PAUSE_AFTER_FRAMES, config.RESUME_AFTER_FRAMES,
                             config.CONTROL_POINT_EDGE_MARGIN), timer,
                   config.EDGE_FREEZE_MARGIN,
                   config.CAMERA_WIDTH / config.CAMERA_HEIGHT, config.FINGERTIP_EDGE_MARGIN, make_touch())
+    engine.pointers = {"direct": direct, "mouse": mouse}
+    engine.set_pointer_style(pointer_style or config.POINTER_STYLE)
+    return engine
 
 
 def live_stream(source, tracker, timer):
@@ -263,7 +277,7 @@ def run(args):
         engine.notice = warning
     if stage_mode:
         modes.set_click_mode(Mode(stage_mode))
-    if config.CALIBRATE_ON_FIRST_RUN and not engine.calibrated and not dry_run:
+    if config.CALIBRATE_ON_FIRST_RUN and not engine.calibrated and not dry_run and engine.pointer_style == "direct":
         # First run: fit Conjure to the user's comfortable range before anything else.
         engine.submit(lambda e: e.calibrator.start())
         log.info("no saved calibration: starting calibration (rest your forearm and trace a small area)")

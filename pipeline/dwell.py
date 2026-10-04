@@ -50,6 +50,9 @@ class DwellDetector:
             return []
         self.armed = False
         self.progress = None
+        # Measure "moved away" from where it clicked, not from where the dwell began: otherwise a
+        # slowly drifting cursor re-arms a few pixels from the click and clicks the same target again.
+        self.anchor = cursor
         return [ClickEvent(Action.LEFT, cursor)]
 
     def status(self):

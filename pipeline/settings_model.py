@@ -52,6 +52,7 @@ def current(engine):
         "spell": spell.name if spell else None,
         "spell_threshold": spell.threshold if spell else None,
         "calibrated": engine.calibrated,
+        "pointer_style": engine.pointer_style,
     }
 
 
@@ -90,6 +91,11 @@ def step_smoothing(engine, direction):
 def step_responsiveness(engine, direction):
     level = min(5, max(1, responsiveness_level(engine.filter.euro.beta) + direction))
     engine.filter.configure(beta=RESPONSIVENESS_LEVELS[level])
+
+
+def toggle_pointer_style(engine):
+    """Mouse-like (relative, accelerated) <-> Direct (calibrated box). Not saved: set POINTER_STYLE to keep it."""
+    engine.set_pointer_style("direct" if engine.pointer_style == "mouse" else "mouse")
 
 
 @_then_save

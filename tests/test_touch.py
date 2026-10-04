@@ -76,7 +76,8 @@ def test_press_hold_then_move_drags_and_lift_drops():
 
 def test_a_touch_that_slides_before_settling_is_cancelled():
     frames = stream([(0.6, dict(wrist=(0.4, 0.7))), (0.08, dict(bend=ramp(0, 1), wrist=(0.4, 0.7))),
-                     (0.6, dict(bend=1.0, wrist=lambda f: (0.4 + 0.15 * f, 0.7))),
+                     (0.15, dict(bend=1.0, wrist=lambda f: (0.4 + 0.15 * f, 0.7))),
+                     (0.45, dict(bend=1.0, wrist=(0.55, 0.7))),
                      (0.1, dict(bend=ramp(1, 0), wrist=(0.55, 0.7)))])
     events, _, _, engine = run(frames)
     assert events == [] and engine.touch.blocked >= 1
