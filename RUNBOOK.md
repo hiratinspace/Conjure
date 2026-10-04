@@ -14,14 +14,16 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 3. `python scripts/check_permissions.py`: `RESULT: ALL PASS`. If anything fails, the line says which setting to change.
 4. Voice clips: `export ELEVENLABS_API_KEY=...` in that shell, then `python scripts/pregenerate_voices.py`. Commit `audio/voice/`.
 5. Record the backup video (below). Copy it to the Desktop and to a phone.
-6. Charge the laptop and phone. Pack a desk lamp and a plain backdrop (a sheet or poster board).
+6. Test under the **worst** lighting you can find tonight (one dim lamp, a window behind you), not the best. Watch the status pill and the metrics: note the light level where tracking starts to drop.
+7. Charge the laptop and phone. Pack a desk lamp and a plain backdrop (a sheet or poster board).
+8. Commit a working state (`git commit`) before any risky change from here on.
 
 ## 30 minutes before (at the venue)
 
 1. Set up the lamp in front of the Presenter's hand and the backdrop behind it. No window behind the Presenter.
 2. Launch: `python main.py --spellbook`. The Conjure panel, the overlay, and the spellbook (in the browser) open.
 3. Presenter: rest the forearm, then **Calibrate** in the panel and trace the comfortable area.
-4. Presenter: **Record spell** in the panel, cast the chosen gesture 3 times, then name it. Use a big, distinct motion; heed any warning that appears.
+4. Presenter: **Record spell** in the panel, cast the chosen gesture 3 times, then name it. Use a big, distinct motion. If it says the three didn't look alike, do it again; heed any warning that appears.
 5. Run the 3-minute script below twice, back to back. Count false clicks.
 6. If anything misbehaves, tune `venue.json` (each key says which way to turn it), quit with **Quit** in the panel, and relaunch. Calibration and the spell survive a relaunch.
 7. Set `STAGE_CLICK_MODE` in `venue.json` to the mode that was most reliable in the two runs. Commit `venue.json`.
@@ -29,16 +31,20 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 
 ## The 3-minute script
 
-| Time | Spellbook page | Presenter says and does |
+| Time | On screen | Presenter says and does |
 | --- | --- | --- |
-| 0:00 | (before) | "Mice hurt or don't work for people with tremor, arthritis, or paralysis. Every webcam pointer asks your hand to learn its gestures. Conjure learns yours." |
-| 0:20 | I. Point | Hand rested, small movements, light the three runes. "Two inches of comfortable movement covers the whole screen." |
-| 0:45 | II. Pinch | Pinch with fingers open to light the candle. |
-| 1:05 | III. Hold still | Operator presses **Dwell** in the panel. Hold over the crystal until the ring fills. "For hands that can't pinch." |
-| 1:30 | IV. Your own spell | Operator presses **Spell**. Point at the door and cast the recorded gesture: the name flashes and is spoken. "Any motion your hand can repeat becomes a click." |
-| 2:00 | V. Scroll | Two fingers up, lift the hand to read the scroll. |
-| 2:20 | VI. Drag | Pinch the moonstone into the cauldron (in dwell mode: click the stone, then the cauldron). |
-| 2:40 | VII. Finale | Drop the hand out of view: "It pauses when you rest, so nothing clicks by accident. Everything runs on this laptop; no video leaves it." |
+| 0:00 | (desktop) | "Mice hurt or don't work for people with tremor, arthritis, or paralysis. Every webcam pointer asks your hand to learn its gestures. Conjure learns yours." |
+| 0:15 | Tutorial mode (Operator: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 41 false clicks in our tests." Operator turns tutorial mode off. "This is Conjure: zero." |
+| 0:35 | Calibration (Operator: **Calibrate**) | Forearm flat on the table, visibly move about 3 inches, then touch all four screen corners. "Two inches of rested movement covers the whole screen." |
+| 0:55 | Spellbook I. Point | Light the three runes with small movements. Point at the metrics: "jitter under 2 pixels." |
+| 1:10 | II. Pinch | Pinch with fingers open: the dot fills, then the candle lights. |
+| 1:25 | III. Hold still | Operator presses **Dwell**. Hold over the crystal until the ring fills. "For hands that can't pinch." |
+| 1:45 | IV. Your own spell | Operator presses **Spell**. Cast the recorded gesture at the door: the name flashes and is spoken. "It works anywhere in the frame, any distance from the camera." |
+| 2:10 | V. Scroll | Two fingers up, lift the hand to read to the end. |
+| 2:25 | VI. Drag | Pinch the moonstone into the cauldron (in dwell mode: click the stone, then the cauldron). |
+| 2:45 | VII. Finale | Drop the hand out of view, the pill turns red: "It pauses when you rest, so nothing clicks by accident. Everything runs on this laptop." |
+
+The comparison slide and the measured numbers are in `PITCH.md`.
 
 ## Fallback ladder
 
@@ -71,4 +77,5 @@ Restarting is level 3.5: `Ctrl+C`, then `python main.py --spellbook`. It takes a
 | Spell does not fire | Cast differs from the recording, or venue light changed the hand's look | Raise `GESTURE_MATCH_SCALE` in `venue.json`, or press **Spell forgiveness +** in the panel, or re-record the spell. |
 | Spell name is spoken by the robotic Mac voice | No network or no key; the offline fallback is working as designed | Nothing to fix. Pre-generated clips cover the stock spell names. |
 | Cursor cannot reach a screen edge | Calibration area too large | **Calibrate** again with a smaller area, or press **Sensitivity +**. |
+| Tutorial mode left on | The red banner and "tutorial clicks" metric show it | Press **Tutorial mode** (or `t`) to turn it off. Its clicks are never real. |
 | Overlay intercepts clicks | Click-through failed (a warning is logged at startup) | Relaunch; if it persists, run `python main.py --no-ui` (no overlay) and use the spellbook only. |
