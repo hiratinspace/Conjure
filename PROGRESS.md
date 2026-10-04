@@ -93,6 +93,8 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 - **Resilience (autonomous session 2026-10-04).** Engine.step never raises: a failing frame releases any held button, resets motion state, logs, and returns an empty result; errors reset after a good frame. Camera loss retries every 2 s with an on-screen notice and input paused, up to 30 times; the retry counter resets only after 60 healthy frames (an early version reset it on every open and could loop forever).
 
+- **Autonomous session additions (2026-10-04, from the research pass):** next-action bar with fallback and drag lock (Apple Dwell Control / Tobii pattern), auto-tune of the dead zone from the user's resting tremor, pointer style and tuning persisted in an additive profile section, target-practice page with ISO 9241-9 throughput for an evaluation story, camera reconnect, per-frame recovery. Wording changed per the research: "alternative pointer for people who can lift one hand", measured numbers instead of "never misfires". Deliberately not built (scope section 4 or too risky unverified): on-screen keyboard, multiple spells, target snapping via the Accessibility API, zoom magnifier.
+
 ## Granted runners (CONJ-2 AC)
 
 | Laptop | Runner app | Accessibility | Camera | Cursor | Click |

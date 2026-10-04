@@ -23,7 +23,7 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 
 1. Set up the lamp in front of your pointing hand and the backdrop behind you. No window behind you. Place the trackpad hand where the camera cannot see it.
 2. Launch: `python main.py --spellbook`. The Conjure panel, the overlay, and the spellbook (in the browser) open. With no saved calibration, calibration starts by itself.
-3. Rest the forearm, then **Calibrate** (if it did not start by itself) in the panel and trace the comfortable area.
+3. Rest the forearm, press **Tune**, hold still five seconds. (**Calibrate** is only for the Direct pointer style.) in the panel and trace the comfortable area.
 4. **Record spell** in the panel, cast the chosen gesture 3 times, then name it. Use a big, distinct motion. If it says the three didn't look alike, do it again; heed any warning that appears.
 5. Run the 3-minute script below twice, back to back. Count false clicks.
 6. If anything misbehaves, tune `venue.json` (each key says which way to turn it), quit with **Quit** in the panel, and relaunch. Calibration and the spell survive a relaunch.
@@ -36,13 +36,14 @@ Everything runs from **Terminal.app**, the runner that holds Camera and Accessib
 | --- | --- | --- |
 | 0:00 | (desktop) | "Mice hurt or don't work for people with tremor, arthritis, or paralysis. Every webcam pointer asks your hand to learn its gestures. Conjure learns yours." |
 | 0:15 | Tutorial mode (trackpad hand: **Tutorial mode** in the panel) | Wave and point for 10 seconds: the cursor shakes and red "click" rings fire on their own. "This is how the tutorials work: 17 false clicks in two minutes of our tests." Trackpad hand turns tutorial mode off. "This is Conjure: zero." |
-| 0:35 | Small pad | Forearm flat on the table, flick the cursor to all four screen corners with a few inches of movement, then hold it dead still on a tiny target. "It moves like a mouse: slow for precision, a flick to go far. And tremor is ignored." |
+| 0:35 | Tune (trackpad hand: **Tune**) | Forearm flat, hold still five seconds. "It just measured my tremor and set its threshold from my hand." Then flick the cursor to all four corners with a few inches of movement and hold it dead still on a tiny target. |
 | 0:55 | Spellbook I. Point | Light the three runes with small movements. Point at the metrics: "jitter under 2 pixels." |
 | 1:10 | II. Pinch | Point, then a quick pinch: the candle lights. "The same pinch Vision Pro uses, made safe for a shaking hand." |
-| 1:25 | III. Hold still | Trackpad hand presses **Dwell**. Hold over the crystal until the ring fills. "For hands that can't pinch." |
+| 1:25 | III. Hold still | Trackpad hand presses **Dwell**. Hold over the crystal until the ring fills. "For hands that can't pinch." Then dwell on **Right** in the action bar and dwell on the crystal: a right click with no gesture at all. |
 | 1:45 | IV. Your own spell | Trackpad hand presses **Spell**. Cast the recorded gesture at the door: the name flashes and is spoken. "It works anywhere in the frame, any distance from the camera." |
 | 2:10 | V. Scroll | Two fingers up, lift the hand to read to the end. |
 | 2:25 | VI. Drag | Pinch the moonstone, carry it into the cauldron, let go (in dwell mode: click the stone, then the cauldron). |
+| 2:40 | VII. Finale, then **Measure yourself** | Run the 12-target test if time allows and read the throughput number aloud. |
 | 2:45 | VII. Finale | Drop the hand out of view, the pill turns red: "It pauses when you rest, so nothing clicks by accident. Everything runs on this laptop." |
 
 The comparison slide and the measured numbers are in `PITCH.md`.

@@ -8,7 +8,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![MediaPipe](https://img.shields.io/badge/hand%20tracking-MediaPipe-0097A7)
 ![On-device](https://img.shields.io/badge/video-stays%20on%20device-2e7d32)
-![Tests](https://img.shields.io/badge/tests-276%20passing-2e7d32)
+![Tests](https://img.shields.io/badge/tests-294%20passing-2e7d32)
 
 [Highlights](#highlights) · [Results](#measured-results) · [Gestures](#gestures) · [Comparison](#how-it-compares) · [Quick start](#quick-start) · [Architecture](#architecture)
 
@@ -16,7 +16,7 @@
 
 ---
 
-Conjure turns a standard laptop webcam into a full mouse replacement for people with limited hand mobility: tremor, arthritis, partial paralysis, repetitive strain injury. Your hand moves the cursor, and you click with a quick pinch (the same gesture Apple Vision Pro and Meta Quest use), by holding still, by tapping like a touchscreen, or with a gesture you record yourself.
+Conjure turns a standard laptop webcam into an alternative pointer for people who can lift one hand but find a mouse hard or painful: tremor, arthritis, partial paralysis, repetitive strain injury. Your hand moves the cursor, and you click with a quick pinch (the same gesture Apple Vision Pro and Meta Quest use), by holding still, by tapping like a touchscreen, or with a gesture you record yourself.
 
 Every other webcam pointer ships a fixed set of gestures and expects your hand to adapt. **Conjure inverts that: any motion your hand can repeat reliably becomes a click.**
 
@@ -28,8 +28,10 @@ Every other webcam pointer ships a fixed set of gestures and expects your hand t
 | **Your own click gesture** | Record any motion three times, name it, and it becomes a click. It works anywhere in the frame and at any distance from the camera. |
 | **Feels like a mouse** | Your hand works like a mouse on a small pad: slow, careful moves are scaled down for precision and quick flicks go far, so a few inches cover the whole screen. Drop your hand out of view and back to "lift the mouse". |
 | **Steady under tremor** | Tremor-speed motion is ignored entirely: on a recorded resting hand the cursor stays still in 94% of frames and wanders 3 px in 16 seconds. |
-| **Clicks that don't misfire** | Size-normalized pinch, hysteresis, a hold time, and an open-fingers rule. Zero false clicks across every recorded session. |
-| **Never stuck** | Can't pinch? Hold still to click (dwell). Hand drops out of view? Everything pauses within half a second. |
+| **Clicks you mean** | A pinch counts only when it snaps shut from open; accidental contacts drift. Zero false clicks across every recorded no-click session, measured. |
+| **Any click without a pinch** | Pick the next action on a big-button bar (Left, Right, Double, Drag) by dwell or any click, then click the target. Drag lock means nobody has to hold a pinch. |
+| **Tuned to your hand** | Press Tune, rest for five seconds, and the tremor threshold is set from your own hand, not a default. |
+| **Never stuck** | Can't pinch? Hold still to click (dwell). Hand drops out of view? Everything pauses within half a second. Camera unplugged? Conjure waits and reconnects. |
 | **Private by design** | Video is processed on the laptop and never stored or sent. No account, no cloud. |
 
 ## Measured results
@@ -40,6 +42,7 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | --- | :---: | :---: |
 | False clicks in 2.4 min of ordinary pointing (no click intended) | 17 | **0** |
 | Real pinches recognized (111 recorded on the demo laptop) | n/a | **98 (88%); 41 of 43 in the latest session** |
+| Your own numbers | | The spellbook's **Measure yourself** page runs a 12-target test and reports hit time, misses, and throughput in bits/s |
 | Cursor shake with the hand at rest | 4.8 px | **1.3 px** |
 | Custom gesture recognized, 10 varied casts | not possible | **8 or more, within 500 ms** |
 | Input frozen when the hand leaves view | never | **within 0.5 s, 13 of 13** |
@@ -63,6 +66,8 @@ Measured on real recorded hand sessions ([`recordings/`](recordings/)) and repro
 | Your recorded gesture *(spell mode)* | **Left click**, with the spell's name shown and spoken |
 | Two fingers up (V), then lift or lower your hand | **Scroll** |
 | Hand out of view | **Pause**: nothing can click while you rest |
+| Any click after choosing **Right**, **Double**, or **Drag** on the action bar | That action, once, then back to left click (**Keep** makes it stay) |
+| Any click while a drag is locked | **Drops** it |
 
 **Two pointer styles.** *Mouse* (default) is relative with acceleration, as above. *Direct* maps a small area you trace once (range-of-motion calibration, about 3 inches with the forearm rested) onto the whole screen, so each hand position is a fixed screen position. Switch with **Pointer** in the panel.
 
@@ -113,9 +118,10 @@ This opens the Conjure panel, the on-screen overlay, and the spellbook demo page
 
 **4. First session**
 
-1. Rest your forearm and move your hand like a mouse on a small pad. If you run out of room, drop your hand out of view and bring it back ("lift the mouse"). Adjust **Sensitivity** in the panel to taste.
-2. Pinch to click: Conjure starts in **Pinch** mode. Other modes in the panel: **Touch**, **Dwell**, or **Spell** (press **Record spell** first).
-3. Work through the spellbook pages.
+1. Press **Tune**, rest your forearm, and hold your hand still for five seconds: the tremor threshold is now yours.
+2. Move your hand like a mouse on a small pad. If you run out of room, drop your hand out of view and bring it back ("lift the mouse"). Adjust **Sensitivity** in the panel to taste.
+3. Pinch to click: Conjure starts in **Pinch** mode. Other modes in the panel: **Touch**, **Dwell**, or **Spell** (press **Record spell** first). For a right click, double-click, or drag without a pinch, choose it on the action bar first.
+4. Work through the spellbook pages, then **Measure yourself**.
 
 **Optional: spoken feedback.** Set `ELEVENLABS_API_KEY` in your shell for ElevenLabs voices. Without it, Conjure uses the built-in macOS voice.
 
@@ -171,10 +177,10 @@ config.py               every tunable, with the measurement behind it
 venue.json              demo-day threshold overrides
 pipeline/               one module per stage: tracking, filter, pinch, dwell,
                         gestures, calibration, overlay, settings panel, voice
-spellbook/index.html    offline demo page
+spellbook/              offline demo page and the target-practice test
 recordings/             real hand sessions used as test fixtures
 scripts/                permission check, session recorder, diagnostics, voice clips
-tests/                  276 headless tests
+tests/                  294 headless tests
 ```
 
 </details>
@@ -182,7 +188,7 @@ tests/                  276 headless tests
 ## Testing
 
 ```bash
-python -m pytest -q   # 276 tests, about 8 seconds, no camera needed
+python -m pytest -q   # 294 tests, about 8 seconds, no camera needed
 ```
 
 ## Documentation

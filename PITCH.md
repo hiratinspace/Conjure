@@ -49,6 +49,12 @@ Say it honestly on stage: Apple's head pointer and dwell are excellent and free;
 
 Recheck the AirTouch row the morning of the demo: commercial products change.
 
+## Evaluation plan (say this to judges)
+
+- Measured, not claimed: every no-click session recorded on the demo laptop is a test fixture; the suite fails if a change produces a single false click. Real pinch sessions are fixtures too (98 of 111 recognized).
+- Live measurement: the spellbook's Measure yourself page runs a 12-target ISO 9241-9 task and reports throughput in bits per second, misses, and time by target size. A desktop mouse scores roughly 4 to 5 bits/s. Run it on stage and read the number.
+- Honest scope: informal testing by one person so far. Next step is sessions with people who have tremor and limited hand mobility, measuring the same task.
+
 ## Lines worth saying out loud
 
 - "Two inches of rested movement covers the whole screen." (during calibration)
@@ -56,3 +62,9 @@ Recheck the AirTouch row the morning of the demo: commercial products change.
 - "If your three recordings don't look alike, Conjure says so instead of saving a spell that will fail you later."
 - "When you rest, it pauses. A frozen cursor that can still click is how other tools hurt people."
 - "Everything runs on this laptop. No video leaves it."
+- "Press Tune, rest five seconds, and the tremor threshold is yours, not a default."
+- "Right click, double-click, drag: pick it on the bar, then click. Nobody has to hold a pinch."
+
+## Wording to avoid
+
+Not "replaces a mouse" or "works for anyone": say "an alternative pointer for people who can lift one hand." Not "never misfires" or "100% accurate": quote the measured numbers. Not "tested with users" until it is: "informal testing by one person, measured on the target task."
