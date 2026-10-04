@@ -144,6 +144,17 @@ Keys in the preview window: `p` hide preview, `m` cycle click mode, `g` record a
 
 </details>
 
+## Voice, built on ElevenLabs
+
+For someone who cannot watch the cursor closely, or cannot feel a button, sound is the confirmation channel. Conjure's voice is ElevenLabs text to speech, used for four things:
+
+- **Casting a spell.** The gesture you recorded is named by you ("Illuminate", "Summon", or anything you type). When it fires, the name is spoken, so a cast is confirmed without looking.
+- **State changes.** Mode switches ("Dwell mode"), pause and resume, and the next-action choice ("Right click next") are announced.
+- **Results.** Tune ("Tuned to your hand"), the spell check ("Lumos recognized 3 of 3"), and calibration are read aloud, not only shown.
+- **Click confirmations**, optionally, for people who want every click confirmed.
+
+How it is built to survive a live demo: phrases are synthesized with ElevenLabs Flash v2.5 for low latency, every clip is cached after its first use, the fixed phrases and the six stock spell names are pre-generated into `audio/voice/` and committed, and a live request has a hard one-second deadline. If the network is slow or absent, the offline voice speaks at once and the demo never waits; a late response is still cached for next time. The key is read from `secrets.env` or the environment and never stored in the repository; the ElevenLabs module is the only code that touches the network, which a test enforces.
+
 ## Privacy
 
 - All video is processed on the laptop by MediaPipe and is never stored or sent anywhere.
