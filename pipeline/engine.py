@@ -315,6 +315,76 @@ class Engine:
                  "Conjure clicks": str(self.shadow_clicks)}
         return m
 
+    def _flow_prelude(self, result):
+        """Shared start of every guided flow: cancel half-finished clicks, hold the cursor."""
+        if self.cursor is not None:
+            self._emit(self._detectors_reset(self.modes.mode), result)
+        result.cursor = self.cursor
+
+    def _spell_check_step(self, t, hand, result):
+        self._flow_prelude(result)
+        self.filter.reset()
+        matched = bool(self.matcher.update(hand, t, self.gates)) if hand is not None else False
+        if hand is None:
+            self.matcher.reset()
+        if self.spell_check.update(matched, t):
+            self.notice = self.spell_check.verdict
+            if self.spell_check.hits >= self.spell_check.casts_wanted:
+                self.modes.set_click_mode(Mode.CUSTOM)  # it works: use it
+                self.persist()
+        result.prompt = self.spell_check.prompt
+        result.lines.append(f"spell check: {self.spell_check.hits} hits")
+        return result
+
+    def _tuning_step(self, t, hand, result):
+        self._flow_prelude(result)
+        speed, ratio = None, None
+        if hand is not None and self.base_mapper is not None:
+            speed = self.hand_speed.update(self.base_mapper.target(hand), t)
+            pose = analyze(hand, self.aspect, self.edge_margin)
+            ratio = pose.pinch_index if pose.index_pinch_inside else None
+        else:
+            self.hand_speed.reset()
+        self.tuner.update(speed, t, ratio)
+        if self.tuner.state == "done":
+            dead, slow, p95 = self.tuner.result
+            self.set_dead_speed(dead, slow)
+            parts = [f"Tuned to your hand: resting tremor {p95:.0f}, threshold {dead:.0f}"]
+            if self.tuner.pinch_close_s is not None:
+                self.set_pinch_close(self.tuner.pinch_close_s)
+                engage, _ = self.tuner.pinch_engage_out
+                self.set_pinch_engage(engage)
+                parts.append(f"your pinches close in up to {max(self.tuner.close_times) * 1000:.0f} ms, "
+                             f"window set to {self.tuner.pinch_close_s * 1000:.0f} ms, engage at {engage:.2f}")
+            else:
+                parts.append("no pinch was seen, so the pinch window is unchanged")
+            self.tuner.cancel()
+            self.notice = "; ".join(parts) + "."
+            self.persist()
+        result.prompt, result.message = self.tuner.prompt, self.tuner.message
+        result.lines.append(f"tuning: {self.tuner.state}")
+        return result
+
+    def _calibrating_step(self, t, hand, result):
+        self._flow_prelude(result)
+        self.calibrator.update(hand, t)
+        if self.calibrator.state == calibration.DONE:
+            self.set_calibration(self.calibrator.box)
+            self.calibrator.cancel()
+            self.persist()
+            self.notice = "Calibrated: your comfortable area now covers the whole screen."
+        result.prompt, result.message = self.calibrator.prompt, self.calibrator.message
+        result.lines.append(f"calibrating: {self.calibrator.state}")
+        return result
+
+    def _recording_step(self, t, hand, result):
+        self._flow_prelude(result)
+        self.recorder.update(hand, t)
+        self.filter.reset()
+        result.prompt, result.message = self.recorder.prompt, self.recorder.message
+        result.lines.append(f"recording gesture: {self.recorder.state} ({len(self.recorder.samples)}/3)")
+        return result
+
     def _tutorial_step(self, t, hand, result):
         """Tutorial mode: raw fingertip cursor and naive clicks (shown, never injected);
         Conjure's pinch detector runs in shadow for the side-by-side count."""
@@ -356,75 +426,15 @@ class Engine:
     def _step(self, t, hand):
         self._run_commands()
         result = StepResult()
+        # Guided flows take the frame over: no cursor movement, no clicks, prompts on the overlay.
         if self.spell_check.active:
-            if self.cursor is not None:
-                self._emit(self._detectors_reset(self.modes.mode), result)
-            self.filter.reset()
-            matched = bool(self.matcher.update(hand, t, self.gates)) if hand is not None else False
-            if hand is None:
-                self.matcher.reset()
-            if self.spell_check.update(matched, t):
-                self.notice = self.spell_check.verdict
-                if self.spell_check.hits >= self.spell_check.casts_wanted:
-                    self.modes.set_click_mode(Mode.CUSTOM)  # it works: use it
-                    self.persist()
-            result.cursor = self.cursor
-            result.prompt = self.spell_check.prompt
-            result.lines.append(f"spell check: {self.spell_check.hits} hits")
-            return result
+            return self._spell_check_step(t, hand, result)
         if self.tuner is not None and self.tuner.active:
-            if self.cursor is not None:
-                self._emit(self._detectors_reset(self.modes.mode), result)
-            speed, ratio = None, None
-            if hand is not None and self.base_mapper is not None:
-                speed = self.hand_speed.update(self.base_mapper.target(hand), t)
-                pose = analyze(hand, self.aspect, self.edge_margin)
-                ratio = pose.pinch_index if pose.index_pinch_inside else None
-            else:
-                self.hand_speed.reset()
-            self.tuner.update(speed, t, ratio)
-            if self.tuner.state == "done":
-                dead, slow, p95 = self.tuner.result
-                self.set_dead_speed(dead, slow)
-                parts = [f"Tuned to your hand: resting tremor {p95:.0f}, threshold {dead:.0f}"]
-                if self.tuner.pinch_close_s is not None:
-                    self.set_pinch_close(self.tuner.pinch_close_s)
-                    engage, _ = self.tuner.pinch_engage_out
-                    self.set_pinch_engage(engage)
-                    parts.append(f"your pinches close in up to {max(self.tuner.close_times) * 1000:.0f} ms, "
-                                 f"window set to {self.tuner.pinch_close_s * 1000:.0f} ms, engage at {engage:.2f}")
-                else:
-                    parts.append("no pinch was seen, so the pinch window is unchanged")
-                self.tuner.cancel()
-                self.notice = "; ".join(parts) + "."
-                self.persist()
-            result.cursor = self.cursor
-            result.prompt, result.message = self.tuner.prompt, self.tuner.message
-            result.lines.append(f"tuning: {self.tuner.state}")
-            return result
+            return self._tuning_step(t, hand, result)
         if self.calibrator.active:
-            if self.cursor is not None:
-                self._emit(self._detectors_reset(self.modes.mode), result)
-            self.calibrator.update(hand, t)
-            if self.calibrator.state == calibration.DONE:
-                self.set_calibration(self.calibrator.box)
-                self.calibrator.cancel()
-                self.persist()
-                self.notice = "Calibrated: your comfortable area now covers the whole screen."
-            result.cursor = self.cursor
-            result.prompt, result.message = self.calibrator.prompt, self.calibrator.message
-            result.lines.append(f"calibrating: {self.calibrator.state}")
-            return result
+            return self._calibrating_step(t, hand, result)
         if self.recorder.active:
-            # Recording a gesture: no cursor movement and no clicks until it is done.
-            if self.cursor is not None:
-                self._emit(self._detectors_reset(self.modes.mode), result)
-            self.recorder.update(hand, t)
-            self.filter.reset()
-            result.cursor = self.cursor
-            result.prompt, result.message = self.recorder.prompt, self.recorder.message
-            result.lines.append(f"recording gesture: {self.recorder.state} ({len(self.recorder.samples)}/3)")
-            return result
+            return self._recording_step(t, hand, result)
         if self.tutorial is not None:
             return self._tutorial_step(t, hand, result)
         if not self.auto_pause.update(hand):
