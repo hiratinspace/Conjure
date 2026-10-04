@@ -31,7 +31,7 @@ Status key: `todo` · `doing` · `code done` (headless ACs pass, physical AC pen
 
 | Gate | Status | Evidence / pending |
 | --- | --- | --- |
-| Phase A (CONJ-1..4) | **passed with deferrals** | Live: 30 fps with preview, track ~15 ms, either hand, sticky with two hands. Recorded: `traversal`, `idle`. **Deferred by the user** (build continues meanwhile): `exits`, `pinches`, `small_range` recordings. |
+| Phase A (CONJ-1..4) | **passed with deferrals** | Live: 30 fps with preview, track ~15 ms, either hand, sticky with two hands. Recorded: `traversal`, `idle`, `exits` (stopped at 51 s of 70, but holds 12 clean exit/re-entry cycles). **Deferred by the user** (build continues meanwhile): `pinches`, `small_range` recordings. |
 
 ## Shared contracts (frozen before Phase C)
 
