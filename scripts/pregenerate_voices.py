@@ -10,6 +10,7 @@ environment (never pass it on the command line or write it to a file):
 """
 
 import argparse
+import json
 import os
 import sys
 from pathlib import Path
@@ -20,6 +21,23 @@ import config  # noqa: E402
 from pipeline.feedback import FIXED_PHRASES  # noqa: E402
 from pipeline.voice import SilentVoice, slug  # noqa: E402
 from pipeline.voice_elevenlabs import ElevenLabsVoice  # noqa: E402
+
+
+def explain(error):
+    """The server's own reason for an HTTP error (its body never contains the key)."""
+    code = getattr(error, "code", None)
+    if code is None:
+        return ""
+    try:
+        body = json.loads(error.read().decode("utf-8", "replace"))
+        detail = body.get("detail", body)
+        reason = detail.get("status") or detail.get("message") or detail if isinstance(detail, dict) else detail
+        hint = {401: "the key is wrong, revoked, or lacks the Text to Speech permission "
+                     "(check its length with: echo ${#ELEVENLABS_API_KEY})",
+                402: "the plan's quota is exhausted", 429: "rate limited or quota exhausted"}.get(code, "")
+        return f"\n         server says: {reason}" + (f"\n         meaning: {hint}" if hint else "")
+    except Exception:
+        return ""
 
 
 def main():
@@ -44,8 +62,12 @@ def main():
         try:
             audio = voice.synthesize(text, timeout_s=15)
         except Exception as e:  # report and keep going; never print the key
-            print(f"  FAIL   {text!r}: {type(e).__name__}: {e}")
+            print(f"  FAIL   {text!r}: {type(e).__name__}: {e}{explain(e)}")
             failures += 1
+            if getattr(e, "code", None) in (401, 402, 429):
+                print("  Stopping: the same error would repeat for every phrase.")
+                failures += len(phrases) - phrases.index(text) - 1
+                break
             continue
         path.write_bytes(audio)
         print(f"  ok     {text!r} -> {path.relative_to(config.ROOT)} ({len(audio) // 1024} KB)")
